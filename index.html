@@ -2,404 +2,232 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Go 后端面试题库 — 基于简历定制</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Go 后端面试题库</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-	--bg: #0f1117;
-	--card: #1a1d27;
-	--card-hover: #222633;
-	--border: #2a2e3d;
-	--accent: #6c8cff;
-	--accent-dim: rgba(108,140,255,0.12);
-	--green: #34d399;
-	--green-dim: rgba(52,211,153,0.12);
-	--orange: #fb923c;
-	--orange-dim: rgba(251,146,60,0.12);
-	--red: #f87171;
-	--red-dim: rgba(248,113,113,0.12);
-	--purple: #a78bfa;
-	--purple-dim: rgba(167,139,250,0.12);
-	--cyan: #22d3ee;
-	--cyan-dim: rgba(34,211,238,0.12);
-	--text: #e2e8f0;
-	--text-dim: #94a3b8;
-	--text-muted: #64748b;
+:root{
+	--bg:#09090b;--bg2:#0f0f10;--surface:#151413;--chrome:#1a1918;--chrome-b:#282624;
+	--border:#252320;--border-hi:#3a3630;
+	--gold:#d4a853;--gold-dim:rgba(212,168,83,.10);--gold-glow:rgba(212,168,83,.06);--gold-hi:#e8c36a;
+	--green:#5cb87a;--green-bg:rgba(92,184,122,.10);
+	--orange:#d4943c;--orange-bg:rgba(212,148,60,.10);
+	--red:#c75f5f;--red-bg:rgba(199,95,95,.10);
+	--purple:#a08cc0;--purple-bg:rgba(160,140,192,.08);
+	--cyan:#6bafc4;--cyan-bg:rgba(107,175,196,.08);
+	--text:#f0ece4;--text2:#a09882;--text3:#726a5c;
+	--dot-r:#ff5f57;--dot-y:#febc2e;--dot-g:#28c840;
+	--shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(212,168,83,.05),inset 0 1px 0 rgba(255,255,255,.03);
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-	font-family: -apple-system, 'Noto Sans SC', 'PingFang SC', 'Helvetica Neue', sans-serif;
-	background: var(--bg);
-	color: var(--text);
-	line-height: 1.7;
-	min-height: 100vh;
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:var(--bg)}
+body{
+	font-family:'Inter',-apple-system,BlinkMacSystemFont,'Noto Sans SC','PingFang SC','Segoe UI',sans-serif;
+	background:var(--bg);color:var(--text);line-height:1.65;
+	min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;
 }
-.container { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
+.app{max-width:720px;margin:0 auto;padding:20px 16px calc(env(safe-area-inset-bottom,20px) + 12px)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+button:focus:not(:focus-visible){outline:none}
 
-/* Header */
-.header {
-	text-align: center;
-	padding: 48px 0 32px;
-	border-bottom: 1px solid var(--border);
-	margin-bottom: 32px;
-}
-.header h1 {
-	font-size: 28px;
-	font-weight: 700;
-	background: linear-gradient(135deg, var(--accent), var(--cyan));
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	margin-bottom: 8px;
-}
-.header p { color: var(--text-dim); font-size: 14px; }
+/* ── Header ── */
+.hd{text-align:center;padding:32px 0 14px}
+.hd h1{font-size:24px;font-weight:700;letter-spacing:-.3px;background:linear-gradient(135deg,#c9952e,#e8c36a,#d4a853);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hd p{color:var(--text3);font-size:12px;margin-top:4px;font-weight:500}
 
-/* Stats Bar */
-.stats-bar {
-	display: flex;
-	gap: 12px;
-	margin-bottom: 28px;
-	flex-wrap: wrap;
-}
-.stat-card {
-	flex: 1;
-	min-width: 120px;
-	background: var(--card);
-	border: 1px solid var(--border);
-	border-radius: 10px;
-	padding: 16px;
-	text-align: center;
-	transition: border-color 0.2s;
-}
-.stat-card:hover { border-color: var(--accent); }
-.stat-num { font-size: 28px; font-weight: 700; color: var(--accent); }
-.stat-label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+/* ── Stats ── */
+.sts{display:flex;justify-content:center;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+.st{padding:5px 14px;border-radius:16px;font-size:11px;font-weight:600;background:var(--bg2);border:1px solid var(--border);color:var(--text2)}
+.st-g{color:var(--green);border-color:rgba(92,184,122,.2)}
+.st-o{color:var(--orange);border-color:rgba(212,148,60,.2)}
+.st-r{color:var(--red);border-color:rgba(199,95,95,.2)}
 
-/* Controls */
-.controls {
-	display: flex;
-	gap: 10px;
-	margin-bottom: 24px;
-	flex-wrap: wrap;
-	align-items: center;
-}
-.search-box {
-	flex: 1;
-	min-width: 200px;
-	padding: 10px 16px;
-	background: var(--card);
-	border: 1px solid var(--border);
-	border-radius: 8px;
-	color: var(--text);
-	font-size: 14px;
-	outline: none;
-	transition: border-color 0.2s;
-}
-.search-box:focus { border-color: var(--accent); }
-.search-box::placeholder { color: var(--text-muted); }
+/* ── Mode Toggle ── */
+.modes{display:flex;gap:2px;margin:0 auto 24px;width:fit-content;background:var(--surface);border-radius:10px;padding:3px;border:1px solid var(--border)}
+.modes button{padding:7px 22px;border:none;border-radius:8px;background:0;color:var(--text3);font-size:12px;cursor:pointer;transition:all .2s;font-weight:600;font-family:inherit}
+.modes button.on{background:var(--gold);color:#0a0a08;box-shadow:0 2px 12px rgba(212,168,83,.25)}
 
-.filter-btn {
-	padding: 8px 16px;
-	border-radius: 20px;
-	border: 1px solid var(--border);
-	background: var(--card);
-	color: var(--text-dim);
-	font-size: 13px;
-	cursor: pointer;
-	transition: all 0.2s;
-	white-space: nowrap;
+/* ── Category Tabs (下划线风格) ── */
+.cat-tabs{
+	display:flex;overflow-x:auto;border-bottom:1px solid var(--border);
+	margin-bottom:16px;scrollbar-width:none;-ms-overflow-style:none;
+	-webkit-overflow-scrolling:touch;
 }
-.filter-btn:hover { border-color: var(--accent); color: var(--text); }
-.filter-btn.active {
-	background: var(--accent-dim);
-	border-color: var(--accent);
-	color: var(--accent);
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{
+	padding:10px 20px;border:none;border-bottom:2px solid transparent;
+	background:0;color:var(--text3);font-size:13px;font-weight:500;
+	cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;font-family:inherit;
 }
-.diff-btn { font-size: 12px; padding: 6px 12px; }
-.diff-btn[data-diff="easy"] { --fc: var(--green); }
-.diff-btn[data-diff="medium"] { --fc: var(--orange); }
-.diff-btn[data-diff="hard"] { --fc: var(--red); }
-.diff-btn.active { background: color-mix(in srgb, var(--fc) 15%, transparent); border-color: var(--fc); color: var(--fc); }
+.cat-tab:hover{color:var(--text2)}
+.cat-tab.on{color:var(--gold);border-bottom-color:var(--gold)}
 
-/* Category Section */
-.category {
-	margin-bottom: 32px;
+/* ── Difficulty + Toggles (紧凑行) ── */
+.ctrl-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.ctrl{
+	padding:5px 14px;border-radius:14px;border:1px solid var(--border);
+	background:var(--bg2);color:var(--text3);font-size:11px;font-weight:500;
+	cursor:pointer;transition:all .2s;font-family:inherit;
 }
-.category-header {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin-bottom: 14px;
-	cursor: pointer;
-	user-select: none;
-}
-.category-icon {
-	width: 36px; height: 36px;
-	border-radius: 8px;
-	display: flex; align-items: center; justify-content: center;
-	font-size: 18px;
-	flex-shrink: 0;
-}
-.category-title {
-	font-size: 18px;
-	font-weight: 600;
-	flex: 1;
-}
-.category-count {
-	font-size: 12px;
-	color: var(--text-muted);
-	background: var(--card);
-	padding: 2px 10px;
-	border-radius: 10px;
-}
-.category-toggle {
-	color: var(--text-muted);
-	font-size: 12px;
-	transition: transform 0.3s;
-}
-.category-toggle.collapsed { transform: rotate(-90deg); }
+.ctrl:hover{border-color:var(--border-hi);color:var(--text2)}
+.ctrl.on{background:var(--gold-dim);border-color:rgba(212,168,83,.25);color:var(--gold)}
+.ctrl.de.on{background:var(--green-bg);border-color:rgba(92,184,122,.25);color:var(--green)}
+.ctrl.dm.on{background:var(--orange-bg);border-color:rgba(212,148,60,.25);color:var(--orange)}
+.ctrl.dh.on{background:var(--red-bg);border-color:rgba(199,95,95,.25);color:var(--red)}
 
-/* Question Card */
-.qa-list { display: flex; flex-direction: column; gap: 8px; }
-.qa-card {
-	background: var(--card);
-	border: 1px solid var(--border);
-	border-radius: 10px;
-	overflow: hidden;
-	transition: border-color 0.2s, background 0.2s;
-}
-.qa-card:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
-.qa-card.mastered { opacity: 0.5; }
-.qa-card.mastered .qa-question::before {
-	content: '';
-	position: absolute;
-	left: 0; right: 0; top: 50%;
-	height: 1px;
-	background: var(--text-muted);
-}
+/* ===== FLASHCARD ===== */
+.fc-v{display:block}.ls-v{display:none}
+.mode-ls .fc-v{display:none}.mode-ls .ls-v{display:block}
 
-.qa-question {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 14px 16px;
-	cursor: pointer;
-	user-select: none;
-	position: relative;
-}
-.qa-num {
-	font-size: 12px;
-	color: var(--text-muted);
-	font-weight: 600;
-	min-width: 18px;
-}
-.qa-text {
-	flex: 1;
-	font-size: 14px;
-	font-weight: 500;
-}
-.qa-tags { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-.qa-tag {
-	font-size: 11px;
-	padding: 2px 8px;
-	border-radius: 4px;
-	font-weight: 500;
-}
-.tag-easy { background: var(--green-dim); color: var(--green); }
-.tag-medium { background: var(--orange-dim); color: var(--orange); }
-.tag-hard { background: var(--red-dim); color: var(--red); }
-.tag-project { background: var(--purple-dim); color: var(--purple); font-size: 10px; }
-.tag-scene { background: var(--cyan-dim); color: var(--cyan); font-size: 10px; }
+.stage{perspective:1200px;display:flex;justify-content:center;padding:8px 0 20px}
+.fc{width:100%;max-width:640px;height:380px;position:relative}
+.fc-in{width:100%;height:100%;position:relative;transition:transform .4s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;-webkit-transform-style:preserve-3d}
+.fc.flip .fc-in{transform:rotateY(180deg)}
+.fc-f,.fc-b{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.fc-f{cursor:pointer;pointer-events:auto}.fc.flip .fc-f{pointer-events:none}
+.fc-b{transform:rotateY(180deg);pointer-events:none}.fc.flip .fc-b{pointer-events:auto}
 
-.qa-check {
-	width: 20px; height: 20px;
-	border-radius: 50%;
-	border: 2px solid var(--border);
-	display: flex; align-items: center; justify-content: center;
-	cursor: pointer;
-	transition: all 0.2s;
-	flex-shrink: 0;
-	font-size: 12px;
-	color: transparent;
-}
-.qa-check:hover { border-color: var(--green); }
-.qa-check.checked {
-	border-color: var(--green);
-	background: var(--green);
-	color: #fff;
-}
+.chrome{display:flex;align-items:center;padding:12px 16px;background:var(--chrome);border-bottom:1px solid var(--chrome-b);flex-shrink:0}
+.dots{display:flex;gap:7px;flex-shrink:0}
+.dot{width:11px;height:11px;border-radius:50%}
+.d-r{background:var(--dot-r)}.d-y{background:var(--dot-y)}.d-g{background:var(--dot-g)}
+.chrome-t{flex:1;text-align:center;font-size:12px;color:var(--text3);font-weight:500;letter-spacing:.3px}
+.chrome-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--gold-dim);color:var(--gold);font-size:11px;cursor:pointer;transition:all .15s;font-weight:500;font-family:inherit}
+.chrome-btn:hover{background:rgba(212,168,83,.15);border-color:rgba(212,168,83,.3)}
 
-.qa-answer {
-	display: none;
-	padding: 0 16px 16px;
-	border-top: 1px solid var(--border);
-}
-.qa-answer.open { display: block; padding-top: 14px; }
-.qa-answer h4 {
-	font-size: 13px;
-	color: var(--accent);
-	margin: 16px 0 6px;
-	font-weight: 600;
-}
-.qa-answer h4:first-child { margin-top: 0; }
-.qa-answer p, .qa-answer li {
-	font-size: 13.5px;
-	color: var(--text-dim);
-	line-height: 1.8;
-}
-.qa-answer ul { padding-left: 18px; }
-.qa-answer li { margin-bottom: 4px; }
-.qa-answer code {
-	background: rgba(108,140,255,0.1);
-	color: var(--accent);
-	padding: 1px 6px;
-	border-radius: 4px;
-	font-size: 12.5px;
-	font-family: 'JetBrains Mono', 'Fira Code', monospace;
-}
-.qa-answer pre {
-	background: #151821;
-	border: 1px solid var(--border);
-	border-radius: 8px;
-	padding: 14px;
-	margin: 10px 0;
-	overflow-x: auto;
-	font-size: 12.5px;
-	line-height: 1.6;
-}
-.qa-answer pre code {
-	background: none;
-	padding: 0;
-	color: var(--text-dim);
-}
-.qa-answer .key-point {
-	background: var(--accent-dim);
-	border-left: 3px solid var(--accent);
-	padding: 10px 14px;
-	border-radius: 0 6px 6px 0;
-	margin: 10px 0;
-	font-size: 13px;
-	color: var(--text);
-}
-.qa-answer .project-link {
-	background: var(--purple-dim);
-	border-left: 3px solid var(--purple);
-	padding: 10px 14px;
-	border-radius: 0 6px 6px 0;
-	margin: 10px 0;
-	font-size: 13px;
-	color: var(--purple);
-}
+.fc-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:30px 30px 26px;position:relative;overflow:hidden}
+.fc-body::before{content:'Q';position:absolute;bottom:-24px;right:-8px;font-size:180px;font-weight:900;line-height:1;color:rgba(212,168,83,.03);pointer-events:none;font-family:'Inter',sans-serif}
+.bgs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;justify-content:center}
+.bg{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600;letter-spacing:.2px;border:1px solid transparent}
+.bg-c{background:var(--gold-dim);color:var(--gold);border-color:rgba(212,168,83,.12)}
+.bg-e{background:var(--green-bg);color:var(--green);border-color:rgba(92,184,122,.12)}
+.bg-m{background:var(--orange-bg);color:var(--orange);border-color:rgba(212,148,60,.12)}
+.bg-h{background:var(--red-bg);color:var(--red);border-color:rgba(199,95,95,.12)}
+.bg-p{background:var(--purple-bg);color:var(--purple);border-color:rgba(160,140,192,.10)}
+.bg-s{background:var(--cyan-bg);color:var(--cyan);border-color:rgba(107,175,196,.10)}
+.qt{font-size:18px;font-weight:600;line-height:1.65;max-width:520px}
+.qh{margin-top:24px;font-size:10px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase;font-weight:500}
 
-/* Progress Bar */
-.progress-wrap {
-	position: fixed;
-	bottom: 0;
-	left: 0; right: 0;
-	background: var(--card);
-	border-top: 1px solid var(--border);
-	padding: 12px 24px;
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	z-index: 100;
-}
-.progress-bar {
-	flex: 1;
-	height: 6px;
-	background: var(--border);
-	border-radius: 3px;
-	overflow: hidden;
-}
-.progress-fill {
-	height: 100%;
-	background: linear-gradient(90deg, var(--accent), var(--green));
-	border-radius: 3px;
-	transition: width 0.4s ease;
-	width: 0%;
-}
-.progress-text { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
+.fc-ans{flex:1;overflow-y:auto;padding:20px 24px 24px;-webkit-overflow-scrolling:touch}
+.fc-ans::-webkit-scrollbar{width:3px}.fc-ans::-webkit-scrollbar-track{background:0}.fc-ans::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.fc-ans h4{font-size:13px;color:var(--gold);margin:16px 0 6px;font-weight:600}.fc-ans h4:first-child{margin-top:0}
+.fc-ans p,.fc-ans li{font-size:13px;color:var(--text2);line-height:1.8}
+.fc-ans ul,.fc-ans ol{padding-left:18px}.fc-ans li{margin-bottom:3px}
+.fc-ans code{background:rgba(212,168,83,.07);color:var(--gold);padding:1px 5px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono',monospace}
+.fc-ans pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-size:12px;line-height:1.6}
+.fc-ans pre code{background:0;padding:0;color:var(--text2);font-family:'JetBrains Mono',monospace}
+.fc-ans .key-point{background:var(--gold-glow);border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12px;color:var(--text)}
+.fc-ans .project-link{background:var(--purple-bg);border-left:3px solid var(--purple);padding:8px 12px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12px;color:var(--purple)}
+.fc-ans table{width:100%;font-size:12px;color:var(--text2);border-collapse:collapse}.fc-ans th{text-align:left;padding:5px}.fc-ans td{padding:5px}.fc-ans tr{border-bottom:1px solid var(--border)}
 
-/* Responsive */
-@media (max-width: 640px) {
-	.container { padding: 16px 14px 80px; }
-	.header { padding: 32px 0 24px; }
-	.header h1 { font-size: 22px; }
-	.stats-bar { gap: 8px; }
-	.stat-card { padding: 12px; }
-	.stat-num { font-size: 22px; }
-	.qa-tags { display: none; }
-	.controls { gap: 6px; }
-}
+.nav{display:flex;align-items:center;justify-content:center;gap:24px;margin:0 0 16px}
+.nav-b{width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text3);font-size:18px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.nav-b:hover{border-color:var(--border-hi);color:var(--text)}.nav-b:active{transform:scale(.94)}.nav-b:disabled{opacity:.2;cursor:not-allowed;transform:none}
+.nav-c{font-size:13px;color:var(--text3);font-weight:600;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
 
-/* Expand / Collapse All */
-.toolbar {
-	display: flex;
-	justify-content: flex-end;
-	gap: 8px;
-	margin-bottom: 18px;
-}
-.tool-btn {
-	padding: 6px 14px;
-	border-radius: 6px;
-	border: 1px solid var(--border);
-	background: var(--card);
-	color: var(--text-dim);
-	font-size: 12px;
-	cursor: pointer;
-	transition: all 0.2s;
-}
-.tool-btn:hover { border-color: var(--accent); color: var(--text); }
+.rtg{display:flex;justify-content:center;gap:10px;margin-bottom:14px}
+.rt{flex:1;max-width:130px;min-height:44px;padding:10px 0;border-radius:10px;font-size:13px;cursor:pointer;transition:all .15s;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px;font-family:inherit}
+.rt:active{transform:scale(.95)}
+.rt-f{border:1px solid rgba(199,95,95,.2);color:var(--red);background:rgba(199,95,95,.06)}
+.rt-f:hover{background:rgba(199,95,95,.12);box-shadow:0 4px 16px rgba(199,95,95,.08);border-color:rgba(199,95,95,.35)}
+.rt-z{border:1px solid rgba(212,148,60,.2);color:var(--orange);background:rgba(212,148,60,.06)}
+.rt-z:hover{background:rgba(212,148,60,.12);box-shadow:0 4px 16px rgba(212,148,60,.08);border-color:rgba(212,148,60,.35)}
+.rt-p{border:1px solid rgba(92,184,122,.2);color:var(--green);background:rgba(92,184,122,.06)}
+.rt-p:hover{background:rgba(92,184,122,.12);box-shadow:0 4px 16px rgba(92,184,122,.08);border-color:rgba(92,184,122,.35)}
+.keys{text-align:center;font-size:10px;color:var(--text3);opacity:.45}
+.keys kbd{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:0 5px;font-family:inherit;font-size:9px}
 
-.hidden { display: none !important; }
+.prog{margin-top:20px}.prog-h{display:flex;justify-content:space-between;margin-bottom:6px}
+.prog-t{font-size:11px;color:var(--text3)}
+.prog-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .5s ease;width:0%;background:linear-gradient(90deg,#b8942e,var(--gold),var(--gold-hi));background-size:200% 100%;animation:shimmer 4s ease infinite}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* ===== LIST VIEW ===== */
+.ls-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.ls-s{flex:1;min-width:180px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;outline:none;transition:all .2s;font-family:inherit}
+.ls-s:focus{border-color:rgba(212,168,83,.35);box-shadow:0 0 0 3px rgba(212,168,83,.06)}.ls-s::placeholder{color:var(--text3)}
+.ls-b{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text3);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit}
+.ls-b:hover{border-color:var(--border-hi);color:var(--text2)}
+.csec{margin-bottom:28px}
+.chdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none}
+.cico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cnam{font-size:16px;font-weight:600;flex:1}.ccnt{font-size:11px;color:var(--text3);background:var(--surface);padding:2px 10px;border-radius:8px}
+.carr{color:var(--text3);font-size:11px;transition:transform .3s}.carr.shut{transform:rotate(-90deg)}
+.ql{display:flex;flex-direction:column;gap:6px}
+.qc{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s}.qc:hover{border-color:var(--border-hi)}.qc.done{opacity:.4}
+.qr{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none}
+.qn{font-size:11px;color:var(--text3);font-weight:700;min-width:16px;font-variant-numeric:tabular-nums}.qtx{flex:1;font-size:13px;font-weight:500}
+.qts{display:flex;gap:5px;align-items:center;flex-shrink:0}.qtg{font-size:10px;padding:2px 8px;border-radius:5px;font-weight:500}
+.te{background:var(--green-bg);color:var(--green)}.tm{background:var(--orange-bg);color:var(--orange)}.th{background:var(--red-bg);color:var(--red)}.tp{background:var(--purple-bg);color:var(--purple)}.ts{background:var(--cyan-bg);color:var(--cyan)}
+.qck{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;font-size:11px;color:transparent}
+.qck:hover{border-color:var(--green)}.qck.ck{border-color:var(--green);background:var(--green);color:#fff}
+.qa{display:none;padding:0 16px 16px;border-top:1px solid var(--border)}.qa.open{display:block;padding-top:14px}
+.qa h4{font-size:13px;color:var(--gold);margin:14px 0 6px;font-weight:600}.qa h4:first-child{margin-top:0}
+.qa p,.qa li{font-size:13px;color:var(--text2);line-height:1.8}.qa ul{padding-left:18px}.qa li{margin-bottom:3px}
+.qa code{background:rgba(212,168,83,.07);color:var(--gold);padding:1px 5px;border-radius:4px;font-size:12px;font-family:'JetBrains Mono',monospace}
+.qa pre{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-size:12px;line-height:1.6}.qa pre code{background:0;padding:0;color:var(--text2)}
+.qa .key-point{background:var(--gold-glow);border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:12px;color:var(--text)}
+.qa .project-link{background:var(--purple-bg);border-left:3px solid var(--purple);padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:12px;color:var(--purple)}
+.hidden{display:none!important}
+
+@media(prefers-reduced-motion:reduce){.fc-in{transition:none!important}.fc.flip .fc-in{transform:none!important}.fc.flip .fc-f{opacity:0}.fc.flip .fc-b{transform:none;opacity:1}.fc-f,.fc-b{transition:opacity .15s}.prog-fill{animation:none}*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+@media(max-width:768px){.app{padding:14px 14px calc(env(safe-area-inset-bottom,16px) + 8px)}.hd{padding:24px 0 10px}.hd h1{font-size:21px}.fc{height:340px}.fc-body{padding:24px 22px 20px}.fc-body::before{font-size:140px}.qt{font-size:16px}.fc-ans{padding:16px 18px 20px}.rt{font-size:12px}.keys{display:none}.cat-tab{padding:9px 16px;font-size:12px}}
+@media(max-width:400px){.fc{height:300px}.fc-body{padding:18px 16px}.fc-body::before{font-size:110px}.qt{font-size:15px}.bgs{gap:4px;margin-bottom:14px}.bg{font-size:9px;padding:2px 8px}.nav-b{width:40px;height:40px;border-radius:8px}.rtg{gap:6px}.rt{font-size:11px;min-height:42px}.sts{gap:5px}.st{font-size:10px;padding:4px 10px}.qts{display:none}.cat-tab{padding:8px 12px;font-size:11px}}
 </style>
 </head>
 <body>
 
-<div class="container">
-	<div class="header">
-		<h1>Go 后端开发面试题库</h1>
-		<p>基于简历项目定制 | 覆盖八股文 + 项目场景题 + 系统设计</p>
+<div class="app" id="app">
+	<div class="hd"><h1>Go 后端面试题库</h1><p>基于简历定制 · 记忆卡片</p></div>
+
+	<div class="sts">
+		<span class="st" id="s-t">65 题</span>
+		<span class="st st-g" id="s-p">0 掌握</span>
+		<span class="st st-o" id="s-z">0 模糊</span>
+		<span class="st st-r" id="s-f">0 不会</span>
 	</div>
 
-	<div class="stats-bar">
-		<div class="stat-card">
-			<div class="stat-num" id="totalCount">0</div>
-			<div class="stat-label">总题数</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-num" id="masteredCount" style="color:var(--green)">0</div>
-			<div class="stat-label">已掌握</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-num" id="remainCount" style="color:var(--orange)">0</div>
-			<div class="stat-label">待复习</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-num" id="progressPct" style="color:var(--cyan)">0%</div>
-			<div class="stat-label">完成度</div>
-		</div>
+	<div class="modes"><button class="on" data-m="card">卡片</button><button data-m="list">列表</button></div>
+
+	<div class="cat-tabs" id="catF"></div>
+
+	<div class="ctrl-row">
+		<button class="ctrl on" data-d="all">全部</button>
+		<button class="ctrl de" data-d="easy">基础</button>
+		<button class="ctrl dm" data-d="medium">进阶</button>
+		<button class="ctrl dh" data-d="hard">深入</button>
+		<button class="ctrl" id="unmB">未掌握</button>
+		<button class="ctrl" id="rndB">随机</button>
 	</div>
 
-	<div class="controls">
-		<input class="search-box" type="text" placeholder="搜索题目关键词..." id="searchInput">
-		<button class="filter-btn active" data-cat="all">全部</button>
-		<button class="diff-btn filter-btn" data-diff="easy">基础</button>
-		<button class="diff-btn filter-btn" data-diff="medium">进阶</button>
-		<button class="diff-btn filter-btn" data-diff="hard">深入</button>
+	<div class="fc-v" id="fcV">
+		<div class="stage"><div class="fc" id="fc"><div class="fc-in">
+			<div class="fc-f" id="fcF">
+				<div class="chrome"><div class="dots"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div><span class="chrome-t" id="chT"></span></div>
+				<div class="fc-body"><div class="bgs" id="bgs"></div><div class="qt" id="qt"></div><div class="qh">click to flip</div></div>
+			</div>
+			<div class="fc-b">
+				<div class="chrome"><div class="dots"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div><span class="chrome-t" id="chT2"></span><button class="chrome-btn" onclick="flip()">&#8592; 翻回</button></div>
+				<div class="fc-ans" id="ans"></div>
+			</div>
+		</div></div></div>
+		<div class="nav"><button class="nav-b" id="pB" onclick="prev()">&#8592;</button><span class="nav-c" id="nC">0 / 0</span><button class="nav-b" id="nB" onclick="next()">&#8594;</button></div>
+		<div class="rtg"><button class="rt rt-f" onclick="rate(1)">&#10007; 不会</button><button class="rt rt-z" onclick="rate(2)">&#8776; 模糊</button><button class="rt rt-p" onclick="rate(3)">&#10003; 掌握</button></div>
+		<div class="keys"><kbd>Space</kbd> 翻转 <kbd>&#8592;</kbd><kbd>&#8594;</kbd> 切换 <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 评分</div>
 	</div>
 
-	<div class="toolbar">
-		<button class="tool-btn" onclick="expandAll()">展开全部</button>
-		<button class="tool-btn" onclick="collapseAll()">收起全部</button>
-		<button class="tool-btn" onclick="resetProgress()">重置进度</button>
+	<div class="ls-v" id="lsV">
+		<div class="ls-bar"><input class="ls-s" type="text" placeholder="搜索关键词..." id="sI"><button class="ls-b" onclick="expAll()">展开</button><button class="ls-b" onclick="colAll()">收起</button><button class="ls-b" onclick="rstP()">重置</button></div>
+		<div id="lsC"></div>
 	</div>
 
-	<div id="content"></div>
-</div>
-
-<div class="progress-wrap">
-	<span class="progress-text" id="progressLabel">已掌握 0 / 0</span>
-	<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+	<div class="prog"><div class="prog-h"><span class="prog-t" id="pL">已掌握 0 / 0</span><span class="prog-t" id="pP">0%</span></div><div class="prog-bar"><div class="prog-fill" id="pF"></div></div></div>
 </div>
 
 <script>
@@ -2746,165 +2574,92 @@ LimitNOFILE=65535</code></pre>
 },
 ];
 
-// ========== Render & Interaction ==========
-let mastered = JSON.parse(localStorage.getItem('mastered') || '{}');
-let globalQNum = 0;
 
-function render(filterDiff = 'all', searchText = '') {
-	const container = document.getElementById('content');
-	container.innerHTML = '';
-	globalQNum = 0;
-	let totalQ = 0, masteredQ = 0;
+// ========== State ==========
+let S=JSON.parse(localStorage.getItem('cardStates')||'{}');
+(function(){const o=JSON.parse(localStorage.getItem('mastered')||'{}');if(Object.keys(o).length){Object.keys(o).forEach(k=>{if(o[k]&&!S[k])S[k]=3});localStorage.setItem('cardStates',JSON.stringify(S));localStorage.removeItem('mastered')}})();
 
-	DATA.forEach((cat, ci) => {
-		const section = document.createElement('div');
-		section.className = 'category';
-		section.dataset.cat = ci;
+let mode='card',catV='all',difV='all',unmV=false,rndV=false,idx=0,cards=[],flipped=false;
+const $=id=>document.getElementById(id);
 
-		let visibleItems = cat.items.filter(item => {
-			const diffMatch = filterDiff === 'all' || item.diff === filterDiff;
-			const textMatch = !searchText || item.q.toLowerCase().includes(searchText) ||
-				item.a.toLowerCase().includes(searchText);
-			return diffMatch && textMatch;
-		});
+const all=[];
+DATA.forEach((c,ci)=>c.items.forEach((it,ii)=>all.push({id:`${ci}-${ii}`,cat:c.cat,ci,icon:c.icon,color:c.color,q:it.q,a:it.a,diff:it.diff,tags:it.tags||[]})));
 
-		if (visibleItems.length === 0) return;
-
-		section.innerHTML = `
-			<div class="category-header" onclick="toggleCategory(${ci})">
-				<div class="category-icon" style="background:${cat.color}22;color:${cat.color}">${cat.icon}</div>
-				<div class="category-title" style="color:${cat.color}">${cat.cat}</div>
-				<div class="category-count">${visibleItems.length} 题</div>
-				<div class="category-toggle" id="toggle-${ci}">▼</div>
-			</div>
-			<div class="qa-list" id="list-${ci}"></div>
-		`;
-		container.appendChild(section);
-
-		const list = section.querySelector('.qa-list');
-		visibleItems.forEach((item, idx) => {
-			globalQNum++;
-			const qid = `${ci}-${idx}`;
-			const isMastered = mastered[qid];
-			totalQ++;
-			if (isMastered) masteredQ++;
-
-			const diffLabel = {easy:'基础',medium:'进阶',hard:'深入'}[item.diff];
-			const tagHtml = item.tags.map(t => {
-				if (t === 'project') return '<span class="qa-tag tag-project">简历项目</span>';
-				if (t === 'scene') return '<span class="qa-tag tag-scene">场景题</span>';
-				return '';
-			}).join('');
-
-			const card = document.createElement('div');
-			card.className = 'qa-card' + (isMastered ? ' mastered' : '');
-			card.id = `card-${qid}`;
-			card.innerHTML = `
-				<div class="qa-question" onclick="toggleAnswer('${qid}')">
-					<span class="qa-num">${globalQNum}</span>
-					<span class="qa-text">${item.q}</span>
-					<div class="qa-tags">
-						${tagHtml}
-						<span class="qa-tag tag-${item.diff}">${diffLabel}</span>
-					</div>
-					<div class="qa-check ${isMastered?'checked':''}" onclick="event.stopPropagation();toggleMastered('${qid}')" title="标记已掌握">${isMastered?'✓':''}</div>
-				</div>
-				<div class="qa-answer" id="ans-${qid}">${item.a}</div>
-			`;
-			list.appendChild(card);
-		});
+function filt(){
+	let r=all.filter(c=>{
+		if(catV!=='all'&&c.ci!==+catV)return false;
+		if(difV!=='all'&&c.diff!==difV)return false;
+		if(unmV&&(S[c.id]||0)>=3)return false;return true;
 	});
-
-	updateStats(totalQ, masteredQ);
+	if(rndV){r=[...r];for(let i=r.length-1;i>0;i--){const j=0|Math.random()*(i+1);[r[i],r[j]]=[r[j],r[i]]}}
+	return r;
 }
+function apply(){cards=filt();idx=Math.min(idx,Math.max(0,cards.length-1));mode==='card'?renderFC():renderLS();stats()}
 
-function toggleAnswer(qid) {
-	const ans = document.getElementById('ans-' + qid);
-	ans.classList.toggle('open');
+// ========== Flashcard ==========
+function renderFC(){
+	if(!cards.length){$('bgs').innerHTML='';$('qt').textContent='没有匹配的题目';document.querySelector('.qh').textContent='调整筛选条件';$('ans').innerHTML='';$('nC').textContent='0 / 0';$('chT').textContent='';unflip();return}
+	const c=cards[idx],dl={easy:'基础',medium:'进阶',hard:'深入'}[c.diff],st=S[c.id]||0;
+	$('chT').textContent=c.icon+' '+c.cat+' · '+dl;
+	$('chT2').textContent=c.icon+' '+c.cat+' · 答案';
+	let b='';
+	c.tags.forEach(t=>{if(t==='project')b+='<span class="bg bg-p">简历项目</span>';if(t==='scene')b+='<span class="bg bg-s">场景题</span>'});
+	if(st===3)b+='<span class="bg" style="background:var(--green-bg);color:var(--green);border-color:rgba(92,184,122,.12)">已掌握</span>';
+	else if(st===2)b+='<span class="bg" style="background:var(--orange-bg);color:var(--orange);border-color:rgba(212,148,60,.12)">模糊</span>';
+	else if(st===1)b+='<span class="bg" style="background:var(--red-bg);color:var(--red);border-color:rgba(199,95,95,.12)">不会</span>';
+	$('bgs').innerHTML=b;$('qt').textContent=c.q;document.querySelector('.qh').textContent='click to flip';
+	$('ans').innerHTML=c.a;$('nC').textContent=`${idx+1} / ${cards.length}`;
+	$('pB').disabled=idx===0;$('nB').disabled=idx>=cards.length-1;unflip();
 }
+function flip(){if(!cards.length)return;$('fc').classList.toggle('flip');flipped=!flipped}
+function unflip(){$('fc').classList.remove('flip');flipped=false}
+function prev(){if(idx>0){idx--;renderFC()}}
+function next(){if(idx<cards.length-1){idx++;renderFC()}}
+function rate(l){if(!cards.length)return;S[cards[idx].id]=l;localStorage.setItem('cardStates',JSON.stringify(S));stats();if(idx<cards.length-1){idx++;renderFC()}else renderFC()}
+$('fcF').addEventListener('click',function(){if(!flipped)flip()});
 
-function toggleCategory(ci) {
-	const list = document.getElementById('list-' + ci);
-	const toggle = document.getElementById('toggle-' + ci);
-	list.classList.toggle('hidden');
-	toggle.classList.toggle('collapsed');
-}
-
-function toggleMastered(qid) {
-	mastered[qid] = !mastered[qid];
-	if (!mastered[qid]) delete mastered[qid];
-	localStorage.setItem('mastered', JSON.stringify(mastered));
-	const card = document.getElementById('card-' + qid);
-	const check = card.querySelector('.qa-check');
-	card.classList.toggle('mastered');
-	check.classList.toggle('checked');
-	check.textContent = check.classList.contains('checked') ? '✓' : '';
-	recountStats();
-}
-
-function updateStats(total, done) {
-	document.getElementById('totalCount').textContent = total;
-	document.getElementById('masteredCount').textContent = done;
-	document.getElementById('remainCount').textContent = total - done;
-	const pct = total > 0 ? Math.round(done / total * 100) : 0;
-	document.getElementById('progressPct').textContent = pct + '%';
-	document.getElementById('progressFill').style.width = pct + '%';
-	document.getElementById('progressLabel').textContent = `已掌握 ${done} / ${total}`;
-}
-
-function recountStats() {
-	const cards = document.querySelectorAll('.qa-card');
-	let total = cards.length, done = 0;
-	cards.forEach(c => { if (c.classList.contains('mastered')) done++; });
-	updateStats(total, done);
-}
-
-function expandAll() {
-	document.querySelectorAll('.qa-answer').forEach(a => a.classList.add('open'));
-	document.querySelectorAll('.qa-list').forEach(l => l.classList.remove('hidden'));
-	document.querySelectorAll('.category-toggle').forEach(t => t.classList.remove('collapsed'));
-}
-function collapseAll() {
-	document.querySelectorAll('.qa-answer').forEach(a => a.classList.remove('open'));
-}
-function resetProgress() {
-	if (!confirm('确定重置所有进度？')) return;
-	mastered = {};
-	localStorage.removeItem('mastered');
-	render(currentDiff, currentSearch);
-}
-
-let currentDiff = 'all', currentSearch = '';
-
-document.querySelectorAll('.filter-btn[data-diff]').forEach(btn => {
-	btn.addEventListener('click', () => {
-		const isActive = btn.classList.contains('active');
-		document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-		if (!isActive) {
-			btn.classList.add('active');
-			currentDiff = btn.dataset.diff;
-			document.querySelector('[data-cat="all"]').classList.remove('active');
-		} else {
-			currentDiff = 'all';
-			document.querySelector('[data-cat="all"]').classList.add('active');
-		}
-		render(currentDiff, currentSearch);
+// ========== List ==========
+function renderLS(){
+	const el=$('lsC'),s=($('sI').value||'').toLowerCase();el.innerHTML='';let qn=0;
+	DATA.forEach((cat,ci)=>{
+		const its=cat.items.filter((it,ii)=>{const id=`${ci}-${ii}`;if(catV!=='all'&&ci!==+catV)return false;if(difV!=='all'&&it.diff!==difV)return false;if(unmV&&(S[id]||0)>=3)return false;if(s&&!it.q.toLowerCase().includes(s)&&!it.a.toLowerCase().includes(s))return false;return true});
+		if(!its.length)return;
+		const sec=document.createElement('div');sec.className='csec';
+		sec.innerHTML=`<div class="chdr" onclick="togC(${ci})"><div class="cico" style="background:${cat.color}12;color:${cat.color}">${cat.icon}</div><div class="cnam" style="color:${cat.color}">${cat.cat}</div><div class="ccnt">${its.length}</div><div class="carr" id="ar-${ci}">▼</div></div><div class="ql" id="ql-${ci}"></div>`;
+		el.appendChild(sec);const list=sec.querySelector('.ql');
+		its.forEach(it=>{const ii=cat.items.indexOf(it),id=`${ci}-${ii}`;qn++;const st=S[id]||0;const dl={easy:'基础',medium:'进阶',hard:'深入'}[it.diff];const tg=(it.tags||[]).map(t=>t==='project'?'<span class="qtg tp">项目</span>':t==='scene'?'<span class="qtg ts">场景</span>':'').join('');const cd=document.createElement('div');cd.className='qc'+(st===3?' done':'');cd.id=`qc-${id}`;cd.innerHTML=`<div class="qr" onclick="togA('${id}')"><span class="qn">${qn}</span><span class="qtx">${it.q}</span><div class="qts">${tg}<span class="qtg t${it.diff[0]}">${dl}</span></div><div class="qck ${st===3?'ck':''}" onclick="event.stopPropagation();togS('${id}')">${st===3?'✓':''}</div></div><div class="qa" id="qa-${id}">${it.a}</div>`;list.appendChild(cd)});
 	});
-});
+}
+function togA(id){$('qa-'+id).classList.toggle('open')}
+function togC(ci){$('ql-'+ci).classList.toggle('hidden');$('ar-'+ci).classList.toggle('shut')}
+function expAll(){document.querySelectorAll('.qa').forEach(a=>a.classList.add('open'));document.querySelectorAll('.ql').forEach(l=>l.classList.remove('hidden'));document.querySelectorAll('.carr').forEach(a=>a.classList.remove('shut'))}
+function colAll(){document.querySelectorAll('.qa').forEach(a=>a.classList.remove('open'))}
+function togS(id){S[id]=(S[id]||0)===3?0:3;if(!S[id])delete S[id];localStorage.setItem('cardStates',JSON.stringify(S));renderLS();stats()}
+function rstP(){if(!confirm('确定重置？'))return;S={};localStorage.removeItem('cardStates');apply()}
 
-document.querySelector('[data-cat="all"]').addEventListener('click', () => {
-	document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-	document.querySelector('[data-cat="all"]').classList.add('active');
-	currentDiff = 'all';
-	render(currentDiff, currentSearch);
-});
+// ========== Stats ==========
+function stats(){
+	let t=0,m=0,f=0,u=0;all.forEach(c=>{if(catV!=='all'&&c.ci!==+catV)return;if(difV!=='all'&&c.diff!==difV)return;t++;const s=S[c.id]||0;if(s===3)m++;else if(s===2)f++;else if(s===1)u++});
+	$('s-t').textContent=t+' 题';$('s-p').textContent=m+' 掌握';$('s-z').textContent=f+' 模糊';$('s-f').textContent=u+' 不会';
+	const p=t?Math.round(m/t*100):0;$('pP').textContent=p+'%';$('pF').style.width=p+'%';$('pL').textContent=`已掌握 ${m} / ${t}`;
+}
 
-document.getElementById('searchInput').addEventListener('input', (e) => {
-	currentSearch = e.target.value.toLowerCase();
-	render(currentDiff, currentSearch);
-});
-
-render();
+// ========== Init Filters ==========
+(function(){
+	const el=$('catF');
+	let h='<button class="cat-tab on" data-c="all">全部</button>';
+	DATA.forEach((c,i)=>h+=`<button class="cat-tab" data-c="${i}">${c.icon} ${c.cat}</button>`);
+	el.innerHTML=h;
+	el.querySelectorAll('.cat-tab').forEach(b=>b.addEventListener('click',()=>{el.querySelectorAll('.cat-tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');catV=b.dataset.c;idx=0;apply()}));
+})();
+document.querySelectorAll('[data-d]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-d]').forEach(x=>x.classList.remove('on'));b.classList.add('on');difV=b.dataset.d;idx=0;apply()}));
+$('unmB').addEventListener('click',function(){unmV=!unmV;this.classList.toggle('on');idx=0;apply()});
+$('rndB').addEventListener('click',function(){rndV=!rndV;this.classList.toggle('on');idx=0;apply()});
+document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-m]').forEach(x=>x.classList.remove('on'));b.classList.add('on');mode=b.dataset.m;$('app').className=mode==='list'?'app mode-ls':'app';apply()}));
+$('sI').addEventListener('input',()=>{if(mode==='list')renderLS()});
+document.addEventListener('keydown',e=>{if(mode!=='card'||e.target.tagName==='INPUT')return;if(e.key===' '||e.key==='Enter'){e.preventDefault();flip()}else if(e.key==='ArrowLeft'){e.preventDefault();prev()}else if(e.key==='ArrowRight'){e.preventDefault();next()}else if(e.key==='1')rate(1);else if(e.key==='2')rate(2);else if(e.key==='3')rate(3)});
+let tx=0,ty=0;const fcE=$('fc');fcE.addEventListener('touchstart',e=>{tx=e.changedTouches[0].screenX;ty=e.changedTouches[0].screenY},{passive:true});fcE.addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-tx,dy=e.changedTouches[0].screenY-ty;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx>0)prev();else next()}});
+apply();
 </script>
 </body>
 </html>
