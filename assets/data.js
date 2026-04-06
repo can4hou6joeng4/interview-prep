@@ -1,2342 +1,940 @@
 window.INTERVIEW_DATA = [
-// ==================== 1. Go 语言核心 ====================
-{
-	cat: "Go 语言核心",
-	icon: "🔷",
-	color: "#6c8cff",
-	items: [
-		{
-			q: "Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>核心概念</h4>
-<ul>
-<li><b>G (Goroutine)</b>：用户态轻量级线程，初始栈 2KB（可动态增长到 1GB），包含执行栈、状态、任务函数等信息</li>
-<li><b>M (Machine)</b>：操作系统线程，由 OS 管理调度，Go 运行时最多创建 10000 个 M</li>
-<li><b>P (Processor)</b>：逻辑处理器，数量默认等于 <code>GOMAXPROCS</code>（通常为 CPU 核心数），持有本地运行队列（最多 256 个 G）</li>
-</ul>
-<h4>调度流程</h4>
-<ul>
-<li>每个 P 维护一个本地队列，新创建的 G 优先放入当前 P 的本地队列</li>
-<li>M 必须绑定一个 P 才能执行 G，M 从绑定的 P 的本地队列取 G 执行</li>
-<li>本地队列为空时，M 会尝试从全局队列或其他 P 的队列<b>窃取 (work stealing)</b> G</li>
-<li>当 G 发生系统调用阻塞时，M 会与 P 解绑，P 转移给空闲 M 或新建 M 继续执行其他 G</li>
-</ul>
-<div class="key-point">面试加分：提到 work stealing 机制、hand off 机制（阻塞时 P 与 M 解绑）、抢占式调度（Go 1.14 基于信号的异步抢占）</div>`
-		},
-		{
-			q: "Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>底层结构 (runtime.hchan)</h4>
-<pre><code>type hchan struct {
-    qcount   uint      // 当前队列中的元素数量
-    dataqsiz uint      // 环形缓冲区大小（即 cap）
-    buf      unsafe.Pointer // 环形缓冲区指针
-    elemsize uint16    // 元素大小
-    closed   uint32    // 是否关闭
-    sendx    uint      // 发送索引
-    recvx    uint      // 接收索引
-    recvq    waitq     // 等待接收的 goroutine 队列
-    sendq    waitq     // 等待发送的 goroutine 队列
-    lock     mutex     // 互斥锁
-}</code></pre>
-<h4>无缓冲 vs 有缓冲</h4>
-<ul>
-<li><b>无缓冲</b> (<code>make(chan T)</code>)：发送和接收必须同时就绪，否则阻塞。本质是同步通信</li>
-<li><b>有缓冲</b> (<code>make(chan T, n)</code>)：缓冲区未满时发送不阻塞，缓冲区为空时接收阻塞。本质是异步通信</li>
-</ul>
-<h4>关键行为</h4>
-<ul>
-<li>向 nil channel 发送/接收会永久阻塞</li>
-<li>向已关闭的 channel 发送会 panic</li>
-<li>从已关闭的 channel 接收会返回零值（可通过 <code>v, ok := <-ch</code> 判断）</li>
-</ul>`
-		},
-		{
-			q: "Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>两种底层结构</h4>
-<p><b>空接口</b> <code>interface{}</code> 对应 <code>runtime.eface</code>：</p>
-<pre><code>type eface struct {
-    _type *_type         // 指向类型元数据
-    data  unsafe.Pointer // 指向实际数据
-}</code></pre>
-<p><b>非空接口</b>对应 <code>runtime.iface</code>：</p>
-<pre><code>type iface struct {
-    tab  *itab           // 类型信息 + 方法表
-    data unsafe.Pointer  // 指向实际数据
-}</code></pre>
-<h4>itab 结构</h4>
-<pre><code>type itab struct {
-    inter *interfacetype // 接口类型
-    _type *_type         // 实际类型
-    hash  uint32         // 类型哈希，用于快速判断
-    fun   [1]uintptr     // 方法表（变长数组）
-}</code></pre>
-<h4>关键点</h4>
-<ul>
-<li>itab 会被缓存到全局的 <code>itabTable</code> 哈希表中，同一对 (接口类型, 实际类型) 只计算一次</li>
-<li>接口赋值时，如果值类型小于等于指针大小，直接存在 data 字段；否则堆上分配后存指针</li>
-<li>类型断言 <code>v.(T)</code> 的本质是比较 itab 中的 <code>_type</code> 是否匹配</li>
-</ul>
-<div class="key-point">面试陷阱：<code>var p *int = nil; var i interface{} = p</code> 此时 <code>i != nil</code>，因为 iface 的 tab 不为 nil（存了 *int 的类型信息）</div>`
-		},
-		{
-			q: "Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>reflect 核心</h4>
-<ul>
-<li><code>reflect.TypeOf(x)</code> → 返回 <code>reflect.Type</code>，描述类型信息（字段名、tag、方法等）</li>
-<li><code>reflect.ValueOf(x)</code> → 返回 <code>reflect.Value</code>，持有值的可操作副本</li>
-<li>三大定律：(1) 接口值 → 反射对象 (2) 反射对象 → 接口值 (3) 要修改反射对象，值必须可设置（Elem()）</li>
-</ul>
-<h4>go-cache 中的实现思路</h4>
-<pre><code>// SetValue: Go Struct → Redis Hash
-func SetValue(key string, obj interface{}) {
-    v := reflect.ValueOf(obj)
-    t := v.Type()
-    fields := make(map[string]interface{})
-    for i := 0; i < t.NumField(); i++ {
-        field := t.Field(i)
-        tag := field.Tag.Get("redis") // 读取 redis tag
-        if tag == "" || tag == "-" { continue }
-        fields[tag] = v.Field(i).Interface()
-    }
-    // redis.HSet(key, fields)
-}
-
-// ScanValue: Redis Hash → Go Struct
-func ScanValue(key string, dest interface{}) {
-    v := reflect.ValueOf(dest).Elem() // 必须传指针
-    t := v.Type()
-    data := redis.HGetAll(key)
-    for i := 0; i < t.NumField(); i++ {
-        tag := t.Field(i).Tag.Get("redis")
-        if val, ok := data[tag]; ok {
-            // 根据 field.Kind() 做类型转换后 Set
-            v.Field(i).Set(convertedValue)
-        }
-    }
-}</code></pre>
-<div class="project-link">简历关联：go-cache 基于适配器模式实现统一缓存接口，利用 reflect 库实现 Redis Hash 与 Go Struct 自动映射</div>
-<div class="key-point">注意性能：reflect 操作比直接访问慢约 50-100 倍。生产中可通过缓存 TypeOf 结果、代码生成（go generate）等方式优化</div>`
-		},
-		{
-			q: "Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>执行规则</h4>
-<ul>
-<li><b>LIFO（后进先出）</b>：多个 defer 按栈顺序逆序执行</li>
-<li>defer 的参数在 <b>注册时求值</b>，而非执行时</li>
-<li>defer 在 <code>return</code> 之后、函数真正返回之前执行（可修改命名返回值）</li>
-</ul>
-<h4>panic/recover 机制</h4>
-<pre><code>func safeCall() (err error) {
-    defer func() {
-        if r := recover(); r != nil {
-            err = fmt.Errorf("panic recovered: %v", r)
-            // 记录堆栈: debug.Stack()
-        }
-    }()
-    riskyOperation()
-    return nil
-}</code></pre>
-<ul>
-<li><code>panic</code> 触发后，当前函数停止执行，按 LIFO 执行已注册的 defer</li>
-<li><code>recover</code> 只能在 defer 函数中生效，捕获 panic 值并恢复正常流程</li>
-<li>recover 后函数返回零值（除非使用命名返回值在 defer 中赋值）</li>
-</ul>
-<div class="key-point">经典陷阱：<code>defer f.Close()</code> 如果 f 为 nil 会 panic。应先判断 err 再 defer</div>`
-		},
-		{
-			q: "Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>三色标记法</h4>
-<ul>
-<li><b>白色</b>：未被访问的对象（GC 结束后被回收）</li>
-<li><b>灰色</b>：已被访问但其引用的对象尚未全部扫描</li>
-<li><b>黑色</b>：已被访问且其引用的对象全部扫描完毕</li>
-</ul>
-<h4>流程</h4>
-<ol>
-<li><b>Mark Setup (STW)</b>：开启写屏障，极短暂（通常 < 100μs）</li>
-<li><b>Marking（并发）</b>：从根对象出发，遍历引用图。GC goroutine 与用户 goroutine 并发执行</li>
-<li><b>Mark Termination (STW)</b>：关闭写屏障，完成最终标记，极短暂</li>
-<li><b>Sweeping（并发）</b>：回收白色对象的内存</li>
-</ol>
-<h4>写屏障 (Write Barrier)</h4>
-<p>Go 1.8+ 使用<b>混合写屏障</b>（插入 + 删除），确保并发标记阶段不会遗漏存活对象，大幅减少 STW 时间</p>
-<div class="key-point">GC 触发条件：(1) 堆内存增长到上次 GC 后的 2 倍（GOGC=100）(2) 2 分钟未触发 GC (3) 手动 runtime.GC()</div>`
-		},
-		{
-			q: "Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>普通 map + sync.Mutex / sync.RWMutex</h4>
-<ul>
-<li>读写都需要加锁，RWMutex 允许并发读</li>
-<li>适合读写比例均衡、需要遍历、需要精确控制锁粒度的场景</li>
-</ul>
-<h4>sync.Map</h4>
-<ul>
-<li>内部维护两个 map：<code>read</code>（只读，无锁访问）和 <code>dirty</code>（写入时加锁）</li>
-<li>读操作优先查 read map（无锁 CAS），miss 时穿透到 dirty</li>
-<li>当 miss 次数达到 dirty 长度时，dirty 提升为新的 read</li>
-</ul>
-<h4>适用场景</h4>
-<ul>
-<li><b>sync.Map 适合</b>：读多写少、key 集合相对稳定（如缓存、配置）</li>
-<li><b>map+mutex 适合</b>：写多读少、需要遍历或批量操作、需要泛型类型安全</li>
-</ul>
-<div class="project-link">简历关联：你的国际化系统中「并发安全的 Localizer Map」很可能用到了 sync.Map 或 RWMutex + map 的方案</div>`
-		},
-		{
-			q: "errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？",
-			diff: "hard",
-			tags: ["project", "scene"],
-			a: `<h4>errgroup 原理</h4>
-<pre><code>type Group struct {
-    cancel  func()          // 关联 context 的 cancel
-    wg      sync.WaitGroup
-    errOnce sync.Once       // 只记录第一个错误
-    err     error
-}
-// Go() 启动 goroutine, Wait() 等待所有完成并返回第一个错误</code></pre>
-<h4>框架初始化链设计</h4>
-<pre><code>func (app *App) Bootstrap() error {
-    // 阶段一：串行有序初始化（有依赖关系）
-    steps := []func() error{
-        app.initConfig,    // 1. conf
-        app.initDB,        // 2. db（依赖 conf）
-        app.initRedis,     // 3. redis（依赖 conf）
-        app.initCache,     // 4. cache（依赖 redis）
-    }
-    for _, step := range steps {
-        if err := step(); err != nil { return err }
-    }
-
-    // 阶段二：并行初始化（无依赖关系）
-    g, ctx := errgroup.WithContext(app.ctx)
-    g.Go(func() error { return app.initRPC(ctx) })
-    g.Go(func() error { return app.initJob(ctx) })
-    g.Go(func() error { return app.initWorker(ctx) })
-    g.Go(func() error { return app.initListener(ctx) })
-    return g.Wait() // 任一失败，ctx 取消，其他收到信号
-}</code></pre>
-<h4>优雅关机配合</h4>
-<pre><code>// 10 秒超时保护
-ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-defer cancel()
-// 并行关闭各组件
-g, ctx := errgroup.WithContext(ctx)
-g.Go(func() error { return app.server.ShutdownWithContext(ctx) })
-g.Go(func() error { return app.db.Close() })
-g.Go(func() error { return app.rdb.Close() })
-return g.Wait()</code></pre>
-<div class="project-link">简历关联：go-fast 框架 18 步有序初始化链 + errgroup 并发管理 + 10 秒超时优雅关机</div>`
-		},
-		{
-			q: "Go Plugin (.so) 热加载的原理、限制和你的实践？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>原理</h4>
-<pre><code>// 编译插件
-// go build -buildmode=plugin -o myplugin.so myplugin.go
-
-p, _ := plugin.Open("myplugin.so")
-sym, _ := p.Lookup("NewEngine")  // 查找导出符号
-factory := sym.(func() TemplateEngine)
-engine := factory()</code></pre>
-<h4>核心限制</h4>
-<ul>
-<li>仅支持 Linux 和 macOS，不支持 Windows</li>
-<li>主程序和插件必须使用<b>完全相同的 Go 版本</b>编译</li>
-<li>共享依赖的包路径和版本必须一致</li>
-<li>插件一旦加载<b>无法卸载</b>（内存中永驻）</li>
-<li>不支持泛型导出（Go 1.18+）</li>
-</ul>
-<h4>你的实践方案</h4>
-<ul>
-<li>定义统一接口（如 <code>TemplateEngine</code>、<code>ORMExtension</code>、<code>CaptchaProvider</code>）</li>
-<li>插件实现接口并导出工厂函数</li>
-<li>主进程通过 <code>plugin.Open</code> + <code>Lookup</code> + 类型断言加载</li>
-<li>适用场景：模板引擎切换、ORM 扩展、验证码提供商动态替换</li>
-</ul>
-<div class="key-point">面试追问：如果面试官问 "为什么不用 RPC 微服务替代？"——Plugin 是进程内调用零延迟，适合同进程功能扩展；微服务适合独立部署的业务拆分</div>`
-		},
-	]
-},
-// ==================== 2. MySQL ====================
-{
-	cat: "MySQL 数据库",
-	icon: "🗄️",
-	color: "#f59e0b",
-	items: [
-		{
-			q: "InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>B+ 树特点</h4>
-<ul>
-<li>所有数据存储在<b>叶子节点</b>，非叶子节点只存索引键值</li>
-<li>叶子节点之间通过<b>双向链表</b>连接，天然支持范围查询</li>
-<li>树的高度通常 3-4 层，亿级数据也只需 3-4 次 IO</li>
-</ul>
-<h4>为什么不用 B 树</h4>
-<ul>
-<li>B 树的非叶子节点也存数据，导致每个节点能容纳的 key 更少，树更高，IO 次数更多</li>
-<li>B 树不支持高效的范围扫描（需要中序遍历回溯）</li>
-</ul>
-<h4>为什么不用 Hash</h4>
-<ul>
-<li>Hash 不支持范围查询（<code>WHERE age > 18</code>）</li>
-<li>不支持排序</li>
-<li>不支持最左前缀匹配</li>
-<li>存在哈希冲突</li>
-</ul>
-<h4>聚簇索引 vs 非聚簇索引</h4>
-<ul>
-<li><b>聚簇索引</b>（主键）：叶子节点存储完整行数据</li>
-<li><b>非聚簇索引</b>（二级索引）：叶子节点存储主键值，需要<b>回表</b>查询完整数据</li>
-</ul>`
-		},
-		{
-			q: "你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？",
-			diff: "medium",
-			tags: ["project", "scene"],
-			a: `<h4>索引优化方法论</h4>
-<ol>
-<li><b>EXPLAIN 分析</b>：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化）</li>
-<li><b>覆盖索引</b>：让查询所需字段全在索引中，避免回表。如 <code>INDEX(store_id, status, created_at)</code> 覆盖 <code>SELECT status, created_at WHERE store_id = ?</code></li>
-<li><b>最左前缀</b>：联合索引 <code>(a, b, c)</code> 能命中 <code>a</code>、<code>a,b</code>、<code>a,b,c</code> 的查询</li>
-<li><b>索引下推 (ICP)</b>：MySQL 5.6+ 在存储引擎层过滤索引条件，减少回表次数</li>
-</ol>
-<h4>UUFind 商品列表的实际优化</h4>
-<pre><code>-- 优化前：全表扫描
-SELECT * FROM products WHERE store_id = 123 ORDER BY created_at DESC;
-
--- 优化后：联合索引
-ALTER TABLE products ADD INDEX idx_store_created (store_id, created_at DESC);
-
--- 统计查询拆分：避免 COUNT 与业务查询混合
--- 原：SELECT *, (SELECT COUNT(*) ...) FROM products ...
--- 改：独立统计查询 + 请求级汇率缓存避免重复计算</code></pre>
-<div class="project-link">简历关联：UUFind 平台 — 新增数据库索引、重构统计查询逻辑、引入请求级汇率缓存，显著降低高频接口响应时间</div>`
-		},
-		{
-			q: "MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>ACID 保证机制</h4>
-<ul>
-<li><b>A (原子性)</b>：<code>undo log</code> — 记录反向操作，回滚时逆向执行</li>
-<li><b>C (一致性)</b>：由 A + I + D 共同保证</li>
-<li><b>I (隔离性)</b>：锁 + <code>MVCC</code></li>
-<li><b>D (持久性)</b>：<code>redo log</code> — WAL (Write-Ahead Logging)，先写日志再写磁盘</li>
-</ul>
-<h4>redo log (重做日志)</h4>
-<ul>
-<li>InnoDB 引擎层日志，物理日志（记录数据页的修改）</li>
-<li>循环写入（固定大小文件组），write pos 和 checkpoint 追赶</li>
-<li>保证 crash-safe：事务提交时先写 redo log（顺序 IO），数据页后续异步刷盘</li>
-</ul>
-<h4>undo log (回滚日志)</h4>
-<ul>
-<li>逻辑日志（记录反向 SQL），存储在系统表空间或独立 undo 表空间</li>
-<li>用途：(1) 事务回滚 (2) MVCC 多版本读（通过版本链回溯历史版本）</li>
-</ul>
-<h4>binlog vs redo log</h4>
-<ul>
-<li><code>binlog</code>：Server 层，逻辑日志，追加写入，用于主从复制和数据恢复</li>
-<li><code>redo log</code>：InnoDB 引擎层，物理日志，循环写入，用于崩溃恢复</li>
-<li>两阶段提交 (2PC)：先写 redo log (prepare) → 写 binlog → 写 redo log (commit)，保证数据一致性</li>
-</ul>`
-		},
-		{
-			q: "多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>多租户隔离方案对比</h4>
-<ul>
-<li><b>独立数据库</b>：隔离性最强，成本最高，适合大客户</li>
-<li><b>共享数据库 + 独立 Schema</b>：中等隔离，运维复杂度中等</li>
-<li><b>共享数据库 + 共享表 + StoreId 区分</b>：成本最低，需要严格的数据隔离逻辑 ← 你的方案</li>
-</ul>
-<h4>你的实现方案</h4>
-<pre><code>// 动态切换数据库连接
-func GetDBByStoreId(storeId uint) *gorm.DB {
-    connKey := fmt.Sprintf("store_%d", storeId)
-    if db, ok := dbPool.Load(connKey); ok {
-        return db.(*gorm.DB)
-    }
-    // 根据 storeId 路由到对应数据源
-    dsn := getStoreDSN(storeId)
-    db := initDB(dsn)
-    dbPool.Store(connKey, db)
-    return db
-}
-
-// GORM 分表：按租户 ID 分片
-// statistics_1, statistics_2, visitors_1, visitors_2 ...
-func (s *Statistics) TableName() string {
-    return fmt.Sprintf("statistics_%d", s.StoreId % shardCount)
-}
-
-// 连接池动态计算
-maxConns := runtime.NumCPU() * 2 + 1  // 基于 CPU 核心数
-maxIdle := maxConns / 2
-// 根据可用内存进一步调整</code></pre>
-<div class="project-link">简历关联：通过 StoreId 动态切换数据库连接，集成 GORM 分表插件支持按租户 ID 分片，连接池参数根据 CPU 核心数和内存动态计算</div>`
-		},
-		{
-			q: "MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>锁类型</h4>
-<ul>
-<li><b>全局锁</b>：<code>FLUSH TABLES WITH READ LOCK</code>（全库备份）</li>
-<li><b>表锁</b>：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁</li>
-<li><b>行锁</b>（InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock)</li>
-</ul>
-<h4>行锁升级为表锁的情况</h4>
-<ul>
-<li>WHERE 条件<b>没有命中索引</b>，InnoDB 退化为全表扫描 → 锁住所有扫描到的行（近似表锁）</li>
-<li>索引失效（如对索引列进行函数操作、隐式类型转换）</li>
-</ul>
-<h4>死锁预防</h4>
-<ul>
-<li>按<b>固定顺序</b>访问表和行（如按主键 ASC 顺序更新）</li>
-<li>事务尽量短小，减少持锁时间</li>
-<li>使用合理的索引，避免全表扫描</li>
-<li><code>innodb_deadlock_detect = ON</code>（默认开启），自动检测并回滚代价最小的事务</li>
-</ul>`
-		},
-	]
-},
-// ==================== 3. Redis ====================
-{
-	cat: "Redis 缓存与队列",
-	icon: "🔴",
-	color: "#ef4444",
-	items: [
-		{
-			q: "Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>数据类型 → 编码</h4>
-<ul>
-<li><b>String</b>：int（纯整数）/ embstr（≤44字节）/ raw（>44字节）</li>
-<li><b>List</b>：listpack（Redis 7.0+，元素少且小）/ quicklist</li>
-<li><b>Hash</b>：listpack（field 数 ≤ 128 且 value ≤ 64B）/ hashtable</li>
-<li><b>Set</b>：intset（全整数且 ≤ 512 个）/ hashtable</li>
-<li><b>ZSet</b>：listpack（≤ 128 个元素且 ≤ 64B）/ skiplist + hashtable</li>
-</ul>
-<h4>编码转换触发</h4>
-<p>当元素数量或大小超过阈值时<b>自动且不可逆</b>地从紧凑编码转为通用编码。阈值可通过配置调整：</p>
-<pre><code>hash-max-listpack-entries 128
-hash-max-listpack-value 64
-zset-max-listpack-entries 128
-zset-max-listpack-value 64</code></pre>`
-		},
-		{
-			q: "Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>RDB (快照)</h4>
-<ul>
-<li>某个时间点的全量数据快照（二进制文件）</li>
-<li>通过 <code>fork()</code> 子进程 + COW (Copy-on-Write) 生成</li>
-<li>优：恢复速度快、文件紧凑 | 劣：可能丢失最后一次快照后的数据</li>
-</ul>
-<h4>AOF (追加日志)</h4>
-<ul>
-<li>记录每个写命令（文本格式），支持 always / everysec / no 三种刷盘策略</li>
-<li>AOF 重写 (bgrewriteaof) 压缩日志体积</li>
-<li>优：数据更安全（everysec 最多丢 1 秒）| 劣：文件大、恢复慢</li>
-</ul>
-<h4>混合持久化 (Redis 4.0+)</h4>
-<ul>
-<li>AOF 重写时，前半段写 RDB 格式（快速全量），后半段追加 AOF 命令（增量）</li>
-<li>兼具 RDB 的快速恢复和 AOF 的数据安全性</li>
-<li>开启：<code>aof-use-rdb-preamble yes</code></li>
-</ul>`
-		},
-		{
-			q: "缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>缓存穿透</h4>
-<p>查询一个<b>不存在</b>的数据，缓存和 DB 都没有，每次请求都打到 DB</p>
-<ul>
-<li>解决：(1) 缓存空值/空对象（设较短 TTL） (2) <b>布隆过滤器</b>前置拦截</li>
-</ul>
-<h4>缓存击穿</h4>
-<p><b>热点 key 过期</b>的瞬间，大量并发请求同时打到 DB</p>
-<ul>
-<li>解决：(1) <b>singleflight</b> 合并并发请求，只有一个去查 DB (2) 互斥锁（Redis SETNX）(3) 热点 key 永不过期 + 异步更新</li>
-</ul>
-<h4>缓存雪崩</h4>
-<p>大量 key <b>同时过期</b>或 Redis 宕机，请求全部打到 DB</p>
-<ul>
-<li>解决：(1) 过期时间加<b>随机偏移</b> (2) Redis 集群高可用 (3) 本地缓存兜底 (4) 限流降级</li>
-</ul>
-<div class="project-link">简历关联：你的 go-cache 适配器支持 Redis/Badger/File 三后端，可实现多级缓存兜底策略</div>`
-		},
-		{
-			q: "Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？",
-			diff: "hard",
-			tags: ["project", "scene"],
-			a: `<h4>Asynq 架构</h4>
-<ul>
-<li>基于 Redis 的分布式任务队列（类似 Sidekiq/Celery）</li>
-<li>核心数据结构：<code>asynq:{queue}:pending</code> (List)、<code>asynq:{queue}:active</code> (Set)、<code>asynq:{queue}:scheduled</code> (ZSet，按执行时间排序)</li>
-<li>Scheduler 定时将到期任务从 scheduled → pending，Worker 从 pending 取任务执行</li>
-<li>支持重试（指数退避）、唯一任务（去重）、超时控制、优先级队列</li>
-</ul>
-<h4>营销召回系统设计</h4>
-<pre><code>// 三条召回链
-const (
-    TaskCartRecall     = "recall:cart"      // 购物车召回
-    TaskCheckoutRecall = "recall:checkout"  // 结账页召回
-    TaskOrderRecall    = "recall:order"     // 订单召回
-)
-
-// 10 分钟定时扫描 + 分步邮件
-func HandleCartRecall(ctx context.Context, t *asynq.Task) error {
-    // 1. 查询 10 分钟内有购物车但未下单的用户
-    // 2. 第一封邮件：温馨提醒
-    // 3. 注册延时任务：24 小时后发第二封（含优惠券）
-    task := asynq.NewTask(TaskCartRecallStep2, payload,
-        asynq.ProcessIn(24 * time.Hour),
-        asynq.Unique(24 * time.Hour), // 去重
-    )
-    return client.Enqueue(task)
-}
-
-// 定时调度
-scheduler.Register("*/10 * * * *", // 每 10 分钟
-    asynq.NewTask(TaskCartRecall, nil))</code></pre>
-<div class="project-link">简历关联：基于 Asynq (Redis-backed) 实现购物车召回、结账页召回、订单召回三条异步任务链，10 分钟级定时扫描配合分步邮件提醒</div>`
-		},
-		{
-			q: "Redis 分布式锁怎么实现？有什么陷阱？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>基本实现</h4>
-<pre><code>// 加锁：SET key value NX EX seconds
-ok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second)
-
-// 解锁：Lua 脚本保证原子性（判断 + 删除）
-const unlockScript = \`
-if redis.call("get", KEYS[1]) == ARGV[1] then
-    return redis.call("del", KEYS[1])
-else
-    return 0
-end\`</code></pre>
-<h4>核心陷阱</h4>
-<ul>
-<li><b>锁过期但业务未完成</b>：A 持锁超时 → 锁自动释放 → B 获得锁 → A 完成后误删 B 的锁。解决：uniqueValue（UUID）+ Lua 原子判删</li>
-<li><b>主从切换丢锁</b>：master 加锁后未同步到 slave 就挂了，slave 提升为 master 后锁丢失。解决：<b>RedLock</b>（多节点过半数加锁）</li>
-<li><b>锁续期</b>：业务耗时不确定时需要看门狗机制（如 Redisson），定期续期</li>
-</ul>`
-		},
-	]
-},
-// ==================== 4. 设计模式与架构 ====================
-{
-	cat: "设计模式与架构",
-	icon: "🏗️",
-	color: "#a78bfa",
-	items: [
-		{
-			q: "你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？",
-			diff: "medium",
-			tags: ["project"],
-			a: `<h4>适配器模式 (Adapter) — go-cache</h4>
-<p>问题：Redis / Badger / File 三种缓存后端接口不一致</p>
-<pre><code>type CacheAdapter interface {
-    Get(key string) ([]byte, error)
-    Set(key string, val []byte, ttl time.Duration) error
-    Del(key string) error
-}
-// RedisAdapter, BadgerAdapter, FileAdapter 分别实现
-// 上层代码只依赖 CacheAdapter 接口，切换后端零改动</code></pre>
-
-<h4>策略模式 (Strategy) — go-storage</h4>
-<p>问题：Local 存储和阿里云 OSS 的上传逻辑不同</p>
-<pre><code>type StorageDriver interface {
-    ChunkInit(filename string, size int64) (uploadId string, err error)
-    ChunkPart(uploadId string, partNum int, reader io.ReadSeeker) error
-    ChunkComplete(uploadId string) (url string, err error)
-}
-// LocalDriver 写本地磁盘，OSSDriver 调用阿里云 SDK
-// 通过配置选择具体 Driver</code></pre>
-
-<h4>门面模式 (Facade) — go-storage</h4>
-<p>问题：分片上传涉及多步骤操作（Init→Part→Complete），调用方不需要关心细节</p>
-<pre><code>type Storage struct { driver StorageDriver }
-func (s *Storage) Upload(file io.Reader, size int64) (string, error) {
-    // 门面：封装 Init → 分片读取 → Part → Complete 全流程
-    // 调用方只需要一行 storage.Upload(file, size)
-}</code></pre>
-<div class="key-point">面试回答模板：先说问题（为什么需要这个模式）→ 再说方案（接口设计）→ 最后说效果（解耦/扩展性）</div>`
-		},
-		{
-			q: "你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>架构设计</h4>
-<pre><code>// 事件定义
-type EventType string
-const (
-    BeforeOrderCreate  EventType = "order.before_create"
-    AfterOrderCreate   EventType = "order.after_create"
-    BeforePaymentPay   EventType = "payment.before_pay"
-    AfterPaymentPay    EventType = "payment.after_pay"
-    // ... 覆盖 Order/Checkout/Payment/Product CRUD
-)
-
-// 监听器接口
-type EventListener interface {
-    Handle(ctx context.Context, event Event) error
-}
-
-// 事件总线（观察者模式的中介）
-type EventBus struct {
-    mu        sync.RWMutex
-    listeners map[EventType][]EventListener
-}
-
-func (eb *EventBus) On(eventType EventType, listener EventListener) {
-    eb.mu.Lock()
-    defer eb.mu.Unlock()
-    eb.listeners[eventType] = append(eb.listeners[eventType], listener)
-}
-
-func (eb *EventBus) Emit(ctx context.Context, eventType EventType, payload interface{}) error {
-    eb.mu.RLock()
-    ls := eb.listeners[eventType]
-    eb.mu.RUnlock()
-    for _, l := range ls {
-        if err := l.Handle(ctx, Event{Type: eventType, Data: payload}); err != nil {
-            return err // Before 事件失败可中断流程
-        }
-    }
-    return nil
-}</code></pre>
-<h4>使用示例</h4>
-<pre><code>// 注册监听器 — 核心代码零侵入
-eventBus.On(AfterOrderCreate, &InventoryDeducter{})
-eventBus.On(AfterOrderCreate, &OrderNotifier{})
-eventBus.On(BeforePaymentPay, &FraudChecker{})</code></pre>
-<div class="project-link">简历关联：Before/After 生命周期事件钩子系统，覆盖 Order/Checkout/Payment/Product CRUD 全流程，业务扩展通过注册监听器实现，核心代码零侵入</div>`
-		},
-		{
-			q: "微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？",
-			diff: "medium",
-			tags: ["project", "scene"],
-			a: `<h4>对比</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">JSON-RPC</th><th style="text-align:left;padding:6px">gRPC</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">传输格式</td><td style="padding:6px">JSON (文本)</td><td style="padding:6px">Protobuf (二进制)</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">性能</td><td style="padding:6px">中等</td><td style="padding:6px">高（序列化快 3-10x）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">调试</td><td style="padding:6px">易（可读 JSON）</td><td style="padding:6px">难（需要工具反序列化）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">跨语言</td><td style="padding:6px">天然（JSON）</td><td style="padding:6px">需要 .proto + 代码生成</td></tr>
-<tr><td style="padding:6px">流式</td><td style="padding:6px">不支持</td><td style="padding:6px">支持双向流</td></tr>
-</table>
-<h4>选型理由</h4>
-<ul>
-<li>Go + PHP 混合架构，PHP 生态对 JSON-RPC 支持最成熟</li>
-<li>业务场景不需要流式通信，JSON 可读性利于调试</li>
-<li>17 个服务规模下，JSON-RPC 的性能足够，无需引入 Protobuf 的复杂性</li>
-</ul>
-<div class="key-point">如果面试官追问扩展：未来服务规模增大、需要更高性能时，可逐步引入 gRPC 替换核心链路，JSON-RPC 保留给 PHP 遗留服务</div>`
-		},
-		{
-			q: "如何设计一个优雅关机 (Graceful Shutdown) 方案？",
-			diff: "medium",
-			tags: ["project"],
-			a: `<h4>核心步骤</h4>
-<pre><code>func main() {
-    // 1. 启动服务
-    srv := startServer()
-
-    // 2. 监听信号
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-    <-quit
-
-    // 3. 超时保护
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-
-    // 4. 按依赖顺序关闭（与启动顺序相反）
-    g, ctx := errgroup.WithContext(ctx)
-
-    // 4.1 先停止接收新请求
-    g.Go(func() error { return srv.ShutdownWithContext(ctx) })
-
-    // 4.2 等待异步任务完成
-    g.Go(func() error { return asynqSrv.Shutdown() })
-
-    // 4.3 关闭消息队列消费者
-    g.Go(func() error { return listener.Close() })
-
-    if err := g.Wait(); err != nil {
-        log.Error("shutdown error", err)
-    }
-
-    // 5. 最后关闭基础设施（DB/Redis）
-    db.Close()
-    rdb.Close()
-}</code></pre>
-<h4>关键点</h4>
-<ul>
-<li><b>超时保护</b>必须有，防止某组件 hang 住导致进程无法退出</li>
-<li>关闭顺序：流量入口 → 异步任务 → 消息消费 → 数据库连接</li>
-<li>健康检查端点应在 shutdown 开始时立即返回不健康，让 LB 摘掉节点</li>
-</ul>
-<div class="project-link">简历关联：go-fast 框架支持 errgroup 并发管理与优雅关机（10 秒超时保护）</div>`
-		},
-	]
-},
-// ==================== 5. 支付与交易 ====================
-{
-	cat: "支付与交易系统",
-	icon: "💳",
-	color: "#22d3ee",
-	items: [
-		{
-			q: "你对接了 4 种支付网关，统一抽象层是怎么设计的？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>四层抽象架构</h4>
-<pre><code>// 第一层：Checkout（结账会话）
-type CheckoutService interface {
-    Create(ctx context.Context, req CheckoutReq) (*Checkout, error)
-    // 生成商品快照、地址快照、计算金额
-}
-
-// 第二层：Payment（支付意图）
-type PaymentService interface {
-    Create(ctx context.Context, checkout *Checkout) (*Payment, error)
-    // 根据支付方式路由到具体 gateway
-}
-
-// 第三层：PaymentTrade（支付交易）
-type PaymentGateway interface {
-    CreateTrade(ctx context.Context, payment *Payment) (*Trade, error)
-    Capture(ctx context.Context, tradeId string) error
-    Refund(ctx context.Context, tradeId string, amount decimal.Decimal) error
-}
-
-// 第四层：Webhook（异步回调）
-type WebhookHandler interface {
-    Verify(req *http.Request) ([]byte, error)  // 验签
-    Parse(payload []byte) (*WebhookEvent, error)
-    Handle(ctx context.Context, event *WebhookEvent) error
-}
-
-// 具体实现
-type PayPalGateway struct{ ... }   // Standard/Advanced/Embed/Redirect
-type StripeGateway struct{ ... }
-type ApplePayGateway struct{ ... }
-type GooglePayGateway struct{ ... }</code></pre>
-<h4>PayPal Express 快捷支付会话复用</h4>
-<p>用户首次 PayPal 支付后缓存 payer_id，后续支付跳过登录步骤。Capture 兜底：先尝试 authorize → capture，失败则走 direct capture</p>
-<div class="project-link">简历关联：统一 Checkout→Payment→PaymentTrade→Webhook 四层抽象，支持 PayPal 4 种接入模式，实现 Express 快捷支付会话复用与 capture 兜底</div>`
-		},
-		{
-			q: "订单状态机如何设计？主子订单拆分架构怎么处理退款？",
-			diff: "hard",
-			tags: ["project", "scene"],
-			a: `<h4>状态机流转</h4>
-<pre><code>待支付 (pending)
-  ├─ 支付成功 → 待发货 (paid)
-  │   ├─ 已发货 → 待收货 (shipped)
-  │   │   ├─ 确认收货 → 已完成 (completed)
-  │   │   └─ 申请退款 → 退款中 (refunding)
-  │   └─ 申请退款 → 退款中 (refunding)
-  ├─ 支付超时 → 已取消 (cancelled)
-  └─ 用户取消 → 已取消 (cancelled)
-
-退款中 (refunding)
-  ├─ 退款成功 → 已退款 (refunded)
-  └─ 退款失败 → 待发货/待收货 (回退)</code></pre>
-<h4>主子订单拆分</h4>
-<pre><code>// 用户下单：多商品多店铺合并
-主订单 (master_order)
-  ├─ 子订单 A (store_1 的商品)
-  ├─ 子订单 B (store_2 的商品)
-  └─ 子订单 C (store_3 的商品)
-
-// 支付：主订单级别统一支付
-// 发货：子订单级别独立发货
-// 退款：子订单级别独立退款，主订单金额 = sum(子订单)</code></pre>
-<h4>OrderLog 审计</h4>
-<pre><code>type OrderLog struct {
-    OrderId   uint
-    Action    string    // "create" / "pay" / "ship" / "refund"
-    Operator  string    // 操作人（用户/系统/管理员）
-    Content   string    // 操作说明
-    Payload   JSON      // 快照数据
-    CreatedAt time.Time
-}</code></pre>
-<div class="key-point">面试要点：强调幂等性 — 支付回调可能重复，必须通过订单状态判断是否已处理，避免重复发货或重复退款</div>`
-		},
-		{
-			q: "跨境电商中多币种金额精度问题怎么解决？",
-			diff: "medium",
-			tags: ["project", "scene"],
-			a: `<h4>浮点数问题</h4>
-<pre><code>// 经典陷阱
-0.1 + 0.2 = 0.30000000000000004
-// 金融场景绝不能用 float</code></pre>
-<h4>你的双轨金额方案</h4>
-<pre><code>type OrderAmount struct {
-    // 基础币种（商品原始币种，如 CNY）
-    SubtotalPrice decimal.Decimal  // 小计
-    TotalPrice    decimal.Decimal  // 总价
-    PayPrice      decimal.Decimal  // 实付
-
-    // 结算币种（用户支付币种，如 USD）
-    SettleSubtotalPrice decimal.Decimal
-    SettleTotalPrice    decimal.Decimal
-    SettlePayPrice      decimal.Decimal
-
-    ExchangeRate decimal.Decimal   // 下单时锁定汇率
-    BaseCurrency string            // "CNY"
-    SettleCurrency string          // "USD"
-}</code></pre>
-<h4>关键设计</h4>
-<ul>
-<li>使用 <code>shopspring/decimal</code> 库，避免浮点精度丢失</li>
-<li>下单时<b>锁定汇率快照</b>，退款时按原汇率计算，不受汇率波动影响</li>
-<li>DB 中用 <code>DECIMAL(20,4)</code> 存储，Go 中全程 decimal 运算</li>
-<li>Checkout 时生成商品快照和地址快照，确保支付时数据不变</li>
-</ul>`
-		},
-		{
-			q: "支付系统如何保证幂等性？Webhook 重复回调怎么处理？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>幂等性保证</h4>
-<ul>
-<li><b>唯一订单号</b>：每个支付请求携带唯一 order_no，网关端去重</li>
-<li><b>状态机前置判断</b>：处理回调前先检查订单状态，已完成的直接返回成功</li>
-<li><b>数据库唯一约束</b>：payment_trade 表对 (gateway, trade_no) 建唯一索引</li>
-</ul>
-<h4>Webhook 处理流程</h4>
-<pre><code>func HandleWebhook(c *fiber.Ctx) error {
-    // 1. 验签（每个网关签名方式不同）
-    payload, err := gateway.Verify(c.Request())
-
-    // 2. 解析事件
-    event, err := gateway.Parse(payload)
-
-    // 3. 幂等检查
-    trade, err := findTrade(event.TradeNo)
-    if trade.Status == "completed" {
-        return c.SendStatus(200) // 已处理，直接返回成功
-    }
-
-    // 4. 加分布式锁（防止并发回调）
-    lock := redis.Lock("webhook:" + event.TradeNo, 30*time.Second)
-    if !lock.Acquire() { return c.SendStatus(200) }
-    defer lock.Release()
-
-    // 5. 业务处理（更新订单状态、触发发货等）
-    // 6. 返回 200（告诉网关不要重试）
-}</code></pre>
-<div class="key-point">PayPal/Stripe 都会在收到非 2xx 响应时重试 Webhook（最多重试数天），必须做好幂等处理</div>`
-		},
-	]
-},
-// ==================== 6. 搜索引擎 ====================
-{
-	cat: "搜索引擎",
-	icon: "🔍",
-	color: "#34d399",
-	items: [
-		{
-			q: "倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？",
-			diff: "medium",
-			tags: ["project"],
-			a: `<h4>倒排索引原理</h4>
-<pre><code>// 正排索引（文档 → 词）
-doc1: "Go 语言并发编程"
-doc2: "Go 语言网络编程"
-
-// 倒排索引（词 → 文档列表）
-"Go"   → [doc1, doc2]
-"并发" → [doc1]
-"网络" → [doc2]
-"编程" → [doc1, doc2]</code></pre>
-<h4>go-es 兼容实现</h4>
-<pre><code>// 将 ES DSL 转换为 Bluge 查询
-func ParseQuery(dsl map[string]interface{}) bluge.Query {
-    if boolQ, ok := dsl["bool"]; ok {
-        return parseBoolQuery(boolQ)  // must/should/must_not → AND/OR/NOT
-    }
-    if matchQ, ok := dsl["match"]; ok {
-        // 先分词，再 OR 组合
-        return parseMatchQuery(matchQ)
-    }
-    if termQ, ok := dsl["term"]; ok {
-        return bluge.NewTermQuery(value) // 精确匹配
-    }
-    if rangeQ, ok := dsl["range"]; ok {
-        return parseRangeQuery(rangeQ)   // gte/lte → NumericRange
-    }
-    // Geo, Fuzzy 类似...
-}</code></pre>
-<h4>Rendezvous 一致性哈希分片</h4>
-<ul>
-<li>每个分片一个 Bluge 索引实例</li>
-<li>写入时通过 Rendezvous Hash 确定文档归属分片</li>
-<li>查询时并行查所有分片，合并排序后返回</li>
-<li>对比 Consistent Hash Ring：Rendezvous Hash 分布更均匀，增删节点时迁移数据更少</li>
-</ul>
-<div class="project-link">简历关联：go-es 基于 Bluge 引擎，兼容 ES Query DSL (Bool/Match/Term/Range/Geo/Fuzzy)，Rendezvous 一致性哈希分片 + gse 中文分词 + WAL 事务日志</div>`
-		},
-		{
-			q: "WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>WAL 原理</h4>
-<p>所有修改操作<b>先写日志，再写数据</b>。崩溃恢复时重放日志即可恢复到一致状态</p>
-<h4>go-es 中的 WAL 实现</h4>
-<pre><code>type WAL struct {
-    file   *os.File
-    mu     sync.Mutex
-    offset int64
-}
-
-func (w *WAL) Write(op Operation) error {
-    w.mu.Lock()
-    defer w.mu.Unlock()
-    // 1. 序列化操作（type + docId + data + checksum）
-    entry := encodeEntry(op)
-    // 2. 写入日志文件（顺序追加，高性能）
-    _, err := w.file.Write(entry)
-    // 3. fsync 确保持久化
-    return w.file.Sync()
-}
-
-// 崩溃恢复
-func (w *WAL) Recover(index *bluge.Writer) error {
-    entries := w.ReadAll()
-    for _, entry := range entries {
-        // 重放：将未持久化的操作重新应用到索引
-        switch entry.Type {
-        case OpIndex:  index.Update(entry.Doc)
-        case OpDelete: index.Delete(entry.DocId)
-        }
-    }
-    return w.Truncate() // 恢复完毕，截断日志
-}</code></pre>
-<h4>为什么需要 WAL</h4>
-<ul>
-<li>Bluge 索引写入有 batch commit 延迟，中间崩溃会丢数据</li>
-<li>WAL 是顺序写（极快），索引是随机写（较慢），WAL 填补了两者之间的安全间隙</li>
-</ul>`
-		},
-	]
-},
-// ==================== 7. 安全防护 ====================
-{
-	cat: "安全防护",
-	icon: "🛡️",
-	color: "#f472b6",
-	items: [
-		{
-			q: "JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>JWT 结构</h4>
-<p><code>Header.Payload.Signature</code>（Base64URL 编码）</p>
-<h4>HMAC vs RSA</h4>
-<ul>
-<li><b>HMAC (HS256)</b>：对称加密，签发和验证使用同一个密钥。适合单体应用</li>
-<li><b>RSA (RS256)</b>：非对称加密，私钥签发、公钥验证。适合微服务（各服务只需公钥即可验证）</li>
-</ul>
-<h4>微服务场景选 RSA 的原因</h4>
-<pre><code>// Auth Service（持有私钥）
-token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-signedToken, _ := token.SignedString(privateKey)
-
-// 其他 Service（只需公钥验证）
-token, _ := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-    return publicKey, nil  // 公钥泄露不影响安全
-})</code></pre>
-<ul>
-<li>私钥只在 Auth Service，其他 17 个服务不需要接触私钥</li>
-<li>公钥可以公开分发，降低密钥管理复杂度</li>
-</ul>`
-		},
-		{
-			q: "你的自研 WAF 中间件是怎么做访客风险分析的？",
-			diff: "hard",
-			tags: ["project"],
-			a: `<h4>多层风险分析</h4>
-<pre><code>func WAFMiddleware(c *fiber.Ctx) error {
-    risk := &RiskScore{}
-
-    // 1. ASN 识别（云服务商 IP 段）
-    asn := lookupASN(c.IP())
-    if isCloudProvider(asn) { // AWS/GCP/Azure/阿里云
-        risk.Add(30, "cloud_provider_ip")
-    }
-
-    // 2. 代理头伪造检测
-    if hasConflictingProxyHeaders(c) {
-        // X-Forwarded-For 和实际 IP 不一致
-        risk.Add(20, "proxy_header_forgery")
-    }
-
-    // 3. WAF 正则匹配（SQL注入/XSS/路径遍历）
-    if matched, rule := matchWAFRules(c); matched {
-        risk.Add(50, "waf_rule: " + rule)
-    }
-
-    // 4. 高频访问防护（滑动窗口）
-    count := redis.Incr("rate:" + c.IP()) // 1 分钟窗口
-    if count > threshold {
-        risk.Add(40, "high_frequency")
-        // 触发 10 分钟冷却
-        redis.Set("cooldown:" + c.IP(), 1, 10*time.Minute)
-    }
-
-    // 5. 超过阈值 → 拦截
-    if risk.Total() >= 80 {
-        return c.Status(403).JSON(...)
-    }
-
-    // 6. 异步批处理：将访客记录推入队列
-    visitorQueue <- VisitorLog{IP: c.IP(), Risk: risk, ...}
-    return c.Next()
-}
-
-// 后台 worker 批量写入，不阻塞主链路
-go func() {
-    batch := make([]VisitorLog, 0, 100)
-    ticker := time.NewTicker(5 * time.Second)
-    for {
-        select {
-        case v := <-visitorQueue: batch = append(batch, v)
-        case <-ticker.C: flushBatch(batch); batch = batch[:0]
-        }
-    }
-}()</code></pre>
-<div class="project-link">简历关联：自研轻量级 WAF 中间件，集成 ASN 识别、代理头伪造检测、WAF 正则匹配、高频访问防护（1 分钟窗口 + 10 分钟冷却），异步批处理</div>`
-		},
-		{
-			q: "AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？",
-			diff: "medium",
-			tags: ["project"],
-			a: `<h4>为什么不直接用 RSA</h4>
-<ul>
-<li>RSA 加密数据长度受限（2048 位密钥最多加密 245 字节）</li>
-<li>RSA 加密速度极慢（比 AES 慢约 1000 倍）</li>
-</ul>
-<h4>混合加密流程</h4>
-<pre><code>// 加密
-1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes)
-2. 用 AES-CBC 加密明文数据（对称，快速，无长度限制）
-3. 用 RSA 公钥加密 AES 密钥（非对称，只加密 32 bytes）
-4. 发送：RSA(AES_Key) + IV + AES_CBC(Data)
-
-// 解密
-1. 用 RSA 私钥解密出 AES 密钥
-2. 用 AES 密钥 + IV 解密数据</code></pre>
-<h4>CBC 模式注意事项</h4>
-<ul>
-<li>需要 PKCS7 Padding（明文长度对齐到块大小 16 字节）</li>
-<li>IV 必须每次随机生成，不能复用（否则相同明文产生相同密文）</li>
-<li>生产中建议用 AES-GCM（自带认证，防篡改）替代 AES-CBC</li>
-</ul>`
-		},
-	]
-},
-// ==================== 8. WebSocket ====================
-{
-	cat: "WebSocket 与实时通信",
-	icon: "🔌",
-	color: "#fb923c",
-	items: [
-		{
-			q: "WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？",
-			diff: "easy",
-			tags: ["project"],
-			a: `<h4>对比</h4>
-<ul>
-<li><b>HTTP 长轮询</b>：客户端发请求 → 服务端 hold 住 → 有数据时响应 → 客户端再次请求。每次都有完整 HTTP 头，单向通信</li>
-<li><b>WebSocket</b>：一次握手（HTTP Upgrade）后保持<b>全双工</b>长连接，双向实时通信，头部开销极小（2-14 bytes）</li>
-</ul>
-<h4>你项目中的 3 个 WebSocket 场景</h4>
-<ul>
-<li><b>AI 任务状态推送</b>：AI 文章生成/SEO 优化是异步任务，通过 WebSocket 实时推送进度和结果（生成中→完成→错误映射）</li>
-<li><b>商品导入进度</b>：从 Shopify/微店批量导入商品时，实时通知前端当前进度（已导入/总数/失败数）</li>
-<li><b>任务编排状态</b>：Asynq 异步任务的执行状态变更实时推送到管理后台</li>
-</ul>
-<div class="key-point">Fiber 中 WebSocket 基于 gorilla/websocket 或 fasthttp/websocket 封装，每个连接一个 goroutine 读 + 一个 goroutine 写</div>`
-		},
-		{
-			q: "WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>连接管理 Hub</h4>
-<pre><code>type Hub struct {
-    connections map[string]*Connection  // userId → conn
-    mu          sync.RWMutex
-    register    chan *Connection
-    unregister  chan *Connection
-    broadcast   chan Message
-}
-
-func (h *Hub) Run() {
-    for {
-        select {
-        case conn := <-h.register:
-            h.mu.Lock()
-            h.connections[conn.UserId] = conn
-            h.mu.Unlock()
-        case conn := <-h.unregister:
-            h.mu.Lock()
-            delete(h.connections, conn.UserId)
-            h.mu.Unlock()
-        case msg := <-h.broadcast:
-            h.mu.RLock()
-            for _, conn := range h.connections {
-                conn.Send(msg)
-            }
-            h.mu.RUnlock()
-        }
-    }
-}</code></pre>
-<h4>心跳保活</h4>
-<pre><code>// 服务端定期发 Ping，客户端回 Pong
-// 超过 60 秒无 Pong 则关闭连接
-conn.SetPongHandler(func(string) error {
-    conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-    return nil
-})</code></pre>
-<h4>多实例广播</h4>
-<p>多个服务实例时，用户可能连在不同实例上。通过 Redis Pub/Sub 广播消息到所有实例，各实例再推送给自己管理的连接</p>`
-		},
-	]
-},
-// ==================== 9. Docker 与部署 ====================
-{
-	cat: "Docker 与部署",
-	icon: "🐳",
-	color: "#0ea5e9",
-	items: [
-		{
-			q: "Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>多阶段构建</h4>
-<pre><code># 阶段一：编译
-FROM golang:1.22-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/server
-
-# 阶段二：运行
-FROM alpine:3.19
-RUN apk --no-cache add ca-certificates tzdata
-COPY --from=builder /app/server /usr/local/bin/server
-COPY --from=builder /app/configs /etc/app/configs
-EXPOSE 8080
-ENTRYPOINT ["server"]</code></pre>
-<h4>好处</h4>
-<ul>
-<li>最终镜像不包含 Go 编译工具链，体积从 ~1GB 缩减到 ~20MB</li>
-<li><code>CGO_ENABLED=0</code> 生成静态二进制，可用 <code>scratch</code> 或 <code>distroless</code> 更小的基础镜像</li>
-<li><code>-ldflags="-s -w"</code> 去掉符号表和调试信息，进一步缩小</li>
-</ul>`
-		},
-		{
-			q: "容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>完整链路</h4>
-<pre><code># K8s Deployment 配置
-spec:
-  containers:
-  - name: app
-    livenessProbe:     # 存活探针：失败则重启容器
-      httpGet: { path: /healthz, port: 8080 }
-      periodSeconds: 10
-    readinessProbe:    # 就绪探针：失败则从 Service 摘除
-      httpGet: { path: /readyz, port: 8080 }
-      periodSeconds: 5
-    lifecycle:
-      preStop:          # 在 SIGTERM 前执行
-        exec:
-          command: ["sh", "-c", "sleep 5"]  # 等待 LB 摘掉流量
-  terminationGracePeriodSeconds: 30</code></pre>
-<h4>滚动更新流程</h4>
-<ol>
-<li>K8s 发送 SIGTERM 给 Pod，同时将 Pod 从 Service Endpoints 移除</li>
-<li>preStop hook 执行（sleep 5s 等 LB 生效）</li>
-<li>应用收到 SIGTERM，readiness 返回不健康，开始优雅关机</li>
-<li>等待处理中的请求完成（你的 10 秒超时保护）</li>
-<li>关闭 DB/Redis 连接，进程退出</li>
-<li>超过 terminationGracePeriodSeconds 仍未退出则 SIGKILL 强杀</li>
-</ol>`
-		},
-	]
-},
-// ==================== 10. 项目场景题 ====================
-{
-	cat: "项目场景深挖",
-	icon: "🎯",
-	color: "#e879f9",
-	items: [
-		{
-			q: "「游客订单归户」是什么？购物车串单问题怎么解决的？",
-			diff: "hard",
-			tags: ["project", "scene"],
-			a: `<h4>游客订单归户</h4>
-<p>用户未登录时以游客身份（visitorId，通常存在 Cookie/localStorage）浏览、加购、甚至下单。用户登录/注册后，需要将游客期间的数据归属到用户账号</p>
-<pre><code>func MergeVisitorData(userId uint, visitorId string) error {
-    // 1. 合并购物车
-    visitorCart := getCartByVisitorId(visitorId)
-    userCart := getCartByUserId(userId)
-    mergedCart := mergeCartItems(userCart, visitorCart)
-    saveCart(userId, mergedCart)
-
-    // 2. 关联历史订单
-    db.Model(&Order{}).
-        Where("visitor_id = ? AND user_id = 0", visitorId).
-        Update("user_id", userId)
-
-    // 3. 清理游客数据
-    deleteVisitorCart(visitorId)
-    return nil
-}</code></pre>
-<h4>购物车串单问题</h4>
-<p>场景：游客 A 和游客 B 在同一浏览器（如公用电脑），购物车勾选列表可能串到另一个人</p>
-<pre><code>// 问题根因：勾选状态存在 Redis，key 只用了 visitorId
-// 但 visitorId 的 Cookie 可能被多人共享
-
-// 解决方案：
-// 1. 勾选列表绑定 session（而非 visitorId）
-// 2. 登录后立即清除游客态的勾选状态
-// 3. 切换用户时重置购物车勾选
-func (c *CartService) GetCheckedItems(ctx context.Context) []CartItem {
-    sessionId := getSessionId(ctx)  // 绑定 session 而非 visitor
-    checkedIds := redis.SMembers("cart_checked:" + sessionId)
-    return filterByIds(c.GetAll(ctx), checkedIds)
-}</code></pre>
-<div class="project-link">简历关联：通过 visitorId 透传完成登录注册后历史订单与购物车的自动关联，并解决购物车勾选列表游客串单问题</div>`
-		},
-		{
-			q: "第三方平台商品导入：图片去重和异步下载重试机制怎么实现？",
-			diff: "medium",
-			tags: ["project", "scene"],
-			a: `<h4>图片去重</h4>
-<pre><code>// 基于图片 URL 的 MD5 去重
-func DeduplicateImages(images []string) []string {
-    seen := make(map[string]bool)
-    result := make([]string, 0)
-    for _, url := range images {
-        hash := md5.Sum([]byte(url))
-        key := hex.EncodeToString(hash[:])
-        if !seen[key] {
-            seen[key] = true
-            result = append(result, url)
-        }
-    }
-    return result
-}
-
-// 更严格：下载后对图片内容做 perceptual hash，避免同图不同 URL</code></pre>
-<h4>异步下载 + 重试</h4>
-<pre><code>// Worker Pool + 指数退避重试
-func DownloadImages(ctx context.Context, urls []string) {
-    sem := make(chan struct{}, 5) // 5 并发
-    var wg sync.WaitGroup
-
-    for i, url := range urls {
-        wg.Add(1)
-        go func(idx int, u string) {
-            defer wg.Done()
-            sem <- struct{}{}
-            defer func() { <-sem }()
-
-            var err error
-            for retry := 0; retry < 3; retry++ {
-                err = downloadAndSave(ctx, u)
-                if err == nil {
-                    // WebSocket 推送进度
-                    pushProgress(idx, len(urls), "success")
-                    return
-                }
-                time.Sleep(time.Duration(1<<retry) * time.Second) // 指数退避
-            }
-            pushProgress(idx, len(urls), "failed: "+err.Error())
-        }(i, url)
-    }
-    wg.Wait()
-}</code></pre>
-<div class="project-link">简历关联：对接 Shopify/微店 API，实现商品批量导入、图片去重与异步下载重试、WebSocket 导入进度通知</div>`
-		},
-		{
-			q: "请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？",
-			diff: "medium",
-			tags: ["project"],
-			a: `<h4>分片上传三步</h4>
-<pre><code>// 1. ChunkInit — 初始化上传会话
-uploadId, err := storage.ChunkInit("video.mp4", fileSize)
-// Local: 创建临时目录存放分片
-// OSS:  调用 InitiateMultipartUpload 获取 uploadId
-
-// 2. ChunkPart — 上传每个分片
-for partNum := 1; partNum <= totalParts; partNum++ {
-    reader := io.NewSectionReader(file, offset, chunkSize)
-    err := storage.ChunkPart(uploadId, partNum, reader)
-    // Local: 写入 tmp/{uploadId}/part_{partNum}
-    // OSS:  调用 UploadPart
-}
-
-// 3. ChunkComplete — 合并分片
-url, err := storage.ChunkComplete(uploadId)
-// Local: 按顺序合并所有分片文件，删除临时目录
-// OSS:  调用 CompleteMultipartUpload</code></pre>
-<h4>为什么用 io.ReadSeeker / io.ReadCloser</h4>
-<ul>
-<li><code>io.ReadSeeker</code>：支持 <code>Seek()</code>，OSS SDK 需要在失败重试时重新定位到分片起始位置重新读取</li>
-<li><code>io.ReadCloser</code>：用于流式传输场景，读完即释放，不需要缓冲整个文件到内存</li>
-<li>使用标准接口而非 <code>[]byte</code>，支持大文件（如几 GB 的视频）不占内存</li>
-</ul>`
-		},
-		{
-			q: "你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？",
-			diff: "hard",
-			tags: ["project", "scene"],
-			a: `<h4>整体架构</h4>
-<pre><code>用户请求 → API → 创建异步任务 (Asynq)
-                        ↓
-              Task Worker 执行 AI 调用
-                        ↓
-              WebSocket 推送实时状态
-                        ↓
-              结果入库 → 用户编辑 → 一键应用</code></pre>
-<h4>任务编排</h4>
-<pre><code>// AI 文章生成任务链
-func HandleArticleGeneration(ctx context.Context, t *asynq.Task) error {
-    taskId := getTaskId(t)
-    pushStatus(taskId, "generating")    // WS 推送
-
-    // 1. 调用 AI API 生成文章
-    result, err := aiClient.Generate(ctx, prompt)
-    if err != nil {
-        pushStatus(taskId, "error", mapError(err))  // 错误映射
-        return err
-    }
-
-    // 2. 存储生成结果（草稿状态）
-    saveAsDraft(taskId, result)
-    pushStatus(taskId, "completed", result.Summary)
-    return nil
-}
-
-// SEO 优化建议：生成 → 用户编辑 → 一键应用
-func HandleSEOOptimization(ctx context.Context, t *asynq.Task) error {
-    product := getProduct(t)
-    suggestions := aiClient.GenerateSEO(ctx, product)
-    // 生成 title/description/keywords 建议
-    // 用户在前端编辑确认后，调用 apply 接口一键更新
-    saveSuggestions(product.Id, suggestions)
-    return nil
-}</code></pre>
-<h4>错误映射</h4>
-<pre><code>// AI 接口错误 → 用户友好提示
-func mapError(err error) string {
-    switch {
-    case errors.Is(err, context.DeadlineExceeded):
-        return "AI 生成超时，请稍后重试"
-    case isRateLimitError(err):
-        return "请求频率过高，请 1 分钟后重试"
-    case isTokenLimitError(err):
-        return "内容过长，请缩短输入"
-    default:
-        return "生成失败，请重试"
-    }
-}</code></pre>
-<div class="project-link">简历关联：从零构建 AI Agent 应用模块，AI 文章定时生成 + 产品 SEO 优化建议生成→用户编辑→一键应用，WebSocket 实时状态推送与错误映射</div>`
-		},
-	]
-},
-// ==================== 11. 高频手撕 ====================
-{
-	cat: "高频手撕代码",
-	icon: "✍️",
-	color: "#facc15",
-	items: [
-		{
-			q: "用 Go 实现一个并发安全的 LRU Cache",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<pre><code>type LRUCache struct {
-    capacity int
-    mu       sync.Mutex
-    list     *list.List                    // 双向链表（最近使用 → 最久未用）
-    cache    map[string]*list.Element      // key → 链表节点
-}
-
-type entry struct {
-    key   string
-    value interface{}
-}
-
-func NewLRUCache(cap int) *LRUCache {
-    return &LRUCache{
-        capacity: cap,
-        list:     list.New(),
-        cache:    make(map[string]*list.Element),
-    }
-}
-
-func (c *LRUCache) Get(key string) (interface{}, bool) {
-    c.mu.Lock()
-    defer c.mu.Unlock()
-    if elem, ok := c.cache[key]; ok {
-        c.list.MoveToFront(elem)  // 移到链表头部
-        return elem.Value.(*entry).value, true
-    }
-    return nil, false
-}
-
-func (c *LRUCache) Put(key string, value interface{}) {
-    c.mu.Lock()
-    defer c.mu.Unlock()
-    if elem, ok := c.cache[key]; ok {
-        c.list.MoveToFront(elem)
-        elem.Value.(*entry).value = value
-        return
-    }
-    if c.list.Len() >= c.capacity {
-        // 淘汰链表尾部（最久未使用）
-        tail := c.list.Back()
-        c.list.Remove(tail)
-        delete(c.cache, tail.Value.(*entry).key)
-    }
-    elem := c.list.PushFront(&entry{key, value})
-    c.cache[key] = elem
-}</code></pre>
-<div class="key-point">复杂度：Get/Put 均为 O(1)。并发安全通过 sync.Mutex 实现，如需更高性能可用分片锁</div>`
-		},
-		{
-			q: "用 Go 实现一个简单的 Worker Pool（限制并发数）",
-			diff: "easy",
-			tags: [],
-			a: `<pre><code>type WorkerPool struct {
-    maxWorkers int
-    taskQueue  chan func()
-    wg         sync.WaitGroup
-}
-
-func NewWorkerPool(maxWorkers, queueSize int) *WorkerPool {
-    wp := &WorkerPool{
-        maxWorkers: maxWorkers,
-        taskQueue:  make(chan func(), queueSize),
-    }
-    wp.start()
-    return wp
-}
-
-func (wp *WorkerPool) start() {
-    for i := 0; i < wp.maxWorkers; i++ {
-        go func() {
-            for task := range wp.taskQueue {
-                task()
-                wp.wg.Done()
-            }
-        }()
-    }
-}
-
-func (wp *WorkerPool) Submit(task func()) {
-    wp.wg.Add(1)
-    wp.taskQueue <- task
-}
-
-func (wp *WorkerPool) Wait() {
-    wp.wg.Wait()
-}
-
-func (wp *WorkerPool) Shutdown() {
-    close(wp.taskQueue)
-}
-
-// 使用
-pool := NewWorkerPool(5, 100)
-for _, url := range urls {
-    u := url
-    pool.Submit(func() { download(u) })
-}
-pool.Wait()
-pool.Shutdown()</code></pre>`
-		},
-		{
-			q: "用 Go 实现 singleflight（合并并发请求）",
-			diff: "hard",
-			tags: [],
-			a: `<pre><code>type call struct {
-    wg  sync.WaitGroup
-    val interface{}
-    err error
-}
-
-type SingleFlight struct {
-    mu sync.Mutex
-    m  map[string]*call
-}
-
-func (sf *SingleFlight) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
-    sf.mu.Lock()
-    if sf.m == nil {
-        sf.m = make(map[string]*call)
-    }
-
-    // 如果已有相同 key 的请求在执行，等待结果
-    if c, ok := sf.m[key]; ok {
-        sf.mu.Unlock()
-        c.wg.Wait()           // 等待第一个请求完成
-        return c.val, c.err   // 共享结果
-    }
-
-    // 第一个请求，创建 call 并执行
-    c := &call{}
-    c.wg.Add(1)
-    sf.m[key] = c
-    sf.mu.Unlock()
-
-    c.val, c.err = fn()  // 实际执行
-    c.wg.Done()           // 唤醒等待者
-
-    sf.mu.Lock()
-    delete(sf.m, key)     // 清理
-    sf.mu.Unlock()
-
-    return c.val, c.err
-}
-
-// 使用场景：缓存击穿防护
-val, err := sf.Do(cacheKey, func() (interface{}, error) {
-    return db.Query(...)  // 只有一个请求打到 DB
-})</code></pre>
-<div class="key-point">这就是 <code>golang.org/x/sync/singleflight</code> 的核心实现。理解它对回答缓存击穿问题非常加分</div>`
-		},
-	]
-},
-// ==================== 12. Kafka 消息队列 ====================
-{
-	cat: "Kafka 消息队列",
-	icon: "📨",
-	color: "#10b981",
-	items: [
-		{
-			q: "Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>核心组件</h4>
-<ul>
-<li><b>Producer</b>：消息生产者，将消息发送到指定 Topic 的 Partition</li>
-<li><b>Broker</b>：Kafka 服务节点，负责存储消息。一个集群由多个 Broker 组成</li>
-<li><b>Topic</b>：消息的逻辑分类（如 order_events、payment_events）</li>
-<li><b>Partition</b>：Topic 的物理分片，每个 Partition 是一个有序的、不可变的消息序列（追加写入）</li>
-<li><b>Consumer Group</b>：消费者组，组内每个 Consumer 消费不同 Partition，实现并行消费</li>
-<li><b>Offset</b>：消费者在 Partition 中的读取位置，持久化在 __consumer_offsets Topic</li>
-</ul>
-<h4>为什么快</h4>
-<ul>
-<li><b>顺序写磁盘</b>：比随机写快 3 个数量级</li>
-<li><b>零拷贝 (sendfile)</b>：数据从磁盘直接到网卡，不经过用户态</li>
-<li><b>批量发送 + 压缩</b>：减少网络 IO 次数</li>
-<li><b>Page Cache</b>：利用 OS 页缓存，读写都在内存中完成</li>
-</ul>`
-		},
-		{
-			q: "Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>Producer 端</h4>
-<pre><code>// acks 配置
-acks=0   // 不等确认，最快但可能丢消息
-acks=1   // Leader 写入即确认（Leader 挂了可能丢）
-acks=all // 所有 ISR 副本写入才确认（最安全）
-
-// 重试 + 幂等
-retries=3
-enable.idempotence=true  // Producer 幂等，防止重试导致重复</code></pre>
-<h4>Broker 端</h4>
-<pre><code>// 副本机制
-replication.factor=3          // 每个 Partition 3 个副本
-min.insync.replicas=2         // 至少 2 个副本同步才允许写入
-unclean.leader.election=false // 禁止非 ISR 副本成为 Leader</code></pre>
-<h4>Consumer 端</h4>
-<pre><code>// 手动提交 Offset（处理完再提交）
-enable.auto.commit=false
-
-for msg := range consumer.Messages() {
-    process(msg)                    // 先处理
-    consumer.CommitMessage(msg)     // 再提交 offset
-}
-// 如果 process 失败不提交，下次消费会重试（at-least-once）</code></pre>
-<div class="key-point">三端配合：acks=all + min.insync.replicas=2 + 手动提交 offset = 消息不丢失（at-least-once 语义）</div>`
-		},
-		{
-			q: "Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>排查步骤</h4>
-<ol>
-<li>查看 Consumer Lag：<code>kafka-consumer-groups.sh --describe --group mygroup</code></li>
-<li>确认是否是消费逻辑慢（DB 操作、外部 API 调用等）</li>
-<li>确认 Partition 数量是否足够</li>
-</ol>
-<h4>解决方案</h4>
-<ul>
-<li><b>增加 Partition + Consumer</b>：Consumer 数量不能超过 Partition 数（超过的会空闲）</li>
-<li><b>消费端批量处理</b>：批量写入 DB 而非逐条插入</li>
-<li><b>异步消费</b>：Consumer 接收后投入本地队列，Worker Pool 并行处理</li>
-<li><b>临时扩容</b>：新建一个 Topic（更多 Partition），用转发 Consumer 把积压消息转发过去，扩大消费并行度</li>
-</ul>
-<pre><code>// Go 消费端并行处理
-func consume(msg *kafka.Message) {
-    // 投入 Worker Pool 而非同步处理
-    pool.Submit(func() {
-        process(msg)
-        consumer.CommitMessage(msg)
-    })
-}</code></pre>`
-		},
-		{
-			q: "Kafka 如何保证消息顺序性？全局有序和分区有序的区别？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>Kafka 的顺序保证</h4>
-<ul>
-<li><b>分区内有序</b>：单个 Partition 内的消息严格有序（追加写入）</li>
-<li><b>跨分区无序</b>：不同 Partition 之间没有顺序保证</li>
-</ul>
-<h4>需要顺序的场景怎么做</h4>
-<pre><code>// 方案一：同一个 Key 的消息发到同一个 Partition
-producer.Produce(&kafka.Message{
-    TopicPartition: kafka.TopicPartition{Topic: &topic},
-    Key:   []byte(orderId),   // 用 orderId 做 Key
-    Value: payload,
-})
-// Kafka 对 Key 做 hash % partitionCount，相同 Key 固定到同一 Partition
-
-// 方案二：全局有序（极端场景）
-// Topic 只设 1 个 Partition（牺牲并行度，不推荐）</code></pre>
-<h4>顺序消费注意</h4>
-<ul>
-<li>Consumer 内不能用多线程并行处理同一个 Partition 的消息（否则乱序）</li>
-<li>如需并行：按 Key 分组，相同 Key 的消息由同一个 goroutine 处理</li>
-</ul>
-<div class="key-point">岗位关联：腾讯赛事平台、百度广告平台都重度依赖 Kafka 做事件驱动，订单/支付/广告投放事件必须保证分区有序</div>`
-		},
-		{
-			q: "Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？",
-			diff: "medium",
-			tags: ["project"],
-			a: `<h4>对比</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">Kafka</th><th style="text-align:left;padding:6px">Asynq (Redis)</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">定位</td><td style="padding:6px">分布式事件流平台</td><td style="padding:6px">异步任务队列</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">消息保留</td><td style="padding:6px">持久化，可重复消费</td><td style="padding:6px">处理完即删除</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">吞吐量</td><td style="padding:6px">百万级/秒</td><td style="padding:6px">万级/秒</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">消费模式</td><td style="padding:6px">发布/订阅 + Consumer Group</td><td style="padding:6px">竞争消费</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">延时任务</td><td style="padding:6px">不原生支持</td><td style="padding:6px">原生支持 (ProcessIn)</td></tr>
-<tr><td style="padding:6px">运维复杂度</td><td style="padding:6px">高（ZK/KRaft + Broker 集群）</td><td style="padding:6px">低（复用 Redis）</td></tr>
-</table>
-<h4>选型建议</h4>
-<ul>
-<li><b>Kafka</b>：大数据量事件流、日志收集、跨服务事件广播、需要消息回溯</li>
-<li><b>Asynq</b>：后台异步任务（邮件/通知）、定时任务、延时任务、业务量中等</li>
-</ul>
-<div class="project-link">简历关联：你的项目用 Asynq 做营销召回（延时任务场景），如果面试岗位问 Kafka，可以说明为什么当前场景选 Asynq 以及何时该引入 Kafka</div>`
-		},
-	]
-},
-// ==================== 13. 计算机网络 ====================
-{
-	cat: "计算机网络",
-	icon: "🌐",
-	color: "#818cf8",
-	items: [
-		{
-			q: "TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>三次握手</h4>
-<pre><code>客户端         服务端
-  |--- SYN (seq=x) --->|     ① 客户端发起连接
-  |<-- SYN+ACK (seq=y, ack=x+1) --|  ② 服务端确认并发起
-  |--- ACK (ack=y+1) -->|     ③ 客户端确认</code></pre>
-<p><b>为什么三次</b>：防止历史连接请求（旧 SYN）造成误连。两次的话服务端无法确认客户端是否收到 SYN+ACK</p>
-
-<h4>四次挥手</h4>
-<pre><code>主动方         被动方
-  |--- FIN --->|    ① 我要关闭发送
-  |<-- ACK ----|    ② 知道了（但我可能还有数据要发）
-  |<-- FIN ----|    ③ 我也发完了，关闭
-  |--- ACK --->|    ④ 收到，连接关闭</code></pre>
-<p><b>为什么四次</b>：TCP 全双工，每个方向需要独立关闭。被动方收到 FIN 时可能还有数据没发完，所以 ACK 和 FIN 分两步</p>
-
-<h4>TIME_WAIT</h4>
-<ul>
-<li>主动关闭方进入 TIME_WAIT，等待 2MSL（通常 60 秒）</li>
-<li>原因：(1) 确保最后的 ACK 到达对方 (2) 让旧连接的迟到报文在网络中消亡</li>
-<li>服务端大量 TIME_WAIT 解决：<code>tcp_tw_reuse</code>、连接池复用</li>
-</ul>`
-		},
-		{
-			q: "HTTP/1.1、HTTP/2、HTTP/3 的区别？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>演进对比</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">HTTP/1.1</th><th style="text-align:left;padding:6px">HTTP/2</th><th style="text-align:left;padding:6px">HTTP/3</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">传输层</td><td style="padding:6px">TCP</td><td style="padding:6px">TCP</td><td style="padding:6px">QUIC (UDP)</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">多路复用</td><td style="padding:6px">无（管线化鸡肋）</td><td style="padding:6px">有（二进制帧）</td><td style="padding:6px">有（无队头阻塞）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">头部压缩</td><td style="padding:6px">无</td><td style="padding:6px">HPACK</td><td style="padding:6px">QPACK</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">服务端推送</td><td style="padding:6px">无</td><td style="padding:6px">支持</td><td style="padding:6px">支持</td></tr>
-<tr><td style="padding:6px">队头阻塞</td><td style="padding:6px">应用层+传输层</td><td style="padding:6px">传输层（TCP丢包）</td><td style="padding:6px">无</td></tr>
-</table>
-<h4>关键概念</h4>
-<ul>
-<li><b>HTTP/2 多路复用</b>：一个 TCP 连接上并行传输多个 Stream，每个 Stream 由多个 Frame 组成，解决 HTTP/1.1 的队头阻塞</li>
-<li><b>HTTP/2 队头阻塞</b>：虽然应用层无阻塞，但 TCP 层丢包会阻塞整个连接的所有 Stream</li>
-<li><b>HTTP/3 QUIC</b>：基于 UDP，每个 Stream 独立可靠传输，一个 Stream 丢包不影响其他 Stream</li>
-</ul>`
-		},
-		{
-			q: "HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>TLS 1.2 握手（简化）</h4>
-<pre><code>客户端                    服务端
-  |--- ClientHello -------->|   支持的加密套件、随机数A
-  |<-- ServerHello ---------|   选定加密套件、随机数B、证书
-  |  验证证书（CA 链）        |
-  |--- ClientKeyExchange -->|   用证书公钥加密预主密钥 (Pre-Master Secret)
-  |  双方计算会话密钥          |   Key = PRF(PreMaster, 随机数A, 随机数B)
-  |--- ChangeCipherSpec --->|   切换到加密通信
-  |<-- ChangeCipherSpec ----|
-  |=== 加密数据传输 =========|</code></pre>
-<h4>两种加密的角色</h4>
-<ul>
-<li><b>非对称加密 (RSA/ECDHE)</b>：仅用于握手阶段安全地交换密钥，速度慢但安全</li>
-<li><b>对称加密 (AES-GCM)</b>：用于数据传输阶段，速度快</li>
-</ul>
-<h4>TLS 1.3 改进</h4>
-<ul>
-<li>握手从 2-RTT 缩减到 1-RTT（0-RTT 可选）</li>
-<li>移除了 RSA 密钥交换（仅保留前向安全的 ECDHE）</li>
-<li>精简加密套件（只保留 AEAD）</li>
-</ul>
-<div class="project-link">简历关联：你的 go-utils 实现了 AES-CBC + RSA 混合加密，原理与 TLS 的混合加密思路一致</div>`
-		},
-		{
-			q: "TCP 粘包/拆包是什么？怎么解决？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>什么是粘包/拆包</h4>
-<p>TCP 是<b>字节流</b>协议（非消息边界协议），发送方的多条消息可能被合并成一个包（粘包），或一条消息被拆成多个包（拆包）</p>
-<pre><code>// 发送 "Hello" 和 "World"
-// 可能收到：
-"HelloWorld"        // 粘包
-"Hel" + "loWorld"   // 拆包+粘包
-"Hello" + "World"   // 正常</code></pre>
-<h4>解决方案</h4>
-<ul>
-<li><b>固定长度</b>：每条消息固定 N 字节，不足补零（简单但浪费）</li>
-<li><b>分隔符</b>：用特殊字符分割（如 <code>\\n</code>、<code>\\r\\n</code>），HTTP/1.1 即如此</li>
-<li><b>长度前缀 (TLV)</b>：消息头包含消息体长度，最常用</li>
-</ul>
-<pre><code>// 长度前缀方案（Go 实现）
-// 写入
-func writeMessage(conn net.Conn, data []byte) error {
-    header := make([]byte, 4)
-    binary.BigEndian.PutUint32(header, uint32(len(data)))
-    conn.Write(header)   // 先写 4 字节长度
-    conn.Write(data)     // 再写消息体
-    return nil
-}
-
-// 读取
-func readMessage(conn net.Conn) ([]byte, error) {
-    header := make([]byte, 4)
-    io.ReadFull(conn, header)
-    length := binary.BigEndian.Uint32(header)
-    data := make([]byte, length)
-    io.ReadFull(conn, data)
-    return data, nil
-}</code></pre>`
-		},
-		{
-			q: "从浏览器输入 URL 到页面显示，发生了什么？（网络全链路）",
-			diff: "easy",
-			tags: ["scene"],
-			a: `<h4>完整链路</h4>
-<ol>
-<li><b>DNS 解析</b>：浏览器缓存 → OS 缓存 → hosts → 本地 DNS → 递归查询根/顶级/权威 DNS → 拿到 IP</li>
-<li><b>TCP 三次握手</b>：与服务器建立 TCP 连接</li>
-<li><b>TLS 握手</b>（HTTPS）：协商加密套件、交换密钥</li>
-<li><b>HTTP 请求</b>：发送 GET / HTTP/1.1（或 HTTP/2 帧）</li>
-<li><b>服务端处理</b>：负载均衡 → Web Server → 应用逻辑 → 数据库查询 → 返回响应</li>
-<li><b>HTTP 响应</b>：状态码 + 响应头 + 响应体（HTML）</li>
-<li><b>浏览器渲染</b>：
-  <ul>
-  <li>解析 HTML → DOM 树</li>
-  <li>解析 CSS → CSSOM 树</li>
-  <li>DOM + CSSOM → Render 树</li>
-  <li>Layout（计算位置大小）→ Paint（绘制像素）→ Composite（合成图层）</li>
-  </ul>
-</li>
-<li><b>异步加载</b>：JS 执行、图片/字体等资源异步请求</li>
-</ol>
-<div class="key-point">面试中可以根据岗位侧重展开不同层：后端重点讲第 5 步（Nginx → 路由 → 中间件 → Handler → DB）</div>`
-		},
-	]
-},
-// ==================== 14. Kubernetes 深入 ====================
-{
-	cat: "Kubernetes 深入",
-	icon: "☸️",
-	color: "#326ce5",
-	items: [
-		{
-			q: "K8s 的核心架构？Master 和 Node 各有哪些组件？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>Master 节点（控制平面）</h4>
-<ul>
-<li><b>kube-apiserver</b>：所有操作的入口（RESTful API），唯一与 etcd 通信的组件</li>
-<li><b>etcd</b>：分布式 KV 存储，保存集群所有状态数据</li>
-<li><b>kube-scheduler</b>：将 Pod 调度到合适的 Node（根据资源、亲和性、污点等）</li>
-<li><b>kube-controller-manager</b>：运行各种控制器（Deployment、ReplicaSet、Node、Service 等）</li>
-</ul>
-<h4>Node 节点（工作节点）</h4>
-<ul>
-<li><b>kubelet</b>：管理 Pod 生命周期，向 apiserver 汇报节点状态</li>
-<li><b>kube-proxy</b>：维护网络规则（iptables/IPVS），实现 Service 的负载均衡</li>
-<li><b>Container Runtime</b>：运行容器（containerd / CRI-O）</li>
-</ul>
-<h4>核心对象</h4>
-<ul>
-<li><b>Pod</b>：最小调度单元，包含一个或多个容器</li>
-<li><b>Deployment</b>：管理 ReplicaSet，支持滚动更新和回滚</li>
-<li><b>Service</b>：为 Pod 提供稳定的网络入口（ClusterIP / NodePort / LoadBalancer）</li>
-<li><b>ConfigMap / Secret</b>：配置和敏感数据管理</li>
-</ul>`
-		},
-		{
-			q: "Pod 的生命周期？init 容器、就绪探针、存活探针的作用？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>Pod 生命周期</h4>
-<pre><code>Pending → Running → Succeeded / Failed
-           ↑
-    Init Containers → App Containers</code></pre>
-<h4>Init 容器</h4>
-<ul>
-<li>在 App 容器启动<b>之前</b>按顺序运行，全部成功后才启动 App 容器</li>
-<li>用途：等待依赖服务就绪、初始化配置文件、数据库 migration</li>
-</ul>
-<pre><code>initContainers:
-- name: wait-for-db
-  image: busybox
-  command: ['sh', '-c', 'until nc -z mysql 3306; do sleep 2; done']</code></pre>
-<h4>探针对比</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">探针</th><th style="text-align:left;padding:6px">失败后果</th><th style="text-align:left;padding:6px">典型用途</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">startupProbe</td><td style="padding:6px">重启容器</td><td style="padding:6px">慢启动应用（Java等）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">livenessProbe</td><td style="padding:6px">重启容器</td><td style="padding:6px">检测死锁/卡死</td></tr>
-<tr><td style="padding:6px">readinessProbe</td><td style="padding:6px">从 Service 摘除</td><td style="padding:6px">是否准备好接流量</td></tr>
-</table>
-<div class="key-point">readiness 失败不会重启 Pod，只是从 Endpoints 移除（不接受新请求）。你的优雅关机方案就是先让 readiness 失败</div>`
-		},
-		{
-			q: "K8s 中 Service 的负载均衡原理？ClusterIP / NodePort / LoadBalancer 区别？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>三种 Service 类型</h4>
-<ul>
-<li><b>ClusterIP</b>（默认）：分配集群内部虚拟 IP，只能集群内部访问。kube-proxy 通过 iptables/IPVS 将流量转发到后端 Pod</li>
-<li><b>NodePort</b>：在 ClusterIP 基础上，每个节点开放一个端口（30000-32767），外部可通过 NodeIP:NodePort 访问</li>
-<li><b>LoadBalancer</b>：在 NodePort 基础上，自动创建云厂商的负载均衡器（如 AWS ELB），提供外部入口 IP</li>
-</ul>
-<h4>kube-proxy 模式</h4>
-<ul>
-<li><b>iptables</b>（默认）：为每个 Service 创建 iptables 规则，随机选择后端 Pod。规则多时性能下降</li>
-<li><b>IPVS</b>：基于内核 IPVS 模块，支持多种负载均衡算法（RR/LC/WRR），大规模集群性能更好</li>
-</ul>
-<h4>Ingress</h4>
-<p>七层（HTTP）负载均衡，通过域名/路径路由到不同 Service（如 Nginx Ingress Controller）</p>`
-		},
-		{
-			q: "K8s 滚动更新的策略？如何实现零停机部署？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>Deployment 滚动更新策略</h4>
-<pre><code>spec:
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1        # 最多多创建 1 个 Pod
-      maxUnavailable: 0  # 不允许有不可用的 Pod（零停机）
-  minReadySeconds: 10    # Pod Ready 后等 10 秒才算可用</code></pre>
-<h4>零停机部署要点</h4>
-<ol>
-<li><b>maxUnavailable: 0</b>：新 Pod Ready 后才销毁旧 Pod</li>
-<li><b>readinessProbe</b>：应用完全启动后才接收流量</li>
-<li><b>preStop hook + sleep</b>：给 kube-proxy 时间更新 iptables 规则</li>
-<li><b>优雅关机</b>：收到 SIGTERM 后处理完在途请求再退出</li>
-<li><b>PDB (PodDisruptionBudget)</b>：限制同时不可用的 Pod 数量</li>
-</ol>
-<pre><code># PDB：确保至少 2 个 Pod 可用
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-spec:
-  minAvailable: 2
-  selector:
-    matchLabels: { app: myapp }</code></pre>
-<div class="project-link">简历关联：你的 go-fast 框架的 10 秒超时优雅关机 + errgroup 并行关闭，正是零停机部署的应用端实现</div>`
-		},
-	]
-},
-// ==================== 15. MongoDB ====================
-{
-	cat: "MongoDB",
-	icon: "🍃",
-	color: "#47a248",
-	items: [
-		{
-			q: "MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>核心区别</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">MySQL</th><th style="text-align:left;padding:6px">MongoDB</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">数据模型</td><td style="padding:6px">关系型（行/列/表）</td><td style="padding:6px">文档型（JSON/BSON）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">Schema</td><td style="padding:6px">强 Schema（需建表）</td><td style="padding:6px">灵活 Schema（无需预定义）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">JOIN</td><td style="padding:6px">支持</td><td style="padding:6px">不支持（嵌入文档或 $lookup）</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">事务</td><td style="padding:6px">完整 ACID</td><td style="padding:6px">4.0+ 支持多文档事务</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">扩展</td><td style="padding:6px">垂直扩展为主</td><td style="padding:6px">原生分片（水平扩展）</td></tr>
-<tr><td style="padding:6px">索引</td><td style="padding:6px">B+ 树</td><td style="padding:6px">B 树 + 支持嵌套字段索引</td></tr>
-</table>
-<h4>适用场景</h4>
-<ul>
-<li><b>MongoDB 适合</b>：日志/埋点、内容管理（CMS）、IoT 时序数据、Schema 频繁变更的早期项目、嵌套结构数据</li>
-<li><b>MySQL 适合</b>：强一致性事务（支付/订单）、复杂关联查询、数据结构稳定的业务</li>
-</ul>
-<div class="key-point">岗位关联：腾讯赛事平台和运维工具岗位要求 MongoDB 经验，通常用于日志存储、赛事数据（嵌套结构）、运维指标等场景</div>`
-		},
-		{
-			q: "MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>索引类型</h4>
-<ul>
-<li><b>单字段索引</b>：<code>db.col.createIndex({name: 1})</code></li>
-<li><b>复合索引</b>：<code>db.col.createIndex({city: 1, age: -1})</code></li>
-<li><b>多键索引 (Multikey)</b>：自动为数组字段创建，每个数组元素都有索引条目</li>
-<li><b>文本索引</b>：<code>db.col.createIndex({content: "text"})</code>，支持全文搜索</li>
-<li><b>地理空间索引</b>：<code>2dsphere</code>（球面）/ <code>2d</code>（平面），支持地理查询</li>
-<li><b>哈希索引</b>：用于分片键的均匀分布</li>
-<li><b>TTL 索引</b>：文档到期自动删除（如 session、日志）</li>
-</ul>
-<h4>与 MySQL 的不同</h4>
-<ul>
-<li>MongoDB 支持对<b>嵌套文档字段</b>建索引：<code>{"address.city": 1}</code></li>
-<li>MongoDB 支持对<b>数组</b>建多键索引，MySQL 无此概念</li>
-<li>复合索引同样遵循最左前缀原则</li>
-<li>MongoDB 索引默认存在内存中（WiredTiger 引擎），查询时不需要磁盘 IO</li>
-</ul>`
-		},
-		{
-			q: "MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>聚合管道</h4>
-<p>类似 Unix 管道，文档依次通过多个<b>阶段 (Stage)</b>，每个阶段对文档做一种变换</p>
-<pre><code>db.orders.aggregate([
-    { $match: { status: "paid" } },              // WHERE
-    { $group: {                                    // GROUP BY
-        _id: "$storeId",
-        totalAmount: { $sum: "$amount" },
-        count: { $sum: 1 }
-    }},
-    { $sort: { totalAmount: -1 } },               // ORDER BY
-    { $limit: 10 },                                // LIMIT
-    { $lookup: {                                   // LEFT JOIN
-        from: "stores",
-        localField: "_id",
-        foreignField: "_id",
-        as: "store"
-    }},
-    { $project: {                                  // SELECT
-        storeName: { $arrayElemAt: ["$store.name", 0] },
-        totalAmount: 1,
-        count: 1
-    }}
-])</code></pre>
-<h4>常用阶段</h4>
-<ul>
-<li><code>$match</code>：过滤（尽量放前面，利用索引）</li>
-<li><code>$group</code>：分组聚合（sum/avg/count/max/min）</li>
-<li><code>$sort</code> / <code>$limit</code> / <code>$skip</code>：排序分页</li>
-<li><code>$lookup</code>：类似 LEFT JOIN（跨集合关联）</li>
-<li><code>$unwind</code>：展开数组（一条文档变多条）</li>
-<li><code>$project</code> / <code>$addFields</code>：字段选择/计算</li>
-</ul>`
-		},
-	]
-},
-// ==================== 16. 高并发与高可用 ====================
-{
-	cat: "高并发与高可用",
-	icon: "⚡",
-	color: "#f43f5e",
-	items: [
-		{
-			q: "高并发系统设计的常见手段有哪些？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>六大核心手段</h4>
-<ul>
-<li><b>缓存</b>：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级</li>
-<li><b>异步</b>：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计</li>
-<li><b>限流</b>：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现了高频访问防护</li>
-<li><b>分库分表</b>：水平拆分降低单库压力。你的多租户 SaaS 按 StoreId 分片</li>
-<li><b>池化</b>：连接池（DB/Redis/HTTP）、goroutine 池。你的连接池根据 CPU/内存动态计算</li>
-<li><b>读写分离</b>：主库写、从库读，分担读压力</li>
-</ul>
-<h4>架构层面</h4>
-<ul>
-<li><b>微服务拆分</b>：独立扩缩容高负载服务</li>
-<li><b>CDN + 静态资源</b>：减少服务端压力</li>
-<li><b>数据库索引优化</b>：你在 UUFind 项目中的实践</li>
-</ul>
-<div class="project-link">简历关联：你的项目几乎覆盖了所有高并发手段 — 面试时可以逐个对应到具体实现</div>`
-		},
-		{
-			q: "限流算法有哪些？令牌桶和漏桶的区别？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>四种限流算法</h4>
-<ul>
-<li><b>固定窗口计数器</b>：时间窗口内计数，超过阈值拒绝。缺点：窗口边界突发（两个窗口交界可能 2 倍流量）</li>
-<li><b>滑动窗口计数器</b>：将窗口分成多个小格子，平滑统计。你的 WAF 用的就是滑动窗口思路</li>
-<li><b>漏桶 (Leaky Bucket)</b>：请求进入桶中，以固定速率流出。流出速率恒定，能平滑突发流量</li>
-<li><b>令牌桶 (Token Bucket)</b>：以固定速率向桶中放令牌，请求需要取令牌才能通过。允许一定程度突发</li>
-</ul>
-<h4>漏桶 vs 令牌桶</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">漏桶</th><th style="text-align:left;padding:6px">令牌桶</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">流出速率</td><td style="padding:6px">恒定</td><td style="padding:6px">可突发</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">突发流量</td><td style="padding:6px">排队等待</td><td style="padding:6px">允许（消耗积累的令牌）</td></tr>
-<tr><td style="padding:6px">适用场景</td><td style="padding:6px">严格平滑（如短信发送）</td><td style="padding:6px">允许突发（如 API 限流）</td></tr>
-</table>
-<pre><code>// Go 标准库令牌桶
-import "golang.org/x/time/rate"
-limiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 10) // 每秒10个，突发10个
-if !limiter.Allow() {
-    return fiber.ErrTooManyRequests
-}</code></pre>`
-		},
-		{
-			q: "分布式系统中如何保证数据一致性？CAP 和 BASE 理论？",
-			diff: "medium",
-			tags: [],
-			a: `<h4>CAP 定理</h4>
-<ul>
-<li><b>C (Consistency)</b>：所有节点同一时间看到的数据一致</li>
-<li><b>A (Availability)</b>：每个请求都能收到非错误响应</li>
-<li><b>P (Partition tolerance)</b>：网络分区时系统仍能工作</li>
-<li>三者最多满足两个。分布式系统中 P 必选 → 实际选择是 CP 或 AP</li>
-</ul>
-<h4>BASE 理论（AP 系统的妥协）</h4>
-<ul>
-<li><b>BA (Basically Available)</b>：基本可用（允许部分功能降级）</li>
-<li><b>S (Soft state)</b>：软状态（中间状态，数据可能暂时不一致）</li>
-<li><b>E (Eventually consistent)</b>：最终一致性</li>
-</ul>
-<h4>常见一致性方案</h4>
-<ul>
-<li><b>强一致性</b>：分布式事务（2PC / 3PC）— 性能差，适合金融核心</li>
-<li><b>最终一致性</b>：消息队列 + 本地消息表 / TCC / Saga — 性能好，适合电商</li>
-</ul>
-<div class="key-point">你的支付系统用 Webhook 异步回调 + 幂等处理，本质就是 BASE 的最终一致性方案</div>`
-		},
-		{
-			q: "服务雪崩是什么？熔断、降级、限流怎么配合？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>服务雪崩</h4>
-<p>服务 A 调用服务 B，B 响应慢 → A 的线程/goroutine 被占满 → A 也变慢 → 调用 A 的 C 也受影响 → 雪崩</p>
-<h4>三板斧</h4>
-<ul>
-<li><b>限流 (Rate Limiting)</b>：入口处控制流量，超过阈值直接拒绝。防止过载</li>
-<li><b>熔断 (Circuit Breaker)</b>：检测到下游错误率过高时，暂停调用一段时间（快速失败），避免无效重试。状态：Closed → Open → Half-Open</li>
-<li><b>降级 (Fallback)</b>：熔断后返回兜底数据（缓存数据/默认值），而非直接报错</li>
-</ul>
-<pre><code>// Go 熔断器（简化版）
-type CircuitBreaker struct {
-    failures    int
-    threshold   int       // 连续失败 N 次后熔断
-    state       string    // closed / open / half-open
-    lastFailure time.Time
-    cooldown    time.Duration
-}
-
-func (cb *CircuitBreaker) Call(fn func() error) error {
-    if cb.state == "open" {
-        if time.Since(cb.lastFailure) > cb.cooldown {
-            cb.state = "half-open" // 试探一次
-        } else {
-            return ErrCircuitOpen // 快速失败
-        }
-    }
-    err := fn()
-    if err != nil {
-        cb.failures++
-        cb.lastFailure = time.Now()
-        if cb.failures >= cb.threshold { cb.state = "open" }
-        return err
-    }
-    cb.failures = 0
-    cb.state = "closed"
-    return nil
-}</code></pre>
-<div class="key-point">岗位关联：腾讯赛事平台要求「高可用系统设计经验」，熔断+降级+限流是核心考点</div>`
-		},
-	]
-},
-// ==================== 17. 微服务治理 ====================
-{
-	cat: "微服务治理",
-	icon: "🔗",
-	color: "#06b6d4",
-	items: [
-		{
-			q: "微服务的服务发现有哪些方式？注册中心的作用？",
-			diff: "easy",
-			tags: [],
-			a: `<h4>两种模式</h4>
-<ul>
-<li><b>客户端发现</b>：服务实例注册到注册中心（如 Consul/etcd/Nacos），客户端从注册中心获取实例列表，自行负载均衡</li>
-<li><b>服务端发现</b>：请求先到负载均衡器（如 K8s Service/Nginx），由 LB 查询注册中心并转发</li>
-</ul>
-<h4>常见注册中心对比</h4>
-<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">注册中心</th><th style="text-align:left;padding:6px">一致性</th><th style="text-align:left;padding:6px">语言</th><th style="text-align:left;padding:6px">特点</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">etcd</td><td style="padding:6px">CP (Raft)</td><td style="padding:6px">Go</td><td style="padding:6px">K8s 默认，强一致</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">Consul</td><td style="padding:6px">CP (Raft)</td><td style="padding:6px">Go</td><td style="padding:6px">自带健康检查、KV 存储、DNS</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">Nacos</td><td style="padding:6px">AP/CP 切换</td><td style="padding:6px">Java</td><td style="padding:6px">阿里开源，配置中心 + 服务发现</td></tr>
-<tr><td style="padding:6px">ZooKeeper</td><td style="padding:6px">CP (ZAB)</td><td style="padding:6px">Java</td><td style="padding:6px">老牌，Kafka 依赖（逐步淘汰）</td></tr>
-</table>
-<h4>K8s 内置服务发现</h4>
-<p>K8s 通过 Service + DNS 实现服务发现：<code>myservice.namespace.svc.cluster.local</code>，无需额外注册中心</p>`
-		},
-		{
-			q: "分布式链路追踪是什么？OpenTelemetry 怎么用？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>为什么需要链路追踪</h4>
-<p>微服务架构下一个请求可能跨越多个服务（如你的 17 个服务），出问题时需要知道：哪个服务慢了？哪个调用链出错了？</p>
-<h4>核心概念</h4>
-<ul>
-<li><b>Trace</b>：一次完整请求的调用链（从入口到所有下游）</li>
-<li><b>Span</b>：Trace 中的一个操作（如一次 RPC 调用、一次 DB 查询）</li>
-<li><b>TraceID</b>：贯穿整个调用链的唯一 ID</li>
-<li><b>SpanID + ParentSpanID</b>：构建调用树</li>
-</ul>
-<h4>Go 中接入 OpenTelemetry</h4>
-<pre><code>import "go.opentelemetry.io/otel"
-
-// 中间件自动创建 Span
-func TracingMiddleware(c *fiber.Ctx) error {
-    tracer := otel.Tracer("myservice")
-    ctx, span := tracer.Start(c.Context(), c.Path())
-    defer span.End()
-
-    span.SetAttributes(
-        attribute.String("http.method", c.Method()),
-        attribute.Int("http.status_code", c.Response().StatusCode()),
-    )
-    c.SetUserContext(ctx) // 传播 context
-    return c.Next()
-}
-
-// 下游 RPC 调用时 context 透传 TraceID
-func callOrderService(ctx context.Context) {
-    _, span := otel.Tracer("myservice").Start(ctx, "rpc.order.create")
-    defer span.End()
-    // RPC 请求自动携带 TraceID
-}</code></pre>
-<div class="key-point">面试加分：提到你的 17 个业务服务如果引入链路追踪，可以快速定位跨服务调用中的性能瓶颈</div>`
-		},
-		{
-			q: "微服务中如何处理分布式事务？Saga 模式是什么？",
-			diff: "hard",
-			tags: ["scene"],
-			a: `<h4>分布式事务方案</h4>
-<ul>
-<li><b>2PC (两阶段提交)</b>：协调者 → 所有参与者 prepare → 全部 OK 则 commit，任一失败则 rollback。强一致但性能差、有单点问题</li>
-<li><b>TCC (Try-Confirm-Cancel)</b>：业务层实现三个方法，Try 预留 → Confirm 确认 → Cancel 撤销。侵入性强</li>
-<li><b>Saga</b>：将长事务拆成多个本地事务，每个事务有对应的<b>补偿操作</b>。任一步失败则逆序执行补偿</li>
-<li><b>本地消息表</b>：业务操作和消息写入同一个本地事务，后台异步发送消息。最终一致性</li>
-</ul>
-<h4>Saga 示例：跨境电商下单</h4>
-<pre><code>// 正向流程
-T1: 创建订单 (order-service)
-T2: 扣减库存 (inventory-service)
-T3: 创建支付 (payment-service)
-
-// 补偿流程（T3 失败时逆序执行）
-C2: 恢复库存
-C1: 取消订单
-
-// 编排方式
-// 1. 协调器模式：中央编排器管理所有步骤
-// 2. 事件驱动模式：每个服务完成后发事件，下一个服务监听</code></pre>
-<h4>你的项目场景</h4>
-<p>主子订单拆分 + 多支付网关场景，退款链路本质就是 Saga 的补偿机制：取消支付 → 恢复库存 → 更新订单状态</p>`
-		},
-	]
-},
-// ==================== 18. Linux 基础 ====================
-{
-	cat: "Linux 基础",
-	icon: "🐧",
-	color: "#fbbf24",
-	items: [
-		{
-			q: "常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？",
-			diff: "easy",
-			tags: ["scene"],
-			a: `<h4>常用命令</h4>
-<ul>
-<li><code>top / htop</code>：实时查看 CPU、内存占用，按进程排序</li>
-<li><code>ps aux | grep xxx</code>：查看进程信息</li>
-<li><code>netstat -tlnp / ss -tlnp</code>：查看端口监听和连接状态</li>
-<li><code>lsof -i :8080</code>：查看端口被哪个进程占用</li>
-<li><code>df -h / du -sh</code>：磁盘空间</li>
-<li><code>free -h</code>：内存使用</li>
-<li><code>tail -f /var/log/xxx.log</code>：实时查看日志</li>
-<li><code>strace -p PID</code>：跟踪系统调用</li>
-</ul>
-<h4>CPU 飙高排查（Go 服务）</h4>
-<pre><code># 1. top 找到 CPU 最高的进程 PID
-top -c
-
-# 2. 对 Go 服务，用 pprof
-# 在代码中引入
-import _ "net/http/pprof"
-go http.ListenAndServe(":6060", nil)
-
-# 3. 采集 CPU profile
-go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
-
-# 4. 查看火焰图
-go tool pprof -http=:8081 profile.out
-
-# 5. 常见原因：
-# - 死循环 / 无限递归
-# - GC 压力大（大量小对象分配）
-# - 锁竞争（mutex contention）
-# - 正则表达式回溯</code></pre>`
-		},
-		{
-			q: "Go 服务内存泄漏怎么排查？pprof 怎么用？",
-			diff: "medium",
-			tags: ["scene"],
-			a: `<h4>pprof 排查流程</h4>
-<pre><code>// 1. 引入 pprof
-import _ "net/http/pprof"
-go http.ListenAndServe(":6060", nil)
-
-// 2. 查看堆内存分配
-go tool pprof http://localhost:6060/debug/pprof/heap
-
-// 3. 常用命令
-(pprof) top 10          // 内存分配 Top 10 函数
-(pprof) list funcName   // 查看具体函数的分配详情
-(pprof) web             // 生成调用图（需要 graphviz）
-
-// 4. 对比两个时间点的堆快照
-go tool pprof -base heap1.out heap2.out  // 查看增量
-
-// 5. Goroutine 泄漏
-go tool pprof http://localhost:6060/debug/pprof/goroutine
-// goroutine 数量持续增长 → 泄漏</code></pre>
-<h4>常见 Go 内存泄漏原因</h4>
-<ul>
-<li><b>Goroutine 泄漏</b>：channel 无人读/写导致 goroutine 永远阻塞（最常见）</li>
-<li><b>未关闭的资源</b>：HTTP response body、DB rows、文件句柄未 Close()</li>
-<li><b>全局 map 无限增长</b>：如缓存没有淘汰策略</li>
-<li><b>time.After 在循环中</b>：每次创建新的 Timer 未被 GC</li>
-<li><b>slice 引用大数组</b>：<code>s := bigSlice[:2]</code> 仍引用底层大数组</li>
-</ul>
-<div class="key-point">面试时可以结合项目：你的 WAF 中间件访客队列如果消费者挂了，channel 满后会阻塞生产者 goroutine → 需要带 default 或 select+timeout 防护</div>`
-		},
-		{
-			q: "Linux 文件描述符是什么？Too many open files 怎么解决？",
-			diff: "easy",
-			tags: ["scene"],
-			a: `<h4>文件描述符 (fd)</h4>
-<p>Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd）</p>
-<ul>
-<li><code>0</code>：stdin | <code>1</code>：stdout | <code>2</code>：stderr</li>
-<li>每个进程有 fd 上限（默认 1024）</li>
-</ul>
-<h4>Too many open files 排查</h4>
-<pre><code># 查看当前进程打开的 fd 数
-ls /proc/PID/fd | wc -l
-
-# 查看进程的 fd 限制
-cat /proc/PID/limits | grep "open files"
-
-# 查看系统级限制
-cat /proc/sys/fs/file-max
-
-# 解决方案
-# 1. 临时调整
-ulimit -n 65535
-
-# 2. 永久调整 (/etc/security/limits.conf)
-* soft nofile 65535
-* hard nofile 65535
-
-# 3. systemd 服务
-[Service]
-LimitNOFILE=65535</code></pre>
-<h4>根本原因</h4>
-<p>通常不是真的需要这么多 fd，而是代码有资源泄漏：</p>
-<ul>
-<li>HTTP 响应 Body 未 <code>resp.Body.Close()</code></li>
-<li>数据库连接未释放</li>
-<li>文件打开后未关闭</li>
-</ul>
-<div class="key-point">Go 中养成习惯：<code>defer resp.Body.Close()</code>、<code>defer rows.Close()</code>、<code>defer f.Close()</code></div>`
-		},
-	]
-},
+  {
+    "cat": "Go 语言核心",
+    "icon": "🔷",
+    "color": "#6c8cff",
+    "items": [
+      {
+        "q": "Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>核心概念</h4>\n<ul>\n<li><b>G (Goroutine)</b>：用户态轻量级线程，初始栈 2KB（可动态增长到 1GB），包含执行栈、状态、任务函数等信息</li>\n<li><b>M (Machine)</b>：操作系统线程，由 OS 管理调度，Go 运行时最多创建 10000 个 M</li>\n<li><b>P (Processor)</b>：逻辑处理器，数量默认等于 <code>GOMAXPROCS</code>（通常为 CPU 核心数），持有本地运行队列（最多 256 个 G）</li>\n</ul>\n<h4>调度流程</h4>\n<ul>\n<li>每个 P 维护一个本地队列，新创建的 G 优先放入当前 P 的本地队列</li>\n<li>M 必须绑定一个 P 才能执行 G，M 从绑定的 P 的本地队列取 G 执行</li>\n<li>本地队列为空时，M 会尝试从全局队列或其他 P 的队列<b>窃取 (work stealing)</b> G</li>\n<li>当 G 发生系统调用阻塞时，M 会与 P 解绑，P 转移给空闲 M 或新建 M 继续执行其他 G</li>\n</ul>\n<div class=\"key-point\">面试加分：提到 work stealing 机制、hand off 机制（阻塞时 P 与 M 解绑）、抢占式调度（Go 1.14 基于信号的异步抢占）</div>",
+        "id": "q-q1rk0k"
+      },
+      {
+        "q": "Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>底层结构 (runtime.hchan)</h4>\n<pre><code>type hchan struct {\n    qcount   uint      // 当前队列中的元素数量\n    dataqsiz uint      // 环形缓冲区大小（即 cap）\n    buf      unsafe.Pointer // 环形缓冲区指针\n    elemsize uint16    // 元素大小\n    closed   uint32    // 是否关闭\n    sendx    uint      // 发送索引\n    recvx    uint      // 接收索引\n    recvq    waitq     // 等待接收的 goroutine 队列\n    sendq    waitq     // 等待发送的 goroutine 队列\n    lock     mutex     // 互斥锁\n}</code></pre>\n<h4>无缓冲 vs 有缓冲</h4>\n<ul>\n<li><b>无缓冲</b> (<code>make(chan T)</code>)：发送和接收必须同时就绪，否则阻塞。本质是同步通信</li>\n<li><b>有缓冲</b> (<code>make(chan T, n)</code>)：缓冲区未满时发送不阻塞，缓冲区为空时接收阻塞。本质是异步通信</li>\n</ul>\n<h4>关键行为</h4>\n<ul>\n<li>向 nil channel 发送/接收会永久阻塞</li>\n<li>向已关闭的 channel 发送会 panic</li>\n<li>从已关闭的 channel 接收会返回零值（可通过 <code>v, ok := <-ch</code> 判断）</li>\n</ul>",
+        "id": "q-1uwipet"
+      },
+      {
+        "q": "Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>两种底层结构</h4>\n<p><b>空接口</b> <code>interface{}</code> 对应 <code>runtime.eface</code>：</p>\n<pre><code>type eface struct {\n    _type *_type         // 指向类型元数据\n    data  unsafe.Pointer // 指向实际数据\n}</code></pre>\n<p><b>非空接口</b>对应 <code>runtime.iface</code>：</p>\n<pre><code>type iface struct {\n    tab  *itab           // 类型信息 + 方法表\n    data unsafe.Pointer  // 指向实际数据\n}</code></pre>\n<h4>itab 结构</h4>\n<pre><code>type itab struct {\n    inter *interfacetype // 接口类型\n    _type *_type         // 实际类型\n    hash  uint32         // 类型哈希，用于快速判断\n    fun   [1]uintptr     // 方法表（变长数组）\n}</code></pre>\n<h4>关键点</h4>\n<ul>\n<li>itab 会被缓存到全局的 <code>itabTable</code> 哈希表中，同一对 (接口类型, 实际类型) 只计算一次</li>\n<li>接口赋值时，如果值类型小于等于指针大小，直接存在 data 字段；否则堆上分配后存指针</li>\n<li>类型断言 <code>v.(T)</code> 的本质是比较 itab 中的 <code>_type</code> 是否匹配</li>\n</ul>\n<div class=\"key-point\">面试陷阱：<code>var p *int = nil; var i interface{} = p</code> 此时 <code>i != nil</code>，因为 iface 的 tab 不为 nil（存了 *int 的类型信息）</div>",
+        "id": "q-1v8drm9"
+      },
+      {
+        "q": "Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>reflect 核心</h4>\n<ul>\n<li><code>reflect.TypeOf(x)</code> → 返回 <code>reflect.Type</code>，描述类型信息（字段名、tag、方法等）</li>\n<li><code>reflect.ValueOf(x)</code> → 返回 <code>reflect.Value</code>，持有值的可操作副本</li>\n<li>三大定律：(1) 接口值 → 反射对象 (2) 反射对象 → 接口值 (3) 要修改反射对象，值必须可设置（Elem()）</li>\n</ul>\n<h4>go-cache 中的实现思路</h4>\n<pre><code>// SetValue: Go Struct → Redis Hash\nfunc SetValue(key string, obj interface{}) {\n    v := reflect.ValueOf(obj)\n    t := v.Type()\n    fields := make(map[string]interface{})\n    for i := 0; i < t.NumField(); i++ {\n        field := t.Field(i)\n        tag := field.Tag.Get(\"redis\") // 读取 redis tag\n        if tag == \"\" || tag == \"-\" { continue }\n        fields[tag] = v.Field(i).Interface()\n    }\n    // redis.HSet(key, fields)\n}\n\n// ScanValue: Redis Hash → Go Struct\nfunc ScanValue(key string, dest interface{}) {\n    v := reflect.ValueOf(dest).Elem() // 必须传指针\n    t := v.Type()\n    data := redis.HGetAll(key)\n    for i := 0; i < t.NumField(); i++ {\n        tag := t.Field(i).Tag.Get(\"redis\")\n        if val, ok := data[tag]; ok {\n            // 根据 field.Kind() 做类型转换后 Set\n            v.Field(i).Set(convertedValue)\n        }\n    }\n}</code></pre>\n<div class=\"project-link\">简历关联：go-cache 基于适配器模式实现统一缓存接口，利用 reflect 库实现 Redis Hash 与 Go Struct 自动映射</div>\n<div class=\"key-point\">注意性能：reflect 操作比直接访问慢约 50-100 倍。生产中可通过缓存 TypeOf 结果、代码生成（go generate）等方式优化</div>",
+        "id": "q-1dumk95"
+      },
+      {
+        "q": "Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>执行规则</h4>\n<ul>\n<li><b>LIFO（后进先出）</b>：多个 defer 按栈顺序逆序执行</li>\n<li>defer 的参数在 <b>注册时求值</b>，而非执行时</li>\n<li>defer 在 <code>return</code> 之后、函数真正返回之前执行（可修改命名返回值）</li>\n</ul>\n<h4>panic/recover 机制</h4>\n<pre><code>func safeCall() (err error) {\n    defer func() {\n        if r := recover(); r != nil {\n            err = fmt.Errorf(\"panic recovered: %v\", r)\n            // 记录堆栈: debug.Stack()\n        }\n    }()\n    riskyOperation()\n    return nil\n}</code></pre>\n<ul>\n<li><code>panic</code> 触发后，当前函数停止执行，按 LIFO 执行已注册的 defer</li>\n<li><code>recover</code> 只能在 defer 函数中生效，捕获 panic 值并恢复正常流程</li>\n<li>recover 后函数返回零值（除非使用命名返回值在 defer 中赋值）</li>\n</ul>\n<div class=\"key-point\">经典陷阱：<code>defer f.Close()</code> 如果 f 为 nil 会 panic。应先判断 err 再 defer</div>",
+        "id": "q-yws6gn"
+      },
+      {
+        "q": "Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>三色标记法</h4>\n<ul>\n<li><b>白色</b>：未被访问的对象（GC 结束后被回收）</li>\n<li><b>灰色</b>：已被访问但其引用的对象尚未全部扫描</li>\n<li><b>黑色</b>：已被访问且其引用的对象全部扫描完毕</li>\n</ul>\n<h4>流程</h4>\n<ol>\n<li><b>Mark Setup (STW)</b>：开启写屏障，极短暂（通常 < 100μs）</li>\n<li><b>Marking（并发）</b>：从根对象出发，遍历引用图。GC goroutine 与用户 goroutine 并发执行</li>\n<li><b>Mark Termination (STW)</b>：关闭写屏障，完成最终标记，极短暂</li>\n<li><b>Sweeping（并发）</b>：回收白色对象的内存</li>\n</ol>\n<h4>写屏障 (Write Barrier)</h4>\n<p>Go 1.8+ 使用<b>混合写屏障</b>（插入 + 删除），确保并发标记阶段不会遗漏存活对象，大幅减少 STW 时间</p>\n<div class=\"key-point\">GC 触发条件：(1) 堆内存增长到上次 GC 后的 2 倍（GOGC=100）(2) 2 分钟未触发 GC (3) 手动 runtime.GC()</div>",
+        "id": "q-11rk16a"
+      },
+      {
+        "q": "Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>普通 map + sync.Mutex / sync.RWMutex</h4>\n<ul>\n<li>读写都需要加锁，RWMutex 允许并发读</li>\n<li>适合读写比例均衡、需要遍历、需要精确控制锁粒度的场景</li>\n</ul>\n<h4>sync.Map</h4>\n<ul>\n<li>内部维护两个 map：<code>read</code>（只读，无锁访问）和 <code>dirty</code>（写入时加锁）</li>\n<li>读操作优先查 read map（无锁 CAS），miss 时穿透到 dirty</li>\n<li>当 miss 次数达到 dirty 长度时，dirty 提升为新的 read</li>\n</ul>\n<h4>适用场景</h4>\n<ul>\n<li><b>sync.Map 适合</b>：读多写少、key 集合相对稳定（如缓存、配置）</li>\n<li><b>map+mutex 适合</b>：写多读少、需要遍历或批量操作、需要泛型类型安全</li>\n</ul>\n<div class=\"project-link\">简历关联：你的国际化系统中「并发安全的 Localizer Map」很可能用到了 sync.Map 或 RWMutex + map 的方案</div>",
+        "id": "q-1cw0vwp"
+      },
+      {
+        "q": "errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>errgroup 原理</h4>\n<pre><code>type Group struct {\n    cancel  func()          // 关联 context 的 cancel\n    wg      sync.WaitGroup\n    errOnce sync.Once       // 只记录第一个错误\n    err     error\n}\n// Go() 启动 goroutine, Wait() 等待所有完成并返回第一个错误</code></pre>\n<h4>框架初始化链设计</h4>\n<pre><code>func (app *App) Bootstrap() error {\n    // 阶段一：串行有序初始化（有依赖关系）\n    steps := []func() error{\n        app.initConfig,    // 1. conf\n        app.initDB,        // 2. db（依赖 conf）\n        app.initRedis,     // 3. redis（依赖 conf）\n        app.initCache,     // 4. cache（依赖 redis）\n    }\n    for _, step := range steps {\n        if err := step(); err != nil { return err }\n    }\n\n    // 阶段二：并行初始化（无依赖关系）\n    g, ctx := errgroup.WithContext(app.ctx)\n    g.Go(func() error { return app.initRPC(ctx) })\n    g.Go(func() error { return app.initJob(ctx) })\n    g.Go(func() error { return app.initWorker(ctx) })\n    g.Go(func() error { return app.initListener(ctx) })\n    return g.Wait() // 任一失败，ctx 取消，其他收到信号\n}</code></pre>\n<h4>优雅关机配合</h4>\n<pre><code>// 10 秒超时保护\nctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\ndefer cancel()\n// 并行关闭各组件\ng, ctx := errgroup.WithContext(ctx)\ng.Go(func() error { return app.server.ShutdownWithContext(ctx) })\ng.Go(func() error { return app.db.Close() })\ng.Go(func() error { return app.rdb.Close() })\nreturn g.Wait()</code></pre>\n<div class=\"project-link\">简历关联：go-fast 框架 18 步有序初始化链 + errgroup 并发管理 + 10 秒超时优雅关机</div>",
+        "id": "q-7hw7o6"
+      },
+      {
+        "q": "Go Plugin (.so) 热加载的原理、限制和你的实践？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>原理</h4>\n<pre><code>// 编译插件\n// go build -buildmode=plugin -o myplugin.so myplugin.go\n\np, _ := plugin.Open(\"myplugin.so\")\nsym, _ := p.Lookup(\"NewEngine\")  // 查找导出符号\nfactory := sym.(func() TemplateEngine)\nengine := factory()</code></pre>\n<h4>核心限制</h4>\n<ul>\n<li>仅支持 Linux 和 macOS，不支持 Windows</li>\n<li>主程序和插件必须使用<b>完全相同的 Go 版本</b>编译</li>\n<li>共享依赖的包路径和版本必须一致</li>\n<li>插件一旦加载<b>无法卸载</b>（内存中永驻）</li>\n<li>不支持泛型导出（Go 1.18+）</li>\n</ul>\n<h4>你的实践方案</h4>\n<ul>\n<li>定义统一接口（如 <code>TemplateEngine</code>、<code>ORMExtension</code>、<code>CaptchaProvider</code>）</li>\n<li>插件实现接口并导出工厂函数</li>\n<li>主进程通过 <code>plugin.Open</code> + <code>Lookup</code> + 类型断言加载</li>\n<li>适用场景：模板引擎切换、ORM 扩展、验证码提供商动态替换</li>\n</ul>\n<div class=\"key-point\">面试追问：如果面试官问 \"为什么不用 RPC 微服务替代？\"——Plugin 是进程内调用零延迟，适合同进程功能扩展；微服务适合独立部署的业务拆分</div>",
+        "id": "q-1f99wc9"
+      }
+    ]
+  },
+  {
+    "cat": "MySQL 数据库",
+    "icon": "🗄️",
+    "color": "#f59e0b",
+    "items": [
+      {
+        "q": "InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>B+ 树特点</h4>\n<ul>\n<li>所有数据存储在<b>叶子节点</b>，非叶子节点只存索引键值</li>\n<li>叶子节点之间通过<b>双向链表</b>连接，天然支持范围查询</li>\n<li>树的高度通常 3-4 层，亿级数据也只需 3-4 次 IO</li>\n</ul>\n<h4>为什么不用 B 树</h4>\n<ul>\n<li>B 树的非叶子节点也存数据，导致每个节点能容纳的 key 更少，树更高，IO 次数更多</li>\n<li>B 树不支持高效的范围扫描（需要中序遍历回溯）</li>\n</ul>\n<h4>为什么不用 Hash</h4>\n<ul>\n<li>Hash 不支持范围查询（<code>WHERE age > 18</code>）</li>\n<li>不支持排序</li>\n<li>不支持最左前缀匹配</li>\n<li>存在哈希冲突</li>\n</ul>\n<h4>聚簇索引 vs 非聚簇索引</h4>\n<ul>\n<li><b>聚簇索引</b>（主键）：叶子节点存储完整行数据</li>\n<li><b>非聚簇索引</b>（二级索引）：叶子节点存储主键值，需要<b>回表</b>查询完整数据</li>\n</ul>",
+        "id": "q-wxlgi4"
+      },
+      {
+        "q": "你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>索引优化方法论</h4>\n<ol>\n<li><b>EXPLAIN 分析</b>：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化）</li>\n<li><b>覆盖索引</b>：让查询所需字段全在索引中，避免回表。如 <code>INDEX(store_id, status, created_at)</code> 覆盖 <code>SELECT status, created_at WHERE store_id = ?</code></li>\n<li><b>最左前缀</b>：联合索引 <code>(a, b, c)</code> 能命中 <code>a</code>、<code>a,b</code>、<code>a,b,c</code> 的查询</li>\n<li><b>索引下推 (ICP)</b>：MySQL 5.6+ 在存储引擎层过滤索引条件，减少回表次数</li>\n</ol>\n<h4>UUFind 商品列表的实际优化</h4>\n<pre><code>-- 优化前：全表扫描\nSELECT * FROM products WHERE store_id = 123 ORDER BY created_at DESC;\n\n-- 优化后：联合索引\nALTER TABLE products ADD INDEX idx_store_created (store_id, created_at DESC);\n\n-- 统计查询拆分：避免 COUNT 与业务查询混合\n-- 原：SELECT *, (SELECT COUNT(*) ...) FROM products ...\n-- 改：独立统计查询 + 请求级汇率缓存避免重复计算</code></pre>\n<div class=\"project-link\">简历关联：UUFind 平台 — 新增数据库索引、重构统计查询逻辑、引入请求级汇率缓存，显著降低高频接口响应时间</div>",
+        "id": "q-sqoeth"
+      },
+      {
+        "q": "MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>ACID 保证机制</h4>\n<ul>\n<li><b>A (原子性)</b>：<code>undo log</code> — 记录反向操作，回滚时逆向执行</li>\n<li><b>C (一致性)</b>：由 A + I + D 共同保证</li>\n<li><b>I (隔离性)</b>：锁 + <code>MVCC</code></li>\n<li><b>D (持久性)</b>：<code>redo log</code> — WAL (Write-Ahead Logging)，先写日志再写磁盘</li>\n</ul>\n<h4>redo log (重做日志)</h4>\n<ul>\n<li>InnoDB 引擎层日志，物理日志（记录数据页的修改）</li>\n<li>循环写入（固定大小文件组），write pos 和 checkpoint 追赶</li>\n<li>保证 crash-safe：事务提交时先写 redo log（顺序 IO），数据页后续异步刷盘</li>\n</ul>\n<h4>undo log (回滚日志)</h4>\n<ul>\n<li>逻辑日志（记录反向 SQL），存储在系统表空间或独立 undo 表空间</li>\n<li>用途：(1) 事务回滚 (2) MVCC 多版本读（通过版本链回溯历史版本）</li>\n</ul>\n<h4>binlog vs redo log</h4>\n<ul>\n<li><code>binlog</code>：Server 层，逻辑日志，追加写入，用于主从复制和数据恢复</li>\n<li><code>redo log</code>：InnoDB 引擎层，物理日志，循环写入，用于崩溃恢复</li>\n<li>两阶段提交 (2PC)：先写 redo log (prepare) → 写 binlog → 写 redo log (commit)，保证数据一致性</li>\n</ul>",
+        "id": "q-m41whe"
+      },
+      {
+        "q": "多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>多租户隔离方案对比</h4>\n<ul>\n<li><b>独立数据库</b>：隔离性最强，成本最高，适合大客户</li>\n<li><b>共享数据库 + 独立 Schema</b>：中等隔离，运维复杂度中等</li>\n<li><b>共享数据库 + 共享表 + StoreId 区分</b>：成本最低，需要严格的数据隔离逻辑 ← 你的方案</li>\n</ul>\n<h4>你的实现方案</h4>\n<pre><code>// 动态切换数据库连接\nfunc GetDBByStoreId(storeId uint) *gorm.DB {\n    connKey := fmt.Sprintf(\"store_%d\", storeId)\n    if db, ok := dbPool.Load(connKey); ok {\n        return db.(*gorm.DB)\n    }\n    // 根据 storeId 路由到对应数据源\n    dsn := getStoreDSN(storeId)\n    db := initDB(dsn)\n    dbPool.Store(connKey, db)\n    return db\n}\n\n// GORM 分表：按租户 ID 分片\n// statistics_1, statistics_2, visitors_1, visitors_2 ...\nfunc (s *Statistics) TableName() string {\n    return fmt.Sprintf(\"statistics_%d\", s.StoreId % shardCount)\n}\n\n// 连接池动态计算\nmaxConns := runtime.NumCPU() * 2 + 1  // 基于 CPU 核心数\nmaxIdle := maxConns / 2\n// 根据可用内存进一步调整</code></pre>\n<div class=\"project-link\">简历关联：通过 StoreId 动态切换数据库连接，集成 GORM 分表插件支持按租户 ID 分片，连接池参数根据 CPU 核心数和内存动态计算</div>",
+        "id": "q-fe9pel"
+      },
+      {
+        "q": "MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>锁类型</h4>\n<ul>\n<li><b>全局锁</b>：<code>FLUSH TABLES WITH READ LOCK</code>（全库备份）</li>\n<li><b>表锁</b>：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁</li>\n<li><b>行锁</b>（InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock)</li>\n</ul>\n<h4>行锁升级为表锁的情况</h4>\n<ul>\n<li>WHERE 条件<b>没有命中索引</b>，InnoDB 退化为全表扫描 → 锁住所有扫描到的行（近似表锁）</li>\n<li>索引失效（如对索引列进行函数操作、隐式类型转换）</li>\n</ul>\n<h4>死锁预防</h4>\n<ul>\n<li>按<b>固定顺序</b>访问表和行（如按主键 ASC 顺序更新）</li>\n<li>事务尽量短小，减少持锁时间</li>\n<li>使用合理的索引，避免全表扫描</li>\n<li><code>innodb_deadlock_detect = ON</code>（默认开启），自动检测并回滚代价最小的事务</li>\n</ul>",
+        "id": "q-1gxiy1s"
+      }
+    ]
+  },
+  {
+    "cat": "Redis 缓存与队列",
+    "icon": "🔴",
+    "color": "#ef4444",
+    "items": [
+      {
+        "q": "Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>数据类型 → 编码</h4>\n<ul>\n<li><b>String</b>：int（纯整数）/ embstr（≤44字节）/ raw（>44字节）</li>\n<li><b>List</b>：listpack（Redis 7.0+，元素少且小）/ quicklist</li>\n<li><b>Hash</b>：listpack（field 数 ≤ 128 且 value ≤ 64B）/ hashtable</li>\n<li><b>Set</b>：intset（全整数且 ≤ 512 个）/ hashtable</li>\n<li><b>ZSet</b>：listpack（≤ 128 个元素且 ≤ 64B）/ skiplist + hashtable</li>\n</ul>\n<h4>编码转换触发</h4>\n<p>当元素数量或大小超过阈值时<b>自动且不可逆</b>地从紧凑编码转为通用编码。阈值可通过配置调整：</p>\n<pre><code>hash-max-listpack-entries 128\nhash-max-listpack-value 64\nzset-max-listpack-entries 128\nzset-max-listpack-value 64</code></pre>",
+        "id": "q-1d6l2fz"
+      },
+      {
+        "q": "Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>RDB (快照)</h4>\n<ul>\n<li>某个时间点的全量数据快照（二进制文件）</li>\n<li>通过 <code>fork()</code> 子进程 + COW (Copy-on-Write) 生成</li>\n<li>优：恢复速度快、文件紧凑 | 劣：可能丢失最后一次快照后的数据</li>\n</ul>\n<h4>AOF (追加日志)</h4>\n<ul>\n<li>记录每个写命令（文本格式），支持 always / everysec / no 三种刷盘策略</li>\n<li>AOF 重写 (bgrewriteaof) 压缩日志体积</li>\n<li>优：数据更安全（everysec 最多丢 1 秒）| 劣：文件大、恢复慢</li>\n</ul>\n<h4>混合持久化 (Redis 4.0+)</h4>\n<ul>\n<li>AOF 重写时，前半段写 RDB 格式（快速全量），后半段追加 AOF 命令（增量）</li>\n<li>兼具 RDB 的快速恢复和 AOF 的数据安全性</li>\n<li>开启：<code>aof-use-rdb-preamble yes</code></li>\n</ul>",
+        "id": "q-1glhos9"
+      },
+      {
+        "q": "缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>缓存穿透</h4>\n<p>查询一个<b>不存在</b>的数据，缓存和 DB 都没有，每次请求都打到 DB</p>\n<ul>\n<li>解决：(1) 缓存空值/空对象（设较短 TTL） (2) <b>布隆过滤器</b>前置拦截</li>\n</ul>\n<h4>缓存击穿</h4>\n<p><b>热点 key 过期</b>的瞬间，大量并发请求同时打到 DB</p>\n<ul>\n<li>解决：(1) <b>singleflight</b> 合并并发请求，只有一个去查 DB (2) 互斥锁（Redis SETNX）(3) 热点 key 永不过期 + 异步更新</li>\n</ul>\n<h4>缓存雪崩</h4>\n<p>大量 key <b>同时过期</b>或 Redis 宕机，请求全部打到 DB</p>\n<ul>\n<li>解决：(1) 过期时间加<b>随机偏移</b> (2) Redis 集群高可用 (3) 本地缓存兜底 (4) 限流降级</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 go-cache 适配器支持 Redis/Badger/File 三后端，可实现多级缓存兜底策略</div>",
+        "id": "q-6ie2jz"
+      },
+      {
+        "q": "Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>Asynq 架构</h4>\n<ul>\n<li>基于 Redis 的分布式任务队列（类似 Sidekiq/Celery）</li>\n<li>核心数据结构：<code>asynq:{queue}:pending</code> (List)、<code>asynq:{queue}:active</code> (Set)、<code>asynq:{queue}:scheduled</code> (ZSet，按执行时间排序)</li>\n<li>Scheduler 定时将到期任务从 scheduled → pending，Worker 从 pending 取任务执行</li>\n<li>支持重试（指数退避）、唯一任务（去重）、超时控制、优先级队列</li>\n</ul>\n<h4>营销召回系统设计</h4>\n<pre><code>// 三条召回链\nconst (\n    TaskCartRecall     = \"recall:cart\"      // 购物车召回\n    TaskCheckoutRecall = \"recall:checkout\"  // 结账页召回\n    TaskOrderRecall    = \"recall:order\"     // 订单召回\n)\n\n// 10 分钟定时扫描 + 分步邮件\nfunc HandleCartRecall(ctx context.Context, t *asynq.Task) error {\n    // 1. 查询 10 分钟内有购物车但未下单的用户\n    // 2. 第一封邮件：温馨提醒\n    // 3. 注册延时任务：24 小时后发第二封（含优惠券）\n    task := asynq.NewTask(TaskCartRecallStep2, payload,\n        asynq.ProcessIn(24 * time.Hour),\n        asynq.Unique(24 * time.Hour), // 去重\n    )\n    return client.Enqueue(task)\n}\n\n// 定时调度\nscheduler.Register(\"*/10 * * * *\", // 每 10 分钟\n    asynq.NewTask(TaskCartRecall, nil))</code></pre>\n<div class=\"project-link\">简历关联：基于 Asynq (Redis-backed) 实现购物车召回、结账页召回、订单召回三条异步任务链，10 分钟级定时扫描配合分步邮件提醒</div>",
+        "id": "q-18vz82y"
+      },
+      {
+        "q": "Redis 分布式锁怎么实现？有什么陷阱？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>基本实现</h4>\n<pre><code>// 加锁：SET key value NX EX seconds\nok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second)\n\n// 解锁：Lua 脚本保证原子性（判断 + 删除）\nconst unlockScript = `\nif redis.call(\"get\", KEYS[1]) == ARGV[1] then\n    return redis.call(\"del\", KEYS[1])\nelse\n    return 0\nend`</code></pre>\n<h4>核心陷阱</h4>\n<ul>\n<li><b>锁过期但业务未完成</b>：A 持锁超时 → 锁自动释放 → B 获得锁 → A 完成后误删 B 的锁。解决：uniqueValue（UUID）+ Lua 原子判删</li>\n<li><b>主从切换丢锁</b>：master 加锁后未同步到 slave 就挂了，slave 提升为 master 后锁丢失。解决：<b>RedLock</b>（多节点过半数加锁）</li>\n<li><b>锁续期</b>：业务耗时不确定时需要看门狗机制（如 Redisson），定期续期</li>\n</ul>",
+        "id": "q-x046rc"
+      }
+    ]
+  },
+  {
+    "cat": "设计模式与架构",
+    "icon": "🏗️",
+    "color": "#a78bfa",
+    "items": [
+      {
+        "q": "你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>适配器模式 (Adapter) — go-cache</h4>\n<p>问题：Redis / Badger / File 三种缓存后端接口不一致</p>\n<pre><code>type CacheAdapter interface {\n    Get(key string) ([]byte, error)\n    Set(key string, val []byte, ttl time.Duration) error\n    Del(key string) error\n}\n// RedisAdapter, BadgerAdapter, FileAdapter 分别实现\n// 上层代码只依赖 CacheAdapter 接口，切换后端零改动</code></pre>\n\n<h4>策略模式 (Strategy) — go-storage</h4>\n<p>问题：Local 存储和阿里云 OSS 的上传逻辑不同</p>\n<pre><code>type StorageDriver interface {\n    ChunkInit(filename string, size int64) (uploadId string, err error)\n    ChunkPart(uploadId string, partNum int, reader io.ReadSeeker) error\n    ChunkComplete(uploadId string) (url string, err error)\n}\n// LocalDriver 写本地磁盘，OSSDriver 调用阿里云 SDK\n// 通过配置选择具体 Driver</code></pre>\n\n<h4>门面模式 (Facade) — go-storage</h4>\n<p>问题：分片上传涉及多步骤操作（Init→Part→Complete），调用方不需要关心细节</p>\n<pre><code>type Storage struct { driver StorageDriver }\nfunc (s *Storage) Upload(file io.Reader, size int64) (string, error) {\n    // 门面：封装 Init → 分片读取 → Part → Complete 全流程\n    // 调用方只需要一行 storage.Upload(file, size)\n}</code></pre>\n<div class=\"key-point\">面试回答模板：先说问题（为什么需要这个模式）→ 再说方案（接口设计）→ 最后说效果（解耦/扩展性）</div>",
+        "id": "q-159zveo"
+      },
+      {
+        "q": "你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>架构设计</h4>\n<pre><code>// 事件定义\ntype EventType string\nconst (\n    BeforeOrderCreate  EventType = \"order.before_create\"\n    AfterOrderCreate   EventType = \"order.after_create\"\n    BeforePaymentPay   EventType = \"payment.before_pay\"\n    AfterPaymentPay    EventType = \"payment.after_pay\"\n    // ... 覆盖 Order/Checkout/Payment/Product CRUD\n)\n\n// 监听器接口\ntype EventListener interface {\n    Handle(ctx context.Context, event Event) error\n}\n\n// 事件总线（观察者模式的中介）\ntype EventBus struct {\n    mu        sync.RWMutex\n    listeners map[EventType][]EventListener\n}\n\nfunc (eb *EventBus) On(eventType EventType, listener EventListener) {\n    eb.mu.Lock()\n    defer eb.mu.Unlock()\n    eb.listeners[eventType] = append(eb.listeners[eventType], listener)\n}\n\nfunc (eb *EventBus) Emit(ctx context.Context, eventType EventType, payload interface{}) error {\n    eb.mu.RLock()\n    ls := eb.listeners[eventType]\n    eb.mu.RUnlock()\n    for _, l := range ls {\n        if err := l.Handle(ctx, Event{Type: eventType, Data: payload}); err != nil {\n            return err // Before 事件失败可中断流程\n        }\n    }\n    return nil\n}</code></pre>\n<h4>使用示例</h4>\n<pre><code>// 注册监听器 — 核心代码零侵入\neventBus.On(AfterOrderCreate, &InventoryDeducter{})\neventBus.On(AfterOrderCreate, &OrderNotifier{})\neventBus.On(BeforePaymentPay, &FraudChecker{})</code></pre>\n<div class=\"project-link\">简历关联：Before/After 生命周期事件钩子系统，覆盖 Order/Checkout/Payment/Product CRUD 全流程，业务扩展通过注册监听器实现，核心代码零侵入</div>",
+        "id": "q-1yd5y53"
+      },
+      {
+        "q": "微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>对比</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">特性</th><th style=\"text-align:left;padding:6px\">JSON-RPC</th><th style=\"text-align:left;padding:6px\">gRPC</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">传输格式</td><td style=\"padding:6px\">JSON (文本)</td><td style=\"padding:6px\">Protobuf (二进制)</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">性能</td><td style=\"padding:6px\">中等</td><td style=\"padding:6px\">高（序列化快 3-10x）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">调试</td><td style=\"padding:6px\">易（可读 JSON）</td><td style=\"padding:6px\">难（需要工具反序列化）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">跨语言</td><td style=\"padding:6px\">天然（JSON）</td><td style=\"padding:6px\">需要 .proto + 代码生成</td></tr>\n<tr><td style=\"padding:6px\">流式</td><td style=\"padding:6px\">不支持</td><td style=\"padding:6px\">支持双向流</td></tr>\n</table>\n<h4>选型理由</h4>\n<ul>\n<li>Go + PHP 混合架构，PHP 生态对 JSON-RPC 支持最成熟</li>\n<li>业务场景不需要流式通信，JSON 可读性利于调试</li>\n<li>17 个服务规模下，JSON-RPC 的性能足够，无需引入 Protobuf 的复杂性</li>\n</ul>\n<div class=\"key-point\">如果面试官追问扩展：未来服务规模增大、需要更高性能时，可逐步引入 gRPC 替换核心链路，JSON-RPC 保留给 PHP 遗留服务</div>",
+        "id": "q-1ad9nas"
+      },
+      {
+        "q": "如何设计一个优雅关机 (Graceful Shutdown) 方案？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>核心步骤</h4>\n<pre><code>func main() {\n    // 1. 启动服务\n    srv := startServer()\n\n    // 2. 监听信号\n    quit := make(chan os.Signal, 1)\n    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)\n    <-quit\n\n    // 3. 超时保护\n    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\n    defer cancel()\n\n    // 4. 按依赖顺序关闭（与启动顺序相反）\n    g, ctx := errgroup.WithContext(ctx)\n\n    // 4.1 先停止接收新请求\n    g.Go(func() error { return srv.ShutdownWithContext(ctx) })\n\n    // 4.2 等待异步任务完成\n    g.Go(func() error { return asynqSrv.Shutdown() })\n\n    // 4.3 关闭消息队列消费者\n    g.Go(func() error { return listener.Close() })\n\n    if err := g.Wait(); err != nil {\n        log.Error(\"shutdown error\", err)\n    }\n\n    // 5. 最后关闭基础设施（DB/Redis）\n    db.Close()\n    rdb.Close()\n}</code></pre>\n<h4>关键点</h4>\n<ul>\n<li><b>超时保护</b>必须有，防止某组件 hang 住导致进程无法退出</li>\n<li>关闭顺序：流量入口 → 异步任务 → 消息消费 → 数据库连接</li>\n<li>健康检查端点应在 shutdown 开始时立即返回不健康，让 LB 摘掉节点</li>\n</ul>\n<div class=\"project-link\">简历关联：go-fast 框架支持 errgroup 并发管理与优雅关机（10 秒超时保护）</div>",
+        "id": "q-1ensob8"
+      },
+      {
+        "q": "DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>四个高频概念</h4>\n<ul>\n<li><b>实体 (Entity)</b>：有唯一身份标识，关注“它是谁”，即使属性变化也还是同一个对象，比如订单、用户</li>\n<li><b>值对象 (Value Object)</b>：没有独立身份，关注“它是什么”，通常不可变，比如金额、地址、时间区间</li>\n<li><b>聚合根 (Aggregate Root)</b>：聚合的一致性边界入口，外部只能通过聚合根访问内部对象，比如订单聚合根统一管理订单项和状态流转</li>\n<li><b>领域事件 (Domain Event)</b>：领域内已经发生的重要事实，用来解耦副作用逻辑，比如“订单已支付”触发积分发放和通知</li>\n</ul>\n<h4>怎么理解更像工程师</h4>\n<p>DDD 不是为了把目录改花，而是先定义业务边界，再让代码结构围绕边界组织，减少跨模块的隐式耦合。</p>\n<div class=\"key-point\">面试里别只背定义，最好顺手举一个电商场景：订单是实体，金额是值对象，订单是聚合根，“订单已支付”是领域事件。</div>",
+        "id": "q-fi8niu"
+      },
+      {
+        "q": "Go 项目如何实践 DDD？目录结构和分层怎么组织？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>推荐分层</h4>\n<pre><code>internal/\n  order/\n    domain/        // 实体、值对象、领域服务、仓储接口\n    application/   // 用例编排、事务边界、DTO 转换\n    infrastructure/ // DB、MQ、第三方实现\n    interfaces/    // HTTP / gRPC Handler</code></pre>\n<h4>职责划分</h4>\n<ul>\n<li><b>Domain</b>：只表达业务规则，不依赖数据库和 Web 框架</li>\n<li><b>Application</b>：负责编排用例、事务和权限校验</li>\n<li><b>Infrastructure</b>：实现仓储、缓存、消息和外部依赖</li>\n<li><b>Interfaces</b>：处理 HTTP / gRPC 请求与响应映射</li>\n</ul>\n<h4>落地注意点</h4>\n<ul>\n<li>不要把 DDD 变成“多一层文件夹”而没有业务边界</li>\n<li>先从复杂领域开始，例如订单、支付、库存，不必全项目一次性改造</li>\n<li>应用服务负责编排，领域对象负责规则，仓储负责持久化，边界要清</li>\n</ul>",
+        "id": "q-10q1978"
+      }
+    ]
+  },
+  {
+    "cat": "支付与交易系统",
+    "icon": "💳",
+    "color": "#22d3ee",
+    "items": [
+      {
+        "q": "你对接了 4 种支付网关，统一抽象层是怎么设计的？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>四层抽象架构</h4>\n<pre><code>// 第一层：Checkout（结账会话）\ntype CheckoutService interface {\n    Create(ctx context.Context, req CheckoutReq) (*Checkout, error)\n    // 生成商品快照、地址快照、计算金额\n}\n\n// 第二层：Payment（支付意图）\ntype PaymentService interface {\n    Create(ctx context.Context, checkout *Checkout) (*Payment, error)\n    // 根据支付方式路由到具体 gateway\n}\n\n// 第三层：PaymentTrade（支付交易）\ntype PaymentGateway interface {\n    CreateTrade(ctx context.Context, payment *Payment) (*Trade, error)\n    Capture(ctx context.Context, tradeId string) error\n    Refund(ctx context.Context, tradeId string, amount decimal.Decimal) error\n}\n\n// 第四层：Webhook（异步回调）\ntype WebhookHandler interface {\n    Verify(req *http.Request) ([]byte, error)  // 验签\n    Parse(payload []byte) (*WebhookEvent, error)\n    Handle(ctx context.Context, event *WebhookEvent) error\n}\n\n// 具体实现\ntype PayPalGateway struct{ ... }   // Standard/Advanced/Embed/Redirect\ntype StripeGateway struct{ ... }\ntype ApplePayGateway struct{ ... }\ntype GooglePayGateway struct{ ... }</code></pre>\n<h4>PayPal Express 快捷支付会话复用</h4>\n<p>用户首次 PayPal 支付后缓存 payer_id，后续支付跳过登录步骤。Capture 兜底：先尝试 authorize → capture，失败则走 direct capture</p>\n<div class=\"project-link\">简历关联：统一 Checkout→Payment→PaymentTrade→Webhook 四层抽象，支持 PayPal 4 种接入模式，实现 Express 快捷支付会话复用与 capture 兜底</div>",
+        "id": "q-atv685"
+      },
+      {
+        "q": "订单状态机如何设计？主子订单拆分架构怎么处理退款？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>状态机流转</h4>\n<pre><code>待支付 (pending)\n  ├─ 支付成功 → 待发货 (paid)\n  │   ├─ 已发货 → 待收货 (shipped)\n  │   │   ├─ 确认收货 → 已完成 (completed)\n  │   │   └─ 申请退款 → 退款中 (refunding)\n  │   └─ 申请退款 → 退款中 (refunding)\n  ├─ 支付超时 → 已取消 (cancelled)\n  └─ 用户取消 → 已取消 (cancelled)\n\n退款中 (refunding)\n  ├─ 退款成功 → 已退款 (refunded)\n  └─ 退款失败 → 待发货/待收货 (回退)</code></pre>\n<h4>主子订单拆分</h4>\n<pre><code>// 用户下单：多商品多店铺合并\n主订单 (master_order)\n  ├─ 子订单 A (store_1 的商品)\n  ├─ 子订单 B (store_2 的商品)\n  └─ 子订单 C (store_3 的商品)\n\n// 支付：主订单级别统一支付\n// 发货：子订单级别独立发货\n// 退款：子订单级别独立退款，主订单金额 = sum(子订单)</code></pre>\n<h4>OrderLog 审计</h4>\n<pre><code>type OrderLog struct {\n    OrderId   uint\n    Action    string    // \"create\" / \"pay\" / \"ship\" / \"refund\"\n    Operator  string    // 操作人（用户/系统/管理员）\n    Content   string    // 操作说明\n    Payload   JSON      // 快照数据\n    CreatedAt time.Time\n}</code></pre>\n<div class=\"key-point\">面试要点：强调幂等性 — 支付回调可能重复，必须通过订单状态判断是否已处理，避免重复发货或重复退款</div>",
+        "id": "q-k0d4gn"
+      },
+      {
+        "q": "跨境电商中多币种金额精度问题怎么解决？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>浮点数问题</h4>\n<pre><code>// 经典陷阱\n0.1 + 0.2 = 0.30000000000000004\n// 金融场景绝不能用 float</code></pre>\n<h4>你的双轨金额方案</h4>\n<pre><code>type OrderAmount struct {\n    // 基础币种（商品原始币种，如 CNY）\n    SubtotalPrice decimal.Decimal  // 小计\n    TotalPrice    decimal.Decimal  // 总价\n    PayPrice      decimal.Decimal  // 实付\n\n    // 结算币种（用户支付币种，如 USD）\n    SettleSubtotalPrice decimal.Decimal\n    SettleTotalPrice    decimal.Decimal\n    SettlePayPrice      decimal.Decimal\n\n    ExchangeRate decimal.Decimal   // 下单时锁定汇率\n    BaseCurrency string            // \"CNY\"\n    SettleCurrency string          // \"USD\"\n}</code></pre>\n<h4>关键设计</h4>\n<ul>\n<li>使用 <code>shopspring/decimal</code> 库，避免浮点精度丢失</li>\n<li>下单时<b>锁定汇率快照</b>，退款时按原汇率计算，不受汇率波动影响</li>\n<li>DB 中用 <code>DECIMAL(20,4)</code> 存储，Go 中全程 decimal 运算</li>\n<li>Checkout 时生成商品快照和地址快照，确保支付时数据不变</li>\n</ul>",
+        "id": "q-1y3mnwx"
+      },
+      {
+        "q": "支付系统如何保证幂等性？Webhook 重复回调怎么处理？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>幂等性保证</h4>\n<ul>\n<li><b>唯一订单号</b>：每个支付请求携带唯一 order_no，网关端去重</li>\n<li><b>状态机前置判断</b>：处理回调前先检查订单状态，已完成的直接返回成功</li>\n<li><b>数据库唯一约束</b>：payment_trade 表对 (gateway, trade_no) 建唯一索引</li>\n</ul>\n<h4>Webhook 处理流程</h4>\n<pre><code>func HandleWebhook(c *fiber.Ctx) error {\n    // 1. 验签（每个网关签名方式不同）\n    payload, err := gateway.Verify(c.Request())\n\n    // 2. 解析事件\n    event, err := gateway.Parse(payload)\n\n    // 3. 幂等检查\n    trade, err := findTrade(event.TradeNo)\n    if trade.Status == \"completed\" {\n        return c.SendStatus(200) // 已处理，直接返回成功\n    }\n\n    // 4. 加分布式锁（防止并发回调）\n    lock := redis.Lock(\"webhook:\" + event.TradeNo, 30*time.Second)\n    if !lock.Acquire() { return c.SendStatus(200) }\n    defer lock.Release()\n\n    // 5. 业务处理（更新订单状态、触发发货等）\n    // 6. 返回 200（告诉网关不要重试）\n}</code></pre>\n<div class=\"key-point\">PayPal/Stripe 都会在收到非 2xx 响应时重试 Webhook（最多重试数天），必须做好幂等处理</div>",
+        "id": "q-15z7zx"
+      }
+    ]
+  },
+  {
+    "cat": "搜索引擎",
+    "icon": "🔍",
+    "color": "#34d399",
+    "items": [
+      {
+        "q": "倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>倒排索引原理</h4>\n<pre><code>// 正排索引（文档 → 词）\ndoc1: \"Go 语言并发编程\"\ndoc2: \"Go 语言网络编程\"\n\n// 倒排索引（词 → 文档列表）\n\"Go\"   → [doc1, doc2]\n\"并发\" → [doc1]\n\"网络\" → [doc2]\n\"编程\" → [doc1, doc2]</code></pre>\n<h4>go-es 兼容实现</h4>\n<pre><code>// 将 ES DSL 转换为 Bluge 查询\nfunc ParseQuery(dsl map[string]interface{}) bluge.Query {\n    if boolQ, ok := dsl[\"bool\"]; ok {\n        return parseBoolQuery(boolQ)  // must/should/must_not → AND/OR/NOT\n    }\n    if matchQ, ok := dsl[\"match\"]; ok {\n        // 先分词，再 OR 组合\n        return parseMatchQuery(matchQ)\n    }\n    if termQ, ok := dsl[\"term\"]; ok {\n        return bluge.NewTermQuery(value) // 精确匹配\n    }\n    if rangeQ, ok := dsl[\"range\"]; ok {\n        return parseRangeQuery(rangeQ)   // gte/lte → NumericRange\n    }\n    // Geo, Fuzzy 类似...\n}</code></pre>\n<h4>Rendezvous 一致性哈希分片</h4>\n<ul>\n<li>每个分片一个 Bluge 索引实例</li>\n<li>写入时通过 Rendezvous Hash 确定文档归属分片</li>\n<li>查询时并行查所有分片，合并排序后返回</li>\n<li>对比 Consistent Hash Ring：Rendezvous Hash 分布更均匀，增删节点时迁移数据更少</li>\n</ul>\n<div class=\"project-link\">简历关联：go-es 基于 Bluge 引擎，兼容 ES Query DSL (Bool/Match/Term/Range/Geo/Fuzzy)，Rendezvous 一致性哈希分片 + gse 中文分词 + WAL 事务日志</div>",
+        "id": "q-1eytra5"
+      },
+      {
+        "q": "WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>WAL 原理</h4>\n<p>所有修改操作<b>先写日志，再写数据</b>。崩溃恢复时重放日志即可恢复到一致状态</p>\n<h4>go-es 中的 WAL 实现</h4>\n<pre><code>type WAL struct {\n    file   *os.File\n    mu     sync.Mutex\n    offset int64\n}\n\nfunc (w *WAL) Write(op Operation) error {\n    w.mu.Lock()\n    defer w.mu.Unlock()\n    // 1. 序列化操作（type + docId + data + checksum）\n    entry := encodeEntry(op)\n    // 2. 写入日志文件（顺序追加，高性能）\n    _, err := w.file.Write(entry)\n    // 3. fsync 确保持久化\n    return w.file.Sync()\n}\n\n// 崩溃恢复\nfunc (w *WAL) Recover(index *bluge.Writer) error {\n    entries := w.ReadAll()\n    for _, entry := range entries {\n        // 重放：将未持久化的操作重新应用到索引\n        switch entry.Type {\n        case OpIndex:  index.Update(entry.Doc)\n        case OpDelete: index.Delete(entry.DocId)\n        }\n    }\n    return w.Truncate() // 恢复完毕，截断日志\n}</code></pre>\n<h4>为什么需要 WAL</h4>\n<ul>\n<li>Bluge 索引写入有 batch commit 延迟，中间崩溃会丢数据</li>\n<li>WAL 是顺序写（极快），索引是随机写（较慢），WAL 填补了两者之间的安全间隙</li>\n</ul>",
+        "id": "q-1xdj11h"
+      }
+    ]
+  },
+  {
+    "cat": "安全防护",
+    "icon": "🛡️",
+    "color": "#f472b6",
+    "items": [
+      {
+        "q": "JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>JWT 结构</h4>\n<p><code>Header.Payload.Signature</code>（Base64URL 编码）</p>\n<h4>HMAC vs RSA</h4>\n<ul>\n<li><b>HMAC (HS256)</b>：对称加密，签发和验证使用同一个密钥。适合单体应用</li>\n<li><b>RSA (RS256)</b>：非对称加密，私钥签发、公钥验证。适合微服务（各服务只需公钥即可验证）</li>\n</ul>\n<h4>微服务场景选 RSA 的原因</h4>\n<pre><code>// Auth Service（持有私钥）\ntoken := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)\nsignedToken, _ := token.SignedString(privateKey)\n\n// 其他 Service（只需公钥验证）\ntoken, _ := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {\n    return publicKey, nil  // 公钥泄露不影响安全\n})</code></pre>\n<ul>\n<li>私钥只在 Auth Service，其他 17 个服务不需要接触私钥</li>\n<li>公钥可以公开分发，降低密钥管理复杂度</li>\n</ul>",
+        "id": "q-1o4zsc6"
+      },
+      {
+        "q": "你的自研 WAF 中间件是怎么做访客风险分析的？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>多层风险分析</h4>\n<pre><code>func WAFMiddleware(c *fiber.Ctx) error {\n    risk := &RiskScore{}\n\n    // 1. ASN 识别（云服务商 IP 段）\n    asn := lookupASN(c.IP())\n    if isCloudProvider(asn) { // AWS/GCP/Azure/阿里云\n        risk.Add(30, \"cloud_provider_ip\")\n    }\n\n    // 2. 代理头伪造检测\n    if hasConflictingProxyHeaders(c) {\n        // X-Forwarded-For 和实际 IP 不一致\n        risk.Add(20, \"proxy_header_forgery\")\n    }\n\n    // 3. WAF 正则匹配（SQL注入/XSS/路径遍历）\n    if matched, rule := matchWAFRules(c); matched {\n        risk.Add(50, \"waf_rule: \" + rule)\n    }\n\n    // 4. 高频访问防护（滑动窗口）\n    count := redis.Incr(\"rate:\" + c.IP()) // 1 分钟窗口\n    if count > threshold {\n        risk.Add(40, \"high_frequency\")\n        // 触发 10 分钟冷却\n        redis.Set(\"cooldown:\" + c.IP(), 1, 10*time.Minute)\n    }\n\n    // 5. 超过阈值 → 拦截\n    if risk.Total() >= 80 {\n        return c.Status(403).JSON(...)\n    }\n\n    // 6. 异步批处理：将访客记录推入队列\n    visitorQueue <- VisitorLog{IP: c.IP(), Risk: risk, ...}\n    return c.Next()\n}\n\n// 后台 worker 批量写入，不阻塞主链路\ngo func() {\n    batch := make([]VisitorLog, 0, 100)\n    ticker := time.NewTicker(5 * time.Second)\n    for {\n        select {\n        case v := <-visitorQueue: batch = append(batch, v)\n        case <-ticker.C: flushBatch(batch); batch = batch[:0]\n        }\n    }\n}()</code></pre>\n<div class=\"project-link\">简历关联：自研轻量级 WAF 中间件，集成 ASN 识别、代理头伪造检测、WAF 正则匹配、高频访问防护（1 分钟窗口 + 10 分钟冷却），异步批处理</div>",
+        "id": "q-2zizcr"
+      },
+      {
+        "q": "AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>为什么不直接用 RSA</h4>\n<ul>\n<li>RSA 加密数据长度受限（2048 位密钥最多加密 245 字节）</li>\n<li>RSA 加密速度极慢（比 AES 慢约 1000 倍）</li>\n</ul>\n<h4>混合加密流程</h4>\n<pre><code>// 加密\n1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes)\n2. 用 AES-CBC 加密明文数据（对称，快速，无长度限制）\n3. 用 RSA 公钥加密 AES 密钥（非对称，只加密 32 bytes）\n4. 发送：RSA(AES_Key) + IV + AES_CBC(Data)\n\n// 解密\n1. 用 RSA 私钥解密出 AES 密钥\n2. 用 AES 密钥 + IV 解密数据</code></pre>\n<h4>CBC 模式注意事项</h4>\n<ul>\n<li>需要 PKCS7 Padding（明文长度对齐到块大小 16 字节）</li>\n<li>IV 必须每次随机生成，不能复用（否则相同明文产生相同密文）</li>\n<li>生产中建议用 AES-GCM（自带认证，防篡改）替代 AES-CBC</li>\n</ul>",
+        "id": "q-1fg3w7k"
+      }
+    ]
+  },
+  {
+    "cat": "WebSocket 与实时通信",
+    "icon": "🔌",
+    "color": "#fb923c",
+    "items": [
+      {
+        "q": "WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？",
+        "diff": "easy",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>对比</h4>\n<ul>\n<li><b>HTTP 长轮询</b>：客户端发请求 → 服务端 hold 住 → 有数据时响应 → 客户端再次请求。每次都有完整 HTTP 头，单向通信</li>\n<li><b>WebSocket</b>：一次握手（HTTP Upgrade）后保持<b>全双工</b>长连接，双向实时通信，头部开销极小（2-14 bytes）</li>\n</ul>\n<h4>你项目中的 3 个 WebSocket 场景</h4>\n<ul>\n<li><b>AI 任务状态推送</b>：AI 文章生成/SEO 优化是异步任务，通过 WebSocket 实时推送进度和结果（生成中→完成→错误映射）</li>\n<li><b>商品导入进度</b>：从 Shopify/微店批量导入商品时，实时通知前端当前进度（已导入/总数/失败数）</li>\n<li><b>任务编排状态</b>：Asynq 异步任务的执行状态变更实时推送到管理后台</li>\n</ul>\n<div class=\"key-point\">Fiber 中 WebSocket 基于 gorilla/websocket 或 fasthttp/websocket 封装，每个连接一个 goroutine 读 + 一个 goroutine 写</div>",
+        "id": "q-u0lewn"
+      },
+      {
+        "q": "WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>连接管理 Hub</h4>\n<pre><code>type Hub struct {\n    connections map[string]*Connection  // userId → conn\n    mu          sync.RWMutex\n    register    chan *Connection\n    unregister  chan *Connection\n    broadcast   chan Message\n}\n\nfunc (h *Hub) Run() {\n    for {\n        select {\n        case conn := <-h.register:\n            h.mu.Lock()\n            h.connections[conn.UserId] = conn\n            h.mu.Unlock()\n        case conn := <-h.unregister:\n            h.mu.Lock()\n            delete(h.connections, conn.UserId)\n            h.mu.Unlock()\n        case msg := <-h.broadcast:\n            h.mu.RLock()\n            for _, conn := range h.connections {\n                conn.Send(msg)\n            }\n            h.mu.RUnlock()\n        }\n    }\n}</code></pre>\n<h4>心跳保活</h4>\n<pre><code>// 服务端定期发 Ping，客户端回 Pong\n// 超过 60 秒无 Pong 则关闭连接\nconn.SetPongHandler(func(string) error {\n    conn.SetReadDeadline(time.Now().Add(60 * time.Second))\n    return nil\n})</code></pre>\n<h4>多实例广播</h4>\n<p>多个服务实例时，用户可能连在不同实例上。通过 Redis Pub/Sub 广播消息到所有实例，各实例再推送给自己管理的连接</p>",
+        "id": "q-10vreb4"
+      }
+    ]
+  },
+  {
+    "cat": "Docker 与部署",
+    "icon": "🐳",
+    "color": "#0ea5e9",
+    "items": [
+      {
+        "q": "Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>多阶段构建</h4>\n<pre><code># 阶段一：编译\nFROM golang:1.22-alpine AS builder\nWORKDIR /app\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY . .\nRUN CGO_ENABLED=0 GOOS=linux go build -ldflags=\"-s -w\" -o /app/server ./cmd/server\n\n# 阶段二：运行\nFROM alpine:3.19\nRUN apk --no-cache add ca-certificates tzdata\nCOPY --from=builder /app/server /usr/local/bin/server\nCOPY --from=builder /app/configs /etc/app/configs\nEXPOSE 8080\nENTRYPOINT [\"server\"]</code></pre>\n<h4>好处</h4>\n<ul>\n<li>最终镜像不包含 Go 编译工具链，体积从 ~1GB 缩减到 ~20MB</li>\n<li><code>CGO_ENABLED=0</code> 生成静态二进制，可用 <code>scratch</code> 或 <code>distroless</code> 更小的基础镜像</li>\n<li><code>-ldflags=\"-s -w\"</code> 去掉符号表和调试信息，进一步缩小</li>\n</ul>",
+        "id": "q-7n8n2h"
+      },
+      {
+        "q": "容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>完整链路</h4>\n<pre><code># K8s Deployment 配置\nspec:\n  containers:\n  - name: app\n    livenessProbe:     # 存活探针：失败则重启容器\n      httpGet: { path: /healthz, port: 8080 }\n      periodSeconds: 10\n    readinessProbe:    # 就绪探针：失败则从 Service 摘除\n      httpGet: { path: /readyz, port: 8080 }\n      periodSeconds: 5\n    lifecycle:\n      preStop:          # 在 SIGTERM 前执行\n        exec:\n          command: [\"sh\", \"-c\", \"sleep 5\"]  # 等待 LB 摘掉流量\n  terminationGracePeriodSeconds: 30</code></pre>\n<h4>滚动更新流程</h4>\n<ol>\n<li>K8s 发送 SIGTERM 给 Pod，同时将 Pod 从 Service Endpoints 移除</li>\n<li>preStop hook 执行（sleep 5s 等 LB 生效）</li>\n<li>应用收到 SIGTERM，readiness 返回不健康，开始优雅关机</li>\n<li>等待处理中的请求完成（你的 10 秒超时保护）</li>\n<li>关闭 DB/Redis 连接，进程退出</li>\n<li>超过 terminationGracePeriodSeconds 仍未退出则 SIGKILL 强杀</li>\n</ol>",
+        "id": "q-1ry7gt7"
+      },
+      {
+        "q": "Go 项目的 CI/CD 流程一般怎么设计？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>一条常见流水线</h4>\n<ol>\n<li>代码提交后先跑静态检查和单元测试，例如 <code>golangci-lint</code>、<code>go test ./...</code></li>\n<li>构建可执行文件或 Docker 镜像，产出可部署制品</li>\n<li>将镜像推到镜像仓库，如 GHCR、Docker Hub、ECR</li>\n<li>部署到测试环境，做 smoke test 和关键路径校验</li>\n<li>通过后再进入生产发布，例如滚动更新或灰度发布</li>\n</ol>\n<h4>关键原则</h4>\n<ul>\n<li>把“是否可合并”前置到 CI，而不是等上线后再发现问题</li>\n<li>构建产物要唯一可追踪，最好带 commit SHA 或版本号</li>\n<li>部署后要有健康检查和回滚手段，不能只有发布没有验证</li>\n</ul>\n<div class=\"key-point\">这题别只背工具名，重点是讲清楚：校验、制品、部署、验证、回滚这五步。</div>",
+        "id": "q-1h0a9vw"
+      },
+      {
+        "q": "灰度发布和金丝雀发布怎么实现？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>核心目标</h4>\n<p>不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。</p>\n<h4>常见实现方式</h4>\n<ul>\n<li><b>Kubernetes</b>：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流</li>\n<li><b>Service Mesh</b>：如 Istio 通过 <code>VirtualService</code> 按比例分流，例如 10% → 30% → 100%</li>\n<li><b>应用层</b>：按用户 ID、租户 ID、地区或白名单做 Feature Flag 分桶</li>\n</ul>\n<h4>发布时看什么</h4>\n<ul>\n<li>错误率、延迟、CPU/内存、下游依赖异常</li>\n<li>关键业务指标是否劣化，比如下单成功率、支付成功率</li>\n<li>一旦指标异常，立刻切回旧版本，这就是灰度发布真正的价值</li>\n</ul>",
+        "id": "q-1dy8w42"
+      }
+    ]
+  },
+  {
+    "cat": "项目场景深挖",
+    "icon": "🎯",
+    "color": "#e879f9",
+    "items": [
+      {
+        "q": "「游客订单归户」是什么？购物车串单问题怎么解决的？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>游客订单归户</h4>\n<p>用户未登录时以游客身份（visitorId，通常存在 Cookie/localStorage）浏览、加购、甚至下单。用户登录/注册后，需要将游客期间的数据归属到用户账号</p>\n<pre><code>func MergeVisitorData(userId uint, visitorId string) error {\n    // 1. 合并购物车\n    visitorCart := getCartByVisitorId(visitorId)\n    userCart := getCartByUserId(userId)\n    mergedCart := mergeCartItems(userCart, visitorCart)\n    saveCart(userId, mergedCart)\n\n    // 2. 关联历史订单\n    db.Model(&Order{}).\n        Where(\"visitor_id = ? AND user_id = 0\", visitorId).\n        Update(\"user_id\", userId)\n\n    // 3. 清理游客数据\n    deleteVisitorCart(visitorId)\n    return nil\n}</code></pre>\n<h4>购物车串单问题</h4>\n<p>场景：游客 A 和游客 B 在同一浏览器（如公用电脑），购物车勾选列表可能串到另一个人</p>\n<pre><code>// 问题根因：勾选状态存在 Redis，key 只用了 visitorId\n// 但 visitorId 的 Cookie 可能被多人共享\n\n// 解决方案：\n// 1. 勾选列表绑定 session（而非 visitorId）\n// 2. 登录后立即清除游客态的勾选状态\n// 3. 切换用户时重置购物车勾选\nfunc (c *CartService) GetCheckedItems(ctx context.Context) []CartItem {\n    sessionId := getSessionId(ctx)  // 绑定 session 而非 visitor\n    checkedIds := redis.SMembers(\"cart_checked:\" + sessionId)\n    return filterByIds(c.GetAll(ctx), checkedIds)\n}</code></pre>\n<div class=\"project-link\">简历关联：通过 visitorId 透传完成登录注册后历史订单与购物车的自动关联，并解决购物车勾选列表游客串单问题</div>",
+        "id": "q-1x4gxxf"
+      },
+      {
+        "q": "第三方平台商品导入：图片去重和异步下载重试机制怎么实现？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>图片去重</h4>\n<pre><code>// 基于图片 URL 的 MD5 去重\nfunc DeduplicateImages(images []string) []string {\n    seen := make(map[string]bool)\n    result := make([]string, 0)\n    for _, url := range images {\n        hash := md5.Sum([]byte(url))\n        key := hex.EncodeToString(hash[:])\n        if !seen[key] {\n            seen[key] = true\n            result = append(result, url)\n        }\n    }\n    return result\n}\n\n// 更严格：下载后对图片内容做 perceptual hash，避免同图不同 URL</code></pre>\n<h4>异步下载 + 重试</h4>\n<pre><code>// Worker Pool + 指数退避重试\nfunc DownloadImages(ctx context.Context, urls []string) {\n    sem := make(chan struct{}, 5) // 5 并发\n    var wg sync.WaitGroup\n\n    for i, url := range urls {\n        wg.Add(1)\n        go func(idx int, u string) {\n            defer wg.Done()\n            sem <- struct{}{}\n            defer func() { <-sem }()\n\n            var err error\n            for retry := 0; retry < 3; retry++ {\n                err = downloadAndSave(ctx, u)\n                if err == nil {\n                    // WebSocket 推送进度\n                    pushProgress(idx, len(urls), \"success\")\n                    return\n                }\n                time.Sleep(time.Duration(1<<retry) * time.Second) // 指数退避\n            }\n            pushProgress(idx, len(urls), \"failed: \"+err.Error())\n        }(i, url)\n    }\n    wg.Wait()\n}</code></pre>\n<div class=\"project-link\">简历关联：对接 Shopify/微店 API，实现商品批量导入、图片去重与异步下载重试、WebSocket 导入进度通知</div>",
+        "id": "q-2mq2hq"
+      },
+      {
+        "q": "请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>分片上传三步</h4>\n<pre><code>// 1. ChunkInit — 初始化上传会话\nuploadId, err := storage.ChunkInit(\"video.mp4\", fileSize)\n// Local: 创建临时目录存放分片\n// OSS:  调用 InitiateMultipartUpload 获取 uploadId\n\n// 2. ChunkPart — 上传每个分片\nfor partNum := 1; partNum <= totalParts; partNum++ {\n    reader := io.NewSectionReader(file, offset, chunkSize)\n    err := storage.ChunkPart(uploadId, partNum, reader)\n    // Local: 写入 tmp/{uploadId}/part_{partNum}\n    // OSS:  调用 UploadPart\n}\n\n// 3. ChunkComplete — 合并分片\nurl, err := storage.ChunkComplete(uploadId)\n// Local: 按顺序合并所有分片文件，删除临时目录\n// OSS:  调用 CompleteMultipartUpload</code></pre>\n<h4>为什么用 io.ReadSeeker / io.ReadCloser</h4>\n<ul>\n<li><code>io.ReadSeeker</code>：支持 <code>Seek()</code>，OSS SDK 需要在失败重试时重新定位到分片起始位置重新读取</li>\n<li><code>io.ReadCloser</code>：用于流式传输场景，读完即释放，不需要缓冲整个文件到内存</li>\n<li>使用标准接口而非 <code>[]byte</code>，支持大文件（如几 GB 的视频）不占内存</li>\n</ul>",
+        "id": "q-1dqlfpk"
+      },
+      {
+        "q": "你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>整体架构</h4>\n<pre><code>用户请求 → API → 创建异步任务 (Asynq)\n                        ↓\n              Task Worker 执行 AI 调用\n                        ↓\n              WebSocket 推送实时状态\n                        ↓\n              结果入库 → 用户编辑 → 一键应用</code></pre>\n<h4>任务编排</h4>\n<pre><code>// AI 文章生成任务链\nfunc HandleArticleGeneration(ctx context.Context, t *asynq.Task) error {\n    taskId := getTaskId(t)\n    pushStatus(taskId, \"generating\")    // WS 推送\n\n    // 1. 调用 AI API 生成文章\n    result, err := aiClient.Generate(ctx, prompt)\n    if err != nil {\n        pushStatus(taskId, \"error\", mapError(err))  // 错误映射\n        return err\n    }\n\n    // 2. 存储生成结果（草稿状态）\n    saveAsDraft(taskId, result)\n    pushStatus(taskId, \"completed\", result.Summary)\n    return nil\n}\n\n// SEO 优化建议：生成 → 用户编辑 → 一键应用\nfunc HandleSEOOptimization(ctx context.Context, t *asynq.Task) error {\n    product := getProduct(t)\n    suggestions := aiClient.GenerateSEO(ctx, product)\n    // 生成 title/description/keywords 建议\n    // 用户在前端编辑确认后，调用 apply 接口一键更新\n    saveSuggestions(product.Id, suggestions)\n    return nil\n}</code></pre>\n<h4>错误映射</h4>\n<pre><code>// AI 接口错误 → 用户友好提示\nfunc mapError(err error) string {\n    switch {\n    case errors.Is(err, context.DeadlineExceeded):\n        return \"AI 生成超时，请稍后重试\"\n    case isRateLimitError(err):\n        return \"请求频率过高，请 1 分钟后重试\"\n    case isTokenLimitError(err):\n        return \"内容过长，请缩短输入\"\n    default:\n        return \"生成失败，请重试\"\n    }\n}</code></pre>\n<div class=\"project-link\">简历关联：从零构建 AI Agent 应用模块，AI 文章定时生成 + 产品 SEO 优化建议生成→用户编辑→一键应用，WebSocket 实时状态推送与错误映射</div>",
+        "id": "q-teeahw"
+      },
+      {
+        "q": "为什么选择 Go + PHP 混合架构而不是纯 Go？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>核心原因</h4>\n<ul>\n<li><b>Go</b> 负责高并发、长连接、任务调度和网关层，适合扛流量和做基础设施能力</li>\n<li><b>PHP</b> 负责插件系统、动态业务逻辑和电商场景下快速迭代，生态成熟、业务团队改动成本低</li>\n</ul>\n<h4>为什么不是纯 Go</h4>\n<ul>\n<li>纯 Go 当然能做，但会推高业务改造成本，尤其是已有 PHP 插件和后台逻辑已经很重的时候</li>\n<li>混合架构的目标不是追求技术纯度，而是在性能、迭代速度和迁移成本之间取平衡</li>\n</ul>\n<h4>落地方式</h4>\n<p>系统采用 Go 作为高性能网关层，PHP 作为灵活业务层，通过 RPC 桥接。这样既能利用 Go 的并发性能，又能保留 PHP 生态对电商插件和模板体系的支持。</p>\n<div class=\"project-link\">简历关联：Shoply 采用 Go + PHP 双引擎架构，Go 侧承接性能敏感链路，PHP 侧承接高频业务迭代。</div>",
+        "id": "q-1logdyo"
+      },
+      {
+        "q": "Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>标准执行顺序</h4>\n<ol>\n<li><code>prepareBaseItems</code>：预校验商品、库存和原价</li>\n<li><code>applyPromotions</code>：计算活动满减</li>\n<li><code>applyCoupons</code>：计算优惠券</li>\n<li><code>applyExternalDiscounts</code>：计算联盟或外部折扣</li>\n<li><code>applyShipping</code>：基于折后金额判断运费和免邮门槛</li>\n<li><code>applyTax</code>：基于配置和折后金额计算税费</li>\n<li><code>summarize</code>：汇总金额、处理精度补偿和改价容错</li>\n<li><code>applyCurrency</code>：最后统一做多币种换算</li>\n</ol>\n<h4>为什么顺序不能乱</h4>\n<ul>\n<li>优惠必须先算，否则运费免邮门槛会基于错误的金额判断</li>\n<li>税费通常依赖折后金额，且某些场景运费也要参与计税</li>\n<li>汇率转换必须最后做，否则每一步都换算会放大精度误差</li>\n</ul>\n<div class=\"key-point\">面试加分：这个题本质在考你能不能把复杂结算逻辑拆成可测试、可组合、可解释的 Pipeline。</div>",
+        "id": "q-1mw1c5q"
+      },
+      {
+        "q": "Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三层模型</h4>\n<ul>\n<li><b>Plan</b>：套餐定义，如 Free / Pro / Enterprise</li>\n<li><b>Quota</b>：资源上限，如商品数、员工数、自定义域名数</li>\n<li><b>Feature</b>：布尔能力开关，如某些高级功能是否启用</li>\n</ul>\n<h4>运行时校验</h4>\n<p>调用 <code>Assert*</code> 方法时先加载当前店铺套餐快照，再读取真实资源用量，判断 <code>used + incoming &lt;= limit</code> 是否成立；超限则记录日志并返回业务错误。</p>\n<h4>为什么不用统一中间件</h4>\n<ul>\n<li>不同资源的校验时机不同，创建商品、绑定域名、触发召回任务分别发生在不同业务点</li>\n<li>Assert 模式调用点清晰，日志里还能通过 <code>source</code> 参数追踪到底是哪个入口触发的</li>\n<li>对复杂业务来说，这比“所有请求都过一层中间件”更精确也更容易维护</li>\n</ul>\n<div class=\"project-link\">简历关联：Shoply 的套餐系统采用 Plan + Quota + Feature 三层模型，并通过 Assert 模式做增量拦截。</div>",
+        "id": "q-123b1zo"
+      },
+      {
+        "q": "UUFind 的跨平台商品统一标识是怎么设计的？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>问题背景</h4>\n<p>1688、淘宝、Shopify 等平台的商品 ID 体系不同，直接拿原始平台 ID 做主键会导致跨平台聚合、去重和回显都很难统一。</p>\n<h4>设计思路</h4>\n<ul>\n<li>定义平台无关的统一商品实体，如 <code>UufindProduct</code>，作为内部主标识</li>\n<li>各平台原始商品通过关联表映射到统一实体，例如记录平台类型、平台商品 ID、店铺信息和同步状态</li>\n<li>查询时优先命中统一实体，再按平台信息回查原始详情，实现聚合展示和二次加工</li>\n</ul>\n<h4>好处</h4>\n<ul>\n<li>同一商品可以挂多个来源，方便做比价、聚合和去重</li>\n<li>上层业务不需要关心各平台字段差异，只依赖统一模型</li>\n<li>后续新增平台时，只要新增映射层，不需要改核心业务模型</li>\n</ul>\n<div class=\"project-link\">简历关联：UUFind 通过统一商品标识模型，把多平台原始商品映射到同一业务实体，支撑聚合检索和数据治理。</div>",
+        "id": "q-esz930"
+      },
+      {
+        "q": "Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三种常见技巧</h4>\n<ul>\n<li><b>Few-shot</b>：给模型几个输入输出示例，适合让输出格式更稳定</li>\n<li><b>Chain-of-Thought</b>：引导模型分步推理，适合复杂推导、规划和解释型任务</li>\n<li><b>ReAct</b>：让模型在“思考”和“调用工具”之间交替进行，适合 Agent 场景</li>\n</ul>\n<h4>工程上怎么用</h4>\n<ul>\n<li>结构化输出任务优先用 Few-shot + JSON 约束</li>\n<li>复杂任务拆解优先用分步提示和中间状态</li>\n<li>需要查资料、算结果、调接口时，用 ReAct 或工具调用链</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 AI Agent 模块如果要稳定生成文章或 SEO 建议，核心不是“提示词越长越好”，而是提示策略和工具编排要匹配任务。</div>",
+        "id": "q-10vccg3"
+      },
+      {
+        "q": "LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>标准流程</h4>\n<ol>\n<li>文档切块并生成 Embedding</li>\n<li>把向量存到向量库，如 pgvector、Milvus、Weaviate</li>\n<li>用户提问时先做 Query Embedding</li>\n<li>召回最相关片段，拼接到 Prompt 里</li>\n<li>LLM 基于检索到的上下文生成回答</li>\n</ol>\n<h4>为什么常比直接塞长上下文更实用</h4>\n<ul>\n<li>上下文窗口有限，RAG 能把真正相关的信息捞出来</li>\n<li>文档更新时只要重建索引，不必频繁改 Prompt</li>\n<li>更容易做来源引用、权限隔离和内容审计</li>\n</ul>\n<h4>常见坑</h4>\n<ul>\n<li>切块太大导致召回不准，太小又缺上下文</li>\n<li>Embedding 模型和业务语料不匹配</li>\n<li>只做召回不做重排，导致最终上下文质量不稳</li>\n</ul>",
+        "id": "q-gebpar"
+      }
+    ]
+  },
+  {
+    "cat": "高频手撕代码",
+    "icon": "✍️",
+    "color": "#facc15",
+    "items": [
+      {
+        "q": "用 Go 实现一个并发安全的 LRU Cache",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<pre><code>type LRUCache struct {\n    capacity int\n    mu       sync.Mutex\n    list     *list.List                    // 双向链表（最近使用 → 最久未用）\n    cache    map[string]*list.Element      // key → 链表节点\n}\n\ntype entry struct {\n    key   string\n    value interface{}\n}\n\nfunc NewLRUCache(cap int) *LRUCache {\n    return &LRUCache{\n        capacity: cap,\n        list:     list.New(),\n        cache:    make(map[string]*list.Element),\n    }\n}\n\nfunc (c *LRUCache) Get(key string) (interface{}, bool) {\n    c.mu.Lock()\n    defer c.mu.Unlock()\n    if elem, ok := c.cache[key]; ok {\n        c.list.MoveToFront(elem)  // 移到链表头部\n        return elem.Value.(*entry).value, true\n    }\n    return nil, false\n}\n\nfunc (c *LRUCache) Put(key string, value interface{}) {\n    c.mu.Lock()\n    defer c.mu.Unlock()\n    if elem, ok := c.cache[key]; ok {\n        c.list.MoveToFront(elem)\n        elem.Value.(*entry).value = value\n        return\n    }\n    if c.list.Len() >= c.capacity {\n        // 淘汰链表尾部（最久未使用）\n        tail := c.list.Back()\n        c.list.Remove(tail)\n        delete(c.cache, tail.Value.(*entry).key)\n    }\n    elem := c.list.PushFront(&entry{key, value})\n    c.cache[key] = elem\n}</code></pre>\n<div class=\"key-point\">复杂度：Get/Put 均为 O(1)。并发安全通过 sync.Mutex 实现，如需更高性能可用分片锁</div>",
+        "id": "q-hkgo2f"
+      },
+      {
+        "q": "用 Go 实现一个简单的 Worker Pool（限制并发数）",
+        "diff": "easy",
+        "tags": [],
+        "a": "<pre><code>type WorkerPool struct {\n    maxWorkers int\n    taskQueue  chan func()\n    wg         sync.WaitGroup\n}\n\nfunc NewWorkerPool(maxWorkers, queueSize int) *WorkerPool {\n    wp := &WorkerPool{\n        maxWorkers: maxWorkers,\n        taskQueue:  make(chan func(), queueSize),\n    }\n    wp.start()\n    return wp\n}\n\nfunc (wp *WorkerPool) start() {\n    for i := 0; i < wp.maxWorkers; i++ {\n        go func() {\n            for task := range wp.taskQueue {\n                task()\n                wp.wg.Done()\n            }\n        }()\n    }\n}\n\nfunc (wp *WorkerPool) Submit(task func()) {\n    wp.wg.Add(1)\n    wp.taskQueue <- task\n}\n\nfunc (wp *WorkerPool) Wait() {\n    wp.wg.Wait()\n}\n\nfunc (wp *WorkerPool) Shutdown() {\n    close(wp.taskQueue)\n}\n\n// 使用\npool := NewWorkerPool(5, 100)\nfor _, url := range urls {\n    u := url\n    pool.Submit(func() { download(u) })\n}\npool.Wait()\npool.Shutdown()</code></pre>",
+        "id": "q-qpqv9v"
+      },
+      {
+        "q": "用 Go 实现 singleflight（合并并发请求）",
+        "diff": "hard",
+        "tags": [],
+        "a": "<pre><code>type call struct {\n    wg  sync.WaitGroup\n    val interface{}\n    err error\n}\n\ntype SingleFlight struct {\n    mu sync.Mutex\n    m  map[string]*call\n}\n\nfunc (sf *SingleFlight) Do(key string, fn func() (interface{}, error)) (interface{}, error) {\n    sf.mu.Lock()\n    if sf.m == nil {\n        sf.m = make(map[string]*call)\n    }\n\n    // 如果已有相同 key 的请求在执行，等待结果\n    if c, ok := sf.m[key]; ok {\n        sf.mu.Unlock()\n        c.wg.Wait()           // 等待第一个请求完成\n        return c.val, c.err   // 共享结果\n    }\n\n    // 第一个请求，创建 call 并执行\n    c := &call{}\n    c.wg.Add(1)\n    sf.m[key] = c\n    sf.mu.Unlock()\n\n    c.val, c.err = fn()  // 实际执行\n    c.wg.Done()           // 唤醒等待者\n\n    sf.mu.Lock()\n    delete(sf.m, key)     // 清理\n    sf.mu.Unlock()\n\n    return c.val, c.err\n}\n\n// 使用场景：缓存击穿防护\nval, err := sf.Do(cacheKey, func() (interface{}, error) {\n    return db.Query(...)  // 只有一个请求打到 DB\n})</code></pre>\n<div class=\"key-point\">这就是 <code>golang.org/x/sync/singleflight</code> 的核心实现。理解它对回答缓存击穿问题非常加分</div>",
+        "id": "q-chozb9"
+      },
+      {
+        "q": "实现 Top K 问题（海量数据中找前 K 大的元素）",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>思路</h4>\n<p>维护一个大小为 <code>k</code> 的小顶堆。遍历所有元素时，如果当前值大于堆顶，就替换堆顶并重新下沉。遍历结束后，堆里保留的就是前 K 大元素。</p>\n<pre><code>type MinHeap []int\n\nfunc topK(nums []int, k int) []int {\n    h := &MinHeap{}\n    heap.Init(h)\n    for _, num := range nums {\n        if h.Len() < k {\n            heap.Push(h, num)\n            continue\n        }\n        if num > (*h)[0] {\n            heap.Pop(h)\n            heap.Push(h, num)\n        }\n    }\n    return *h\n}</code></pre>\n<div class=\"key-point\">时间复杂度 <code>O(n log k)</code>，空间复杂度 <code>O(k)</code>，这是面试里最标准的 Top K 解法。</div>",
+        "id": "q-i5famw"
+      },
+      {
+        "q": "实现一个简单的布隆过滤器（Bloom Filter）",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>核心思想</h4>\n<p>布隆过滤器用一个位数组和多个哈希函数表示集合。插入元素时，把多个哈希位置都置为 1；查询时只要有一个位置为 0，就一定不存在；全部为 1 则表示“可能存在”。</p>\n<pre><code>type Bloom struct {\n    bits []bool\n}\n\nfunc (b *Bloom) Add(s string) {\n    for _, idx := range []int{hash1(s), hash2(s), hash3(s)} {\n        b.bits[idx%len(b.bits)] = true\n    }\n}\n\nfunc (b *Bloom) MightContain(s string) bool {\n    for _, idx := range []int{hash1(s), hash2(s), hash3(s)} {\n        if !b.bits[idx%len(b.bits)] {\n            return false\n        }\n    }\n    return true\n}</code></pre>\n<h4>特点</h4>\n<ul>\n<li>优点：空间效率高，查询快</li>\n<li>缺点：有误判，不支持精准删除</li>\n<li>常见用途：缓存穿透防护、URL 去重、黑名单预判</li>\n</ul>",
+        "id": "q-dxyqet"
+      },
+      {
+        "q": "用 Go 实现生产者-消费者模型（channel + select）",
+        "diff": "easy",
+        "tags": [],
+        "a": "<pre><code>func main() {\n    ctx, cancel := context.WithCancel(context.Background())\n    defer cancel()\n\n    queue := make(chan int, 16)\n    var wg sync.WaitGroup\n\n    // producer\n    wg.Add(1)\n    go func() {\n        defer wg.Done()\n        for i := 0; i < 100; i++ {\n            select {\n            case queue <- i:\n            case <-ctx.Done():\n                return\n            }\n        }\n        close(queue)\n    }()\n\n    // consumers\n    for i := 0; i < 3; i++ {\n        wg.Add(1)\n        go func(worker int) {\n            defer wg.Done()\n            for {\n                select {\n                case v, ok := <-queue:\n                    if !ok {\n                        return\n                    }\n                    fmt.Println(worker, v)\n                case <-ctx.Done():\n                    return\n                }\n            }\n        }(i)\n    }\n\n    wg.Wait()\n}</code></pre>\n<div class=\"key-point\">这题别只写 happy path，最好带上 <code>close(channel)</code>、<code>context</code> 和优雅退出，面试官会更认可。</div>",
+        "id": "q-15zi8zt"
+      },
+      {
+        "q": "实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？",
+        "diff": "hard",
+        "tags": [],
+        "a": "<h4>核心结构</h4>\n<p>跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。</p>\n<pre><code>type Node struct {\n    score float64\n    value string\n    next  []*Node\n}\n\nfunc search(head *Node, score float64) *Node {\n    cur := head\n    for level := len(head.next) - 1; level >= 0; level-- {\n        for cur.next[level] != nil && cur.next[level].score < score {\n            cur = cur.next[level]\n        }\n    }\n    return cur.next[0]\n}</code></pre>\n<h4>为什么适合有序集合</h4>\n<ul>\n<li>查询、插入、删除的平均复杂度都是 <code>O(log n)</code></li>\n<li>比平衡树更容易实现区间遍历和顺序扫描</li>\n<li>Redis 的 ZSet 在一定规模下就采用了 skiplist + hash 的组合</li>\n</ul>",
+        "id": "q-blkq5"
+      }
+    ]
+  },
+  {
+    "cat": "Kafka 消息队列",
+    "icon": "📨",
+    "color": "#10b981",
+    "items": [
+      {
+        "q": "Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>核心组件</h4>\n<ul>\n<li><b>Producer</b>：消息生产者，将消息发送到指定 Topic 的 Partition</li>\n<li><b>Broker</b>：Kafka 服务节点，负责存储消息。一个集群由多个 Broker 组成</li>\n<li><b>Topic</b>：消息的逻辑分类（如 order_events、payment_events）</li>\n<li><b>Partition</b>：Topic 的物理分片，每个 Partition 是一个有序的、不可变的消息序列（追加写入）</li>\n<li><b>Consumer Group</b>：消费者组，组内每个 Consumer 消费不同 Partition，实现并行消费</li>\n<li><b>Offset</b>：消费者在 Partition 中的读取位置，持久化在 __consumer_offsets Topic</li>\n</ul>\n<h4>为什么快</h4>\n<ul>\n<li><b>顺序写磁盘</b>：比随机写快 3 个数量级</li>\n<li><b>零拷贝 (sendfile)</b>：数据从磁盘直接到网卡，不经过用户态</li>\n<li><b>批量发送 + 压缩</b>：减少网络 IO 次数</li>\n<li><b>Page Cache</b>：利用 OS 页缓存，读写都在内存中完成</li>\n</ul>",
+        "id": "q-w5vcxz"
+      },
+      {
+        "q": "Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>Producer 端</h4>\n<pre><code>// acks 配置\nacks=0   // 不等确认，最快但可能丢消息\nacks=1   // Leader 写入即确认（Leader 挂了可能丢）\nacks=all // 所有 ISR 副本写入才确认（最安全）\n\n// 重试 + 幂等\nretries=3\nenable.idempotence=true  // Producer 幂等，防止重试导致重复</code></pre>\n<h4>Broker 端</h4>\n<pre><code>// 副本机制\nreplication.factor=3          // 每个 Partition 3 个副本\nmin.insync.replicas=2         // 至少 2 个副本同步才允许写入\nunclean.leader.election=false // 禁止非 ISR 副本成为 Leader</code></pre>\n<h4>Consumer 端</h4>\n<pre><code>// 手动提交 Offset（处理完再提交）\nenable.auto.commit=false\n\nfor msg := range consumer.Messages() {\n    process(msg)                    // 先处理\n    consumer.CommitMessage(msg)     // 再提交 offset\n}\n// 如果 process 失败不提交，下次消费会重试（at-least-once）</code></pre>\n<div class=\"key-point\">三端配合：acks=all + min.insync.replicas=2 + 手动提交 offset = 消息不丢失（at-least-once 语义）</div>",
+        "id": "q-13n8aa"
+      },
+      {
+        "q": "Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>排查步骤</h4>\n<ol>\n<li>查看 Consumer Lag：<code>kafka-consumer-groups.sh --describe --group mygroup</code></li>\n<li>确认是否是消费逻辑慢（DB 操作、外部 API 调用等）</li>\n<li>确认 Partition 数量是否足够</li>\n</ol>\n<h4>解决方案</h4>\n<ul>\n<li><b>增加 Partition + Consumer</b>：Consumer 数量不能超过 Partition 数（超过的会空闲）</li>\n<li><b>消费端批量处理</b>：批量写入 DB 而非逐条插入</li>\n<li><b>异步消费</b>：Consumer 接收后投入本地队列，Worker Pool 并行处理</li>\n<li><b>临时扩容</b>：新建一个 Topic（更多 Partition），用转发 Consumer 把积压消息转发过去，扩大消费并行度</li>\n</ul>\n<pre><code>// Go 消费端并行处理\nfunc consume(msg *kafka.Message) {\n    // 投入 Worker Pool 而非同步处理\n    pool.Submit(func() {\n        process(msg)\n        consumer.CommitMessage(msg)\n    })\n}</code></pre>",
+        "id": "q-rmp1qo"
+      },
+      {
+        "q": "Kafka 如何保证消息顺序性？全局有序和分区有序的区别？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>Kafka 的顺序保证</h4>\n<ul>\n<li><b>分区内有序</b>：单个 Partition 内的消息严格有序（追加写入）</li>\n<li><b>跨分区无序</b>：不同 Partition 之间没有顺序保证</li>\n</ul>\n<h4>需要顺序的场景怎么做</h4>\n<pre><code>// 方案一：同一个 Key 的消息发到同一个 Partition\nproducer.Produce(&kafka.Message{\n    TopicPartition: kafka.TopicPartition{Topic: &topic},\n    Key:   []byte(orderId),   // 用 orderId 做 Key\n    Value: payload,\n})\n// Kafka 对 Key 做 hash % partitionCount，相同 Key 固定到同一 Partition\n\n// 方案二：全局有序（极端场景）\n// Topic 只设 1 个 Partition（牺牲并行度，不推荐）</code></pre>\n<h4>顺序消费注意</h4>\n<ul>\n<li>Consumer 内不能用多线程并行处理同一个 Partition 的消息（否则乱序）</li>\n<li>如需并行：按 Key 分组，相同 Key 的消息由同一个 goroutine 处理</li>\n</ul>\n<div class=\"key-point\">岗位关联：腾讯赛事平台、百度广告平台都重度依赖 Kafka 做事件驱动，订单/支付/广告投放事件必须保证分区有序</div>",
+        "id": "q-1h9bs4f"
+      },
+      {
+        "q": "Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>对比</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">特性</th><th style=\"text-align:left;padding:6px\">Kafka</th><th style=\"text-align:left;padding:6px\">Asynq (Redis)</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">定位</td><td style=\"padding:6px\">分布式事件流平台</td><td style=\"padding:6px\">异步任务队列</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">消息保留</td><td style=\"padding:6px\">持久化，可重复消费</td><td style=\"padding:6px\">处理完即删除</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">吞吐量</td><td style=\"padding:6px\">百万级/秒</td><td style=\"padding:6px\">万级/秒</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">消费模式</td><td style=\"padding:6px\">发布/订阅 + Consumer Group</td><td style=\"padding:6px\">竞争消费</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">延时任务</td><td style=\"padding:6px\">不原生支持</td><td style=\"padding:6px\">原生支持 (ProcessIn)</td></tr>\n<tr><td style=\"padding:6px\">运维复杂度</td><td style=\"padding:6px\">高（ZK/KRaft + Broker 集群）</td><td style=\"padding:6px\">低（复用 Redis）</td></tr>\n</table>\n<h4>选型建议</h4>\n<ul>\n<li><b>Kafka</b>：大数据量事件流、日志收集、跨服务事件广播、需要消息回溯</li>\n<li><b>Asynq</b>：后台异步任务（邮件/通知）、定时任务、延时任务、业务量中等</li>\n</ul>\n<div class=\"project-link\">简历关联：你的项目用 Asynq 做营销召回（延时任务场景），如果面试岗位问 Kafka，可以说明为什么当前场景选 Asynq 以及何时该引入 Kafka</div>",
+        "id": "q-1e0b4eb"
+      }
+    ]
+  },
+  {
+    "cat": "计算机网络",
+    "icon": "🌐",
+    "color": "#818cf8",
+    "items": [
+      {
+        "q": "TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>三次握手</h4>\n<pre><code>客户端         服务端\n  |--- SYN (seq=x) --->|     ① 客户端发起连接\n  |<-- SYN+ACK (seq=y, ack=x+1) --|  ② 服务端确认并发起\n  |--- ACK (ack=y+1) -->|     ③ 客户端确认</code></pre>\n<p><b>为什么三次</b>：防止历史连接请求（旧 SYN）造成误连。两次的话服务端无法确认客户端是否收到 SYN+ACK</p>\n\n<h4>四次挥手</h4>\n<pre><code>主动方         被动方\n  |--- FIN --->|    ① 我要关闭发送\n  |<-- ACK ----|    ② 知道了（但我可能还有数据要发）\n  |<-- FIN ----|    ③ 我也发完了，关闭\n  |--- ACK --->|    ④ 收到，连接关闭</code></pre>\n<p><b>为什么四次</b>：TCP 全双工，每个方向需要独立关闭。被动方收到 FIN 时可能还有数据没发完，所以 ACK 和 FIN 分两步</p>\n\n<h4>TIME_WAIT</h4>\n<ul>\n<li>主动关闭方进入 TIME_WAIT，等待 2MSL（通常 60 秒）</li>\n<li>原因：(1) 确保最后的 ACK 到达对方 (2) 让旧连接的迟到报文在网络中消亡</li>\n<li>服务端大量 TIME_WAIT 解决：<code>tcp_tw_reuse</code>、连接池复用</li>\n</ul>",
+        "id": "q-1a3g4ml"
+      },
+      {
+        "q": "HTTP/1.1、HTTP/2、HTTP/3 的区别？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>演进对比</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">特性</th><th style=\"text-align:left;padding:6px\">HTTP/1.1</th><th style=\"text-align:left;padding:6px\">HTTP/2</th><th style=\"text-align:left;padding:6px\">HTTP/3</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">传输层</td><td style=\"padding:6px\">TCP</td><td style=\"padding:6px\">TCP</td><td style=\"padding:6px\">QUIC (UDP)</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">多路复用</td><td style=\"padding:6px\">无（管线化鸡肋）</td><td style=\"padding:6px\">有（二进制帧）</td><td style=\"padding:6px\">有（无队头阻塞）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">头部压缩</td><td style=\"padding:6px\">无</td><td style=\"padding:6px\">HPACK</td><td style=\"padding:6px\">QPACK</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">服务端推送</td><td style=\"padding:6px\">无</td><td style=\"padding:6px\">支持</td><td style=\"padding:6px\">支持</td></tr>\n<tr><td style=\"padding:6px\">队头阻塞</td><td style=\"padding:6px\">应用层+传输层</td><td style=\"padding:6px\">传输层（TCP丢包）</td><td style=\"padding:6px\">无</td></tr>\n</table>\n<h4>关键概念</h4>\n<ul>\n<li><b>HTTP/2 多路复用</b>：一个 TCP 连接上并行传输多个 Stream，每个 Stream 由多个 Frame 组成，解决 HTTP/1.1 的队头阻塞</li>\n<li><b>HTTP/2 队头阻塞</b>：虽然应用层无阻塞，但 TCP 层丢包会阻塞整个连接的所有 Stream</li>\n<li><b>HTTP/3 QUIC</b>：基于 UDP，每个 Stream 独立可靠传输，一个 Stream 丢包不影响其他 Stream</li>\n</ul>",
+        "id": "q-10s0hae"
+      },
+      {
+        "q": "HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>TLS 1.2 握手（简化）</h4>\n<pre><code>客户端                    服务端\n  |--- ClientHello -------->|   支持的加密套件、随机数A\n  |<-- ServerHello ---------|   选定加密套件、随机数B、证书\n  |  验证证书（CA 链）        |\n  |--- ClientKeyExchange -->|   用证书公钥加密预主密钥 (Pre-Master Secret)\n  |  双方计算会话密钥          |   Key = PRF(PreMaster, 随机数A, 随机数B)\n  |--- ChangeCipherSpec --->|   切换到加密通信\n  |<-- ChangeCipherSpec ----|\n  |=== 加密数据传输 =========|</code></pre>\n<h4>两种加密的角色</h4>\n<ul>\n<li><b>非对称加密 (RSA/ECDHE)</b>：仅用于握手阶段安全地交换密钥，速度慢但安全</li>\n<li><b>对称加密 (AES-GCM)</b>：用于数据传输阶段，速度快</li>\n</ul>\n<h4>TLS 1.3 改进</h4>\n<ul>\n<li>握手从 2-RTT 缩减到 1-RTT（0-RTT 可选）</li>\n<li>移除了 RSA 密钥交换（仅保留前向安全的 ECDHE）</li>\n<li>精简加密套件（只保留 AEAD）</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 go-utils 实现了 AES-CBC + RSA 混合加密，原理与 TLS 的混合加密思路一致</div>",
+        "id": "q-1cu35pj"
+      },
+      {
+        "q": "TCP 粘包/拆包是什么？怎么解决？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>什么是粘包/拆包</h4>\n<p>TCP 是<b>字节流</b>协议（非消息边界协议），发送方的多条消息可能被合并成一个包（粘包），或一条消息被拆成多个包（拆包）</p>\n<pre><code>// 发送 \"Hello\" 和 \"World\"\n// 可能收到：\n\"HelloWorld\"        // 粘包\n\"Hel\" + \"loWorld\"   // 拆包+粘包\n\"Hello\" + \"World\"   // 正常</code></pre>\n<h4>解决方案</h4>\n<ul>\n<li><b>固定长度</b>：每条消息固定 N 字节，不足补零（简单但浪费）</li>\n<li><b>分隔符</b>：用特殊字符分割（如 <code>\\n</code>、<code>\\r\\n</code>），HTTP/1.1 即如此</li>\n<li><b>长度前缀 (TLV)</b>：消息头包含消息体长度，最常用</li>\n</ul>\n<pre><code>// 长度前缀方案（Go 实现）\n// 写入\nfunc writeMessage(conn net.Conn, data []byte) error {\n    header := make([]byte, 4)\n    binary.BigEndian.PutUint32(header, uint32(len(data)))\n    conn.Write(header)   // 先写 4 字节长度\n    conn.Write(data)     // 再写消息体\n    return nil\n}\n\n// 读取\nfunc readMessage(conn net.Conn) ([]byte, error) {\n    header := make([]byte, 4)\n    io.ReadFull(conn, header)\n    length := binary.BigEndian.Uint32(header)\n    data := make([]byte, length)\n    io.ReadFull(conn, data)\n    return data, nil\n}</code></pre>",
+        "id": "q-1k8jhph"
+      },
+      {
+        "q": "从浏览器输入 URL 到页面显示，发生了什么？（网络全链路）",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>完整链路</h4>\n<ol>\n<li><b>DNS 解析</b>：浏览器缓存 → OS 缓存 → hosts → 本地 DNS → 递归查询根/顶级/权威 DNS → 拿到 IP</li>\n<li><b>TCP 三次握手</b>：与服务器建立 TCP 连接</li>\n<li><b>TLS 握手</b>（HTTPS）：协商加密套件、交换密钥</li>\n<li><b>HTTP 请求</b>：发送 GET / HTTP/1.1（或 HTTP/2 帧）</li>\n<li><b>服务端处理</b>：负载均衡 → Web Server → 应用逻辑 → 数据库查询 → 返回响应</li>\n<li><b>HTTP 响应</b>：状态码 + 响应头 + 响应体（HTML）</li>\n<li><b>浏览器渲染</b>：\n  <ul>\n  <li>解析 HTML → DOM 树</li>\n  <li>解析 CSS → CSSOM 树</li>\n  <li>DOM + CSSOM → Render 树</li>\n  <li>Layout（计算位置大小）→ Paint（绘制像素）→ Composite（合成图层）</li>\n  </ul>\n</li>\n<li><b>异步加载</b>：JS 执行、图片/字体等资源异步请求</li>\n</ol>\n<div class=\"key-point\">面试中可以根据岗位侧重展开不同层：后端重点讲第 5 步（Nginx → 路由 → 中间件 → Handler → DB）</div>",
+        "id": "q-fv9so3"
+      }
+    ]
+  },
+  {
+    "cat": "Kubernetes 深入",
+    "icon": "☸️",
+    "color": "#326ce5",
+    "items": [
+      {
+        "q": "K8s 的核心架构？Master 和 Node 各有哪些组件？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>Master 节点（控制平面）</h4>\n<ul>\n<li><b>kube-apiserver</b>：所有操作的入口（RESTful API），唯一与 etcd 通信的组件</li>\n<li><b>etcd</b>：分布式 KV 存储，保存集群所有状态数据</li>\n<li><b>kube-scheduler</b>：将 Pod 调度到合适的 Node（根据资源、亲和性、污点等）</li>\n<li><b>kube-controller-manager</b>：运行各种控制器（Deployment、ReplicaSet、Node、Service 等）</li>\n</ul>\n<h4>Node 节点（工作节点）</h4>\n<ul>\n<li><b>kubelet</b>：管理 Pod 生命周期，向 apiserver 汇报节点状态</li>\n<li><b>kube-proxy</b>：维护网络规则（iptables/IPVS），实现 Service 的负载均衡</li>\n<li><b>Container Runtime</b>：运行容器（containerd / CRI-O）</li>\n</ul>\n<h4>核心对象</h4>\n<ul>\n<li><b>Pod</b>：最小调度单元，包含一个或多个容器</li>\n<li><b>Deployment</b>：管理 ReplicaSet，支持滚动更新和回滚</li>\n<li><b>Service</b>：为 Pod 提供稳定的网络入口（ClusterIP / NodePort / LoadBalancer）</li>\n<li><b>ConfigMap / Secret</b>：配置和敏感数据管理</li>\n</ul>",
+        "id": "q-1x5mfm2"
+      },
+      {
+        "q": "Pod 的生命周期？init 容器、就绪探针、存活探针的作用？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>Pod 生命周期</h4>\n<pre><code>Pending → Running → Succeeded / Failed\n           ↑\n    Init Containers → App Containers</code></pre>\n<h4>Init 容器</h4>\n<ul>\n<li>在 App 容器启动<b>之前</b>按顺序运行，全部成功后才启动 App 容器</li>\n<li>用途：等待依赖服务就绪、初始化配置文件、数据库 migration</li>\n</ul>\n<pre><code>initContainers:\n- name: wait-for-db\n  image: busybox\n  command: ['sh', '-c', 'until nc -z mysql 3306; do sleep 2; done']</code></pre>\n<h4>探针对比</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">探针</th><th style=\"text-align:left;padding:6px\">失败后果</th><th style=\"text-align:left;padding:6px\">典型用途</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">startupProbe</td><td style=\"padding:6px\">重启容器</td><td style=\"padding:6px\">慢启动应用（Java等）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">livenessProbe</td><td style=\"padding:6px\">重启容器</td><td style=\"padding:6px\">检测死锁/卡死</td></tr>\n<tr><td style=\"padding:6px\">readinessProbe</td><td style=\"padding:6px\">从 Service 摘除</td><td style=\"padding:6px\">是否准备好接流量</td></tr>\n</table>\n<div class=\"key-point\">readiness 失败不会重启 Pod，只是从 Endpoints 移除（不接受新请求）。你的优雅关机方案就是先让 readiness 失败</div>",
+        "id": "q-dlfiam"
+      },
+      {
+        "q": "K8s 中 Service 的负载均衡原理？ClusterIP / NodePort / LoadBalancer 区别？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>三种 Service 类型</h4>\n<ul>\n<li><b>ClusterIP</b>（默认）：分配集群内部虚拟 IP，只能集群内部访问。kube-proxy 通过 iptables/IPVS 将流量转发到后端 Pod</li>\n<li><b>NodePort</b>：在 ClusterIP 基础上，每个节点开放一个端口（30000-32767），外部可通过 NodeIP:NodePort 访问</li>\n<li><b>LoadBalancer</b>：在 NodePort 基础上，自动创建云厂商的负载均衡器（如 AWS ELB），提供外部入口 IP</li>\n</ul>\n<h4>kube-proxy 模式</h4>\n<ul>\n<li><b>iptables</b>（默认）：为每个 Service 创建 iptables 规则，随机选择后端 Pod。规则多时性能下降</li>\n<li><b>IPVS</b>：基于内核 IPVS 模块，支持多种负载均衡算法（RR/LC/WRR），大规模集群性能更好</li>\n</ul>\n<h4>Ingress</h4>\n<p>七层（HTTP）负载均衡，通过域名/路径路由到不同 Service（如 Nginx Ingress Controller）</p>",
+        "id": "q-ssyycj"
+      },
+      {
+        "q": "K8s 滚动更新的策略？如何实现零停机部署？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>Deployment 滚动更新策略</h4>\n<pre><code>spec:\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1        # 最多多创建 1 个 Pod\n      maxUnavailable: 0  # 不允许有不可用的 Pod（零停机）\n  minReadySeconds: 10    # Pod Ready 后等 10 秒才算可用</code></pre>\n<h4>零停机部署要点</h4>\n<ol>\n<li><b>maxUnavailable: 0</b>：新 Pod Ready 后才销毁旧 Pod</li>\n<li><b>readinessProbe</b>：应用完全启动后才接收流量</li>\n<li><b>preStop hook + sleep</b>：给 kube-proxy 时间更新 iptables 规则</li>\n<li><b>优雅关机</b>：收到 SIGTERM 后处理完在途请求再退出</li>\n<li><b>PDB (PodDisruptionBudget)</b>：限制同时不可用的 Pod 数量</li>\n</ol>\n<pre><code># PDB：确保至少 2 个 Pod 可用\napiVersion: policy/v1\nkind: PodDisruptionBudget\nspec:\n  minAvailable: 2\n  selector:\n    matchLabels: { app: myapp }</code></pre>\n<div class=\"project-link\">简历关联：你的 go-fast 框架的 10 秒超时优雅关机 + errgroup 并行关闭，正是零停机部署的应用端实现</div>",
+        "id": "q-fzaiml"
+      },
+      {
+        "q": "什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>CRD 是什么</h4>\n<p><code>CustomResourceDefinition</code> 允许你在 Kubernetes 里定义自己的资源类型，比如 <code>RedisCluster</code>、<code>AIJob</code>。</p>\n<h4>Operator 是什么</h4>\n<p>Operator 本质上是“理解某类业务资源生命周期的控制器”。它持续监听自定义资源状态，并把集群实际状态修正到期望状态。</p>\n<h4>Kubebuilder 的作用</h4>\n<ul>\n<li>帮你生成 Operator 项目的脚手架</li>\n<li>定义 API、Controller、RBAC、CRD 清单</li>\n<li>底层基于 <code>controller-runtime</code>，减少样板代码</li>\n</ul>\n<div class=\"key-point\">一句话概括：CRD 定义“我要管理什么”，Operator 定义“怎么把它管好”。</div>",
+        "id": "q-1khb0gx"
+      },
+      {
+        "q": "Operator 的 Reconcile 循环是什么？为什么它必须保证幂等？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>Reconcile 的职责</h4>\n<p>Controller 收到资源变更事件后，会进入 <code>Reconcile</code>：读取期望状态，读取实际状态，然后不断执行修正动作，直到两者一致。</p>\n<pre><code>func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n    desired := getDesiredSpec(req)\n    actual := queryClusterState(req)\n    diff := compare(desired, actual)\n    if diff.needScale {\n        scaleStatefulSet(...)\n    }\n    if diff.needConfigUpdate {\n        updateConfigMap(...)\n    }\n    return ctrl.Result{}, nil\n}</code></pre>\n<h4>为什么必须幂等</h4>\n<ul>\n<li>Reconcile 可能被反复触发，甚至同一个对象短时间多次进入循环</li>\n<li>如果逻辑不幂等，就可能重复创建资源、重复发通知或把状态改乱</li>\n<li>好的 Reconcile 不依赖“上次执行到哪一步”，而是每次都基于当前真实状态重新收敛</li>\n</ul>",
+        "id": "q-wpeuxb"
+      }
+    ]
+  },
+  {
+    "cat": "MongoDB",
+    "icon": "🍃",
+    "color": "#47a248",
+    "items": [
+      {
+        "q": "MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>核心区别</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">特性</th><th style=\"text-align:left;padding:6px\">MySQL</th><th style=\"text-align:left;padding:6px\">MongoDB</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">数据模型</td><td style=\"padding:6px\">关系型（行/列/表）</td><td style=\"padding:6px\">文档型（JSON/BSON）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">Schema</td><td style=\"padding:6px\">强 Schema（需建表）</td><td style=\"padding:6px\">灵活 Schema（无需预定义）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">JOIN</td><td style=\"padding:6px\">支持</td><td style=\"padding:6px\">不支持（嵌入文档或 $lookup）</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">事务</td><td style=\"padding:6px\">完整 ACID</td><td style=\"padding:6px\">4.0+ 支持多文档事务</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">扩展</td><td style=\"padding:6px\">垂直扩展为主</td><td style=\"padding:6px\">原生分片（水平扩展）</td></tr>\n<tr><td style=\"padding:6px\">索引</td><td style=\"padding:6px\">B+ 树</td><td style=\"padding:6px\">B 树 + 支持嵌套字段索引</td></tr>\n</table>\n<h4>适用场景</h4>\n<ul>\n<li><b>MongoDB 适合</b>：日志/埋点、内容管理（CMS）、IoT 时序数据、Schema 频繁变更的早期项目、嵌套结构数据</li>\n<li><b>MySQL 适合</b>：强一致性事务（支付/订单）、复杂关联查询、数据结构稳定的业务</li>\n</ul>\n<div class=\"key-point\">岗位关联：腾讯赛事平台和运维工具岗位要求 MongoDB 经验，通常用于日志存储、赛事数据（嵌套结构）、运维指标等场景</div>",
+        "id": "q-gay2ec"
+      },
+      {
+        "q": "MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>索引类型</h4>\n<ul>\n<li><b>单字段索引</b>：<code>db.col.createIndex({name: 1})</code></li>\n<li><b>复合索引</b>：<code>db.col.createIndex({city: 1, age: -1})</code></li>\n<li><b>多键索引 (Multikey)</b>：自动为数组字段创建，每个数组元素都有索引条目</li>\n<li><b>文本索引</b>：<code>db.col.createIndex({content: \"text\"})</code>，支持全文搜索</li>\n<li><b>地理空间索引</b>：<code>2dsphere</code>（球面）/ <code>2d</code>（平面），支持地理查询</li>\n<li><b>哈希索引</b>：用于分片键的均匀分布</li>\n<li><b>TTL 索引</b>：文档到期自动删除（如 session、日志）</li>\n</ul>\n<h4>与 MySQL 的不同</h4>\n<ul>\n<li>MongoDB 支持对<b>嵌套文档字段</b>建索引：<code>{\"address.city\": 1}</code></li>\n<li>MongoDB 支持对<b>数组</b>建多键索引，MySQL 无此概念</li>\n<li>复合索引同样遵循最左前缀原则</li>\n<li>MongoDB 索引默认存在内存中（WiredTiger 引擎），查询时不需要磁盘 IO</li>\n</ul>",
+        "id": "q-m6ivnq"
+      },
+      {
+        "q": "MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>聚合管道</h4>\n<p>类似 Unix 管道，文档依次通过多个<b>阶段 (Stage)</b>，每个阶段对文档做一种变换</p>\n<pre><code>db.orders.aggregate([\n    { $match: { status: \"paid\" } },              // WHERE\n    { $group: {                                    // GROUP BY\n        _id: \"$storeId\",\n        totalAmount: { $sum: \"$amount\" },\n        count: { $sum: 1 }\n    }},\n    { $sort: { totalAmount: -1 } },               // ORDER BY\n    { $limit: 10 },                                // LIMIT\n    { $lookup: {                                   // LEFT JOIN\n        from: \"stores\",\n        localField: \"_id\",\n        foreignField: \"_id\",\n        as: \"store\"\n    }},\n    { $project: {                                  // SELECT\n        storeName: { $arrayElemAt: [\"$store.name\", 0] },\n        totalAmount: 1,\n        count: 1\n    }}\n])</code></pre>\n<h4>常用阶段</h4>\n<ul>\n<li><code>$match</code>：过滤（尽量放前面，利用索引）</li>\n<li><code>$group</code>：分组聚合（sum/avg/count/max/min）</li>\n<li><code>$sort</code> / <code>$limit</code> / <code>$skip</code>：排序分页</li>\n<li><code>$lookup</code>：类似 LEFT JOIN（跨集合关联）</li>\n<li><code>$unwind</code>：展开数组（一条文档变多条）</li>\n<li><code>$project</code> / <code>$addFields</code>：字段选择/计算</li>\n</ul>",
+        "id": "q-jljpb8"
+      }
+    ]
+  },
+  {
+    "cat": "高并发与高可用",
+    "icon": "⚡",
+    "color": "#f43f5e",
+    "items": [
+      {
+        "q": "高并发系统设计的常见手段有哪些？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>六大核心手段</h4>\n<ul>\n<li><b>缓存</b>：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级</li>\n<li><b>异步</b>：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计</li>\n<li><b>限流</b>：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现了高频访问防护</li>\n<li><b>分库分表</b>：水平拆分降低单库压力。你的多租户 SaaS 按 StoreId 分片</li>\n<li><b>池化</b>：连接池（DB/Redis/HTTP）、goroutine 池。你的连接池根据 CPU/内存动态计算</li>\n<li><b>读写分离</b>：主库写、从库读，分担读压力</li>\n</ul>\n<h4>架构层面</h4>\n<ul>\n<li><b>微服务拆分</b>：独立扩缩容高负载服务</li>\n<li><b>CDN + 静态资源</b>：减少服务端压力</li>\n<li><b>数据库索引优化</b>：你在 UUFind 项目中的实践</li>\n</ul>\n<div class=\"project-link\">简历关联：你的项目几乎覆盖了所有高并发手段 — 面试时可以逐个对应到具体实现</div>",
+        "id": "q-1sk5mxj"
+      },
+      {
+        "q": "限流算法有哪些？令牌桶和漏桶的区别？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>四种限流算法</h4>\n<ul>\n<li><b>固定窗口计数器</b>：时间窗口内计数，超过阈值拒绝。缺点：窗口边界突发（两个窗口交界可能 2 倍流量）</li>\n<li><b>滑动窗口计数器</b>：将窗口分成多个小格子，平滑统计。你的 WAF 用的就是滑动窗口思路</li>\n<li><b>漏桶 (Leaky Bucket)</b>：请求进入桶中，以固定速率流出。流出速率恒定，能平滑突发流量</li>\n<li><b>令牌桶 (Token Bucket)</b>：以固定速率向桶中放令牌，请求需要取令牌才能通过。允许一定程度突发</li>\n</ul>\n<h4>漏桶 vs 令牌桶</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">特性</th><th style=\"text-align:left;padding:6px\">漏桶</th><th style=\"text-align:left;padding:6px\">令牌桶</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">流出速率</td><td style=\"padding:6px\">恒定</td><td style=\"padding:6px\">可突发</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">突发流量</td><td style=\"padding:6px\">排队等待</td><td style=\"padding:6px\">允许（消耗积累的令牌）</td></tr>\n<tr><td style=\"padding:6px\">适用场景</td><td style=\"padding:6px\">严格平滑（如短信发送）</td><td style=\"padding:6px\">允许突发（如 API 限流）</td></tr>\n</table>\n<pre><code>// Go 标准库令牌桶\nimport \"golang.org/x/time/rate\"\nlimiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 10) // 每秒10个，突发10个\nif !limiter.Allow() {\n    return fiber.ErrTooManyRequests\n}</code></pre>",
+        "id": "q-1n761t2"
+      },
+      {
+        "q": "分布式系统中如何保证数据一致性？CAP 和 BASE 理论？",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>CAP 定理</h4>\n<ul>\n<li><b>C (Consistency)</b>：所有节点同一时间看到的数据一致</li>\n<li><b>A (Availability)</b>：每个请求都能收到非错误响应</li>\n<li><b>P (Partition tolerance)</b>：网络分区时系统仍能工作</li>\n<li>三者最多满足两个。分布式系统中 P 必选 → 实际选择是 CP 或 AP</li>\n</ul>\n<h4>BASE 理论（AP 系统的妥协）</h4>\n<ul>\n<li><b>BA (Basically Available)</b>：基本可用（允许部分功能降级）</li>\n<li><b>S (Soft state)</b>：软状态（中间状态，数据可能暂时不一致）</li>\n<li><b>E (Eventually consistent)</b>：最终一致性</li>\n</ul>\n<h4>常见一致性方案</h4>\n<ul>\n<li><b>强一致性</b>：分布式事务（2PC / 3PC）— 性能差，适合金融核心</li>\n<li><b>最终一致性</b>：消息队列 + 本地消息表 / TCC / Saga — 性能好，适合电商</li>\n</ul>\n<div class=\"key-point\">你的支付系统用 Webhook 异步回调 + 幂等处理，本质就是 BASE 的最终一致性方案</div>",
+        "id": "q-1rup8vt"
+      },
+      {
+        "q": "服务雪崩是什么？熔断、降级、限流怎么配合？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>服务雪崩</h4>\n<p>服务 A 调用服务 B，B 响应慢 → A 的线程/goroutine 被占满 → A 也变慢 → 调用 A 的 C 也受影响 → 雪崩</p>\n<h4>三板斧</h4>\n<ul>\n<li><b>限流 (Rate Limiting)</b>：入口处控制流量，超过阈值直接拒绝。防止过载</li>\n<li><b>熔断 (Circuit Breaker)</b>：检测到下游错误率过高时，暂停调用一段时间（快速失败），避免无效重试。状态：Closed → Open → Half-Open</li>\n<li><b>降级 (Fallback)</b>：熔断后返回兜底数据（缓存数据/默认值），而非直接报错</li>\n</ul>\n<pre><code>// Go 熔断器（简化版）\ntype CircuitBreaker struct {\n    failures    int\n    threshold   int       // 连续失败 N 次后熔断\n    state       string    // closed / open / half-open\n    lastFailure time.Time\n    cooldown    time.Duration\n}\n\nfunc (cb *CircuitBreaker) Call(fn func() error) error {\n    if cb.state == \"open\" {\n        if time.Since(cb.lastFailure) > cb.cooldown {\n            cb.state = \"half-open\" // 试探一次\n        } else {\n            return ErrCircuitOpen // 快速失败\n        }\n    }\n    err := fn()\n    if err != nil {\n        cb.failures++\n        cb.lastFailure = time.Now()\n        if cb.failures >= cb.threshold { cb.state = \"open\" }\n        return err\n    }\n    cb.failures = 0\n    cb.state = \"closed\"\n    return nil\n}</code></pre>\n<div class=\"key-point\">岗位关联：腾讯赛事平台要求「高可用系统设计经验」，熔断+降级+限流是核心考点</div>",
+        "id": "q-1lta6ds"
+      },
+      {
+        "q": "Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三类工具各看什么</h4>\n<ul>\n<li><b><code>pprof</code></b>：看 CPU、堆内存、goroutine、锁阻塞、block profile，适合定位热点函数和资源泄漏</li>\n<li><b><code>trace</code></b>：看 goroutine 调度、系统调用、GC 和网络事件时间线，适合分析“为什么慢”</li>\n<li><b><code>benchmark</code></b>：看某个函数或算法在不同实现下的耗时和分配量，适合做局部优化对比</li>\n</ul>\n<h4>常见命令</h4>\n<pre><code># benchmark\ngo test -bench=. -benchmem ./...\n\n# pprof\ngo tool pprof http://localhost:6060/debug/pprof/profile?seconds=30\n\n# trace\ngo test -run=^$ -trace trace.out ./...\ngo tool trace trace.out</code></pre>\n<div class=\"key-point\">回答这题时不要只背工具名，重点是说明：函数级优化看 benchmark，热点定位看 pprof，时序和调度问题看 trace。</div>",
+        "id": "q-94lt8t"
+      },
+      {
+        "q": "Redis 热点 Key 和大 Key 怎么治理？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>热点 Key 治理</h4>\n<ul>\n<li>本地缓存兜底，减少所有请求都压到 Redis</li>\n<li>对可拆分的热点数据做 Key 打散，例如按用户桶或分片后缀拆开</li>\n<li>读写分离或增加副本，缓解单节点读热点</li>\n<li>对极热点内容采用“永不过期 + 异步刷新”，避免击穿</li>\n</ul>\n<h4>大 Key 治理</h4>\n<ul>\n<li>先用 <code>MEMORY USAGE</code>、<code>bigkeys</code> 等手段找出大 Key</li>\n<li>把超大 Hash、List、Set 拆成多个小 Key 或分段存储</li>\n<li>删除时优先用 <code>UNLINK</code> 做异步删除，避免阻塞主线程</li>\n<li>从设计上限制单个 Key 的元素规模，避免把 Redis 当对象存储</li>\n</ul>\n<div class=\"key-point\">面试里最好把热点 Key 和大 Key 分开答：前者关注流量集中，后者关注单次操作成本。</div>",
+        "id": "q-es6a6z"
+      },
+      {
+        "q": "MySQL 慢查询定位和优化的完整流程？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>标准流程</h4>\n<ol>\n<li>开启 <code>slow_query_log</code>，先确认慢 SQL 真实样本</li>\n<li>用 <code>pt-query-digest</code> 或日志聚合工具找最耗时、最频繁的 SQL</li>\n<li>执行 <code>EXPLAIN</code>，重点看 <code>type</code>、<code>rows</code>、<code>Extra</code></li>\n<li>判断问题属于索引缺失、回表过多、排序临时表、SQL 写法不佳还是数据量过大</li>\n<li>执行优化：补索引、改写查询、拆分页方式、分表或冷热分离</li>\n<li>回到压测或线上观察，确认优化后延迟、扫描行数和 QPS 是否真正改善</li>\n</ol>\n<h4>常见信号</h4>\n<ul>\n<li><code>Using filesort</code>：排序可能没走到合适索引</li>\n<li><code>Using temporary</code>：说明中间结果需要临时表</li>\n<li><code>type=ALL</code>：接近全表扫描，需要重点关注</li>\n</ul>\n<div class=\"key-point\">这题不是背索引口诀，重点是展示你有完整排查闭环：日志采样 → 执行计划 → 改法 → 验证。</div>",
+        "id": "q-1sde06e"
+      },
+      {
+        "q": "线上接口响应变慢，系统化排查思路是什么？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先定范围，再逐层下钻</h4>\n<ol>\n<li>先看监控，确认是平均延迟升高还是 P95/P99 尾延迟恶化</li>\n<li>看错误率、QPS、实例 CPU/内存、goroutine 数，判断是否伴随资源异常</li>\n<li>从网关 → 应用 → 缓存 → DB 逐层排查，避免一上来就拍脑袋改代码</li>\n</ol>\n<h4>常见工具</h4>\n<ul>\n<li><b>应用层</b>：日志、pprof、trace、链路追踪</li>\n<li><b>缓存层</b>：Redis slow log、命中率、热点 Key</li>\n<li><b>数据库</b>：慢查询日志、连接数、锁等待、执行计划</li>\n<li><b>网络层</b>：连接数、超时、重传、DNS 和出口依赖状态</li>\n</ul>\n<h4>经验总结</h4>\n<p>真正的高质量回答不是“我会看日志”，而是先用监控缩小范围，再用 profile 和慢日志把问题收敛到某一层，最后给出验证过的根因。</p>",
+        "id": "q-vszs02"
+      }
+    ]
+  },
+  {
+    "cat": "微服务治理",
+    "icon": "🔗",
+    "color": "#06b6d4",
+    "items": [
+      {
+        "q": "微服务的服务发现有哪些方式？注册中心的作用？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>两种模式</h4>\n<ul>\n<li><b>客户端发现</b>：服务实例注册到注册中心（如 Consul/etcd/Nacos），客户端从注册中心获取实例列表，自行负载均衡</li>\n<li><b>服务端发现</b>：请求先到负载均衡器（如 K8s Service/Nginx），由 LB 查询注册中心并转发</li>\n</ul>\n<h4>常见注册中心对比</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">注册中心</th><th style=\"text-align:left;padding:6px\">一致性</th><th style=\"text-align:left;padding:6px\">语言</th><th style=\"text-align:left;padding:6px\">特点</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">etcd</td><td style=\"padding:6px\">CP (Raft)</td><td style=\"padding:6px\">Go</td><td style=\"padding:6px\">K8s 默认，强一致</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">Consul</td><td style=\"padding:6px\">CP (Raft)</td><td style=\"padding:6px\">Go</td><td style=\"padding:6px\">自带健康检查、KV 存储、DNS</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">Nacos</td><td style=\"padding:6px\">AP/CP 切换</td><td style=\"padding:6px\">Java</td><td style=\"padding:6px\">阿里开源，配置中心 + 服务发现</td></tr>\n<tr><td style=\"padding:6px\">ZooKeeper</td><td style=\"padding:6px\">CP (ZAB)</td><td style=\"padding:6px\">Java</td><td style=\"padding:6px\">老牌，Kafka 依赖（逐步淘汰）</td></tr>\n</table>\n<h4>K8s 内置服务发现</h4>\n<p>K8s 通过 Service + DNS 实现服务发现：<code>myservice.namespace.svc.cluster.local</code>，无需额外注册中心</p>",
+        "id": "q-1drhjo5"
+      },
+      {
+        "q": "分布式链路追踪是什么？OpenTelemetry 怎么用？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么需要链路追踪</h4>\n<p>微服务架构下一个请求可能跨越多个服务（如你的 17 个服务），出问题时需要知道：哪个服务慢了？哪个调用链出错了？</p>\n<h4>核心概念</h4>\n<ul>\n<li><b>Trace</b>：一次完整请求的调用链（从入口到所有下游）</li>\n<li><b>Span</b>：Trace 中的一个操作（如一次 RPC 调用、一次 DB 查询）</li>\n<li><b>TraceID</b>：贯穿整个调用链的唯一 ID</li>\n<li><b>SpanID + ParentSpanID</b>：构建调用树</li>\n</ul>\n<h4>Go 中接入 OpenTelemetry</h4>\n<pre><code>import \"go.opentelemetry.io/otel\"\n\n// 中间件自动创建 Span\nfunc TracingMiddleware(c *fiber.Ctx) error {\n    tracer := otel.Tracer(\"myservice\")\n    ctx, span := tracer.Start(c.Context(), c.Path())\n    defer span.End()\n\n    span.SetAttributes(\n        attribute.String(\"http.method\", c.Method()),\n        attribute.Int(\"http.status_code\", c.Response().StatusCode()),\n    )\n    c.SetUserContext(ctx) // 传播 context\n    return c.Next()\n}\n\n// 下游 RPC 调用时 context 透传 TraceID\nfunc callOrderService(ctx context.Context) {\n    _, span := otel.Tracer(\"myservice\").Start(ctx, \"rpc.order.create\")\n    defer span.End()\n    // RPC 请求自动携带 TraceID\n}</code></pre>\n<div class=\"key-point\">面试加分：提到你的 17 个业务服务如果引入链路追踪，可以快速定位跨服务调用中的性能瓶颈</div>",
+        "id": "q-agdyxq"
+      },
+      {
+        "q": "微服务中如何处理分布式事务？Saga 模式是什么？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>分布式事务方案</h4>\n<ul>\n<li><b>2PC (两阶段提交)</b>：协调者 → 所有参与者 prepare → 全部 OK 则 commit，任一失败则 rollback。强一致但性能差、有单点问题</li>\n<li><b>TCC (Try-Confirm-Cancel)</b>：业务层实现三个方法，Try 预留 → Confirm 确认 → Cancel 撤销。侵入性强</li>\n<li><b>Saga</b>：将长事务拆成多个本地事务，每个事务有对应的<b>补偿操作</b>。任一步失败则逆序执行补偿</li>\n<li><b>本地消息表</b>：业务操作和消息写入同一个本地事务，后台异步发送消息。最终一致性</li>\n</ul>\n<h4>Saga 示例：跨境电商下单</h4>\n<pre><code>// 正向流程\nT1: 创建订单 (order-service)\nT2: 扣减库存 (inventory-service)\nT3: 创建支付 (payment-service)\n\n// 补偿流程（T3 失败时逆序执行）\nC2: 恢复库存\nC1: 取消订单\n\n// 编排方式\n// 1. 协调器模式：中央编排器管理所有步骤\n// 2. 事件驱动模式：每个服务完成后发事件，下一个服务监听</code></pre>\n<h4>你的项目场景</h4>\n<p>主子订单拆分 + 多支付网关场景，退款链路本质就是 Saga 的补偿机制：取消支付 → 恢复库存 → 更新订单状态</p>",
+        "id": "q-1yahdcj"
+      },
+      {
+        "q": "gRPC 的四种通信模式是什么？分别适合什么场景？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>四种模式</h4>\n<ul>\n<li><b>Unary</b>：一问一答，最常见，适合普通接口调用</li>\n<li><b>Server Streaming</b>：客户端发一次请求，服务端持续返回多条消息，适合日志流、价格流、进度流</li>\n<li><b>Client Streaming</b>：客户端持续上传多条消息，服务端最终返回一次结果，适合批量上报或分片上传</li>\n<li><b>Bidirectional Streaming</b>：双向都能持续发送消息，适合聊天、协同编辑、实时控制</li>\n</ul>\n<h4>怎么答更像工程师</h4>\n<p>不要只背定义，最好顺手补一句：gRPC 基于 HTTP/2，一个连接上可以并行承载多个 Stream，所以流式调用的成本比轮询低很多。</p>",
+        "id": "q-1wl8hrc"
+      },
+      {
+        "q": "Protobuf 的编码原理是什么？为什么通常比 JSON 更快？",
+        "diff": "easy",
+        "tags": [],
+        "a": "<h4>核心原理</h4>\n<ul>\n<li>Protobuf 使用字段编号而不是字段名，减少了冗余文本</li>\n<li>整包采用二进制编码，常见整数使用 <code>Varint</code> 变长编码</li>\n<li>消息按 tag + value 的方式组织，解码时可以快速按字段号路由</li>\n</ul>\n<h4>为什么比 JSON 快</h4>\n<ul>\n<li>体积更小，网络传输成本更低</li>\n<li>省去了 JSON 文本解析和字段名匹配的成本</li>\n<li>字段类型在 schema 中已确定，反序列化更直接</li>\n</ul>\n<div class=\"key-point\">工程上常见结论是：Protobuf 不是“永远最快”，但在 RPC 和内部服务通信里，通常比 JSON 更省带宽也更稳定。</div>",
+        "id": "q-1154leh"
+      },
+      {
+        "q": "gRPC 的拦截器怎么用？和 HTTP 中间件有什么对应关系？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>对应关系</h4>\n<p>gRPC 的 <code>UnaryInterceptor</code> 和 <code>StreamInterceptor</code> 本质上就像 HTTP 中间件：在真正执行业务逻辑前后统一插入横切逻辑。</p>\n<h4>常见用途</h4>\n<ul>\n<li>认证鉴权</li>\n<li>请求日志与审计</li>\n<li>限流、熔断、超时控制</li>\n<li>TraceID 透传和链路追踪</li>\n</ul>\n<pre><code>server := grpc.NewServer(\n    grpc.ChainUnaryInterceptor(\n        loggingInterceptor,\n        authInterceptor,\n        tracingInterceptor,\n    ),\n)</code></pre>\n<div class=\"key-point\">如果面试官追问差异，可以补一句：流式拦截器拿到的是 Stream，需要特别处理消息读写和生命周期。</div>",
+        "id": "q-1f937c9"
+      },
+      {
+        "q": "gRPC 的负载均衡方案有哪些？客户端负载和代理负载怎么选？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>两类主流方案</h4>\n<ul>\n<li><b>客户端负载均衡</b>：客户端通过 Name Resolver 拿到实例列表，再由 balancer 选择目标实例，常见策略有 <code>pick_first</code> 和 <code>round_robin</code></li>\n<li><b>代理负载均衡</b>：客户端只连 Envoy、Nginx 或 Service Mesh，由代理统一转发到后端实例</li>\n</ul>\n<h4>怎么选</h4>\n<ul>\n<li>客户端负载更轻链路、少一跳，但客户端要理解服务发现和实例变化</li>\n<li>代理负载便于统一治理，如 TLS、熔断、限流、观测，但会增加一层基础设施</li>\n</ul>\n<div class=\"key-point\">小规模服务常用客户端负载，大规模多语言体系更常见代理或 Service Mesh 统一治理。</div>",
+        "id": "q-qbpll5"
+      },
+      {
+        "q": "可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三支柱</h4>\n<ul>\n<li><b>Metrics</b>：数值型指标，适合看整体趋势和告警，如 QPS、错误率、P99、CPU 使用率</li>\n<li><b>Logs</b>：事件明细，适合定位具体报错和业务上下文</li>\n<li><b>Traces</b>：跨服务调用链，适合分析请求在哪一跳慢了、哪一层出错</li>\n</ul>\n<h4>各自擅长什么</h4>\n<ul>\n<li>先用 Metrics 发现问题</li>\n<li>再用 Logs 看具体异常</li>\n<li>最后用 Traces 把跨服务链路串起来</li>\n</ul>\n<div class=\"key-point\">真正的可观测性不是三套工具堆在一起，而是你能用它们快速回答：哪里有问题、为什么有问题、影响到谁。</div>",
+        "id": "q-1omm89g"
+      },
+      {
+        "q": "SLO、SLI、SLA 分别是什么？如何在系统里落地？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三个概念</h4>\n<ul>\n<li><b>SLI</b>：服务指标，例如可用性、P99 延迟、错误率</li>\n<li><b>SLO</b>：目标值，例如“月可用性 99.9%”或“P99 &lt; 300ms”</li>\n<li><b>SLA</b>：对外承诺，通常写进合同或客户协议</li>\n</ul>\n<h4>怎么落地</h4>\n<ul>\n<li>先选真正影响用户体验的 SLI，而不是堆一堆无关指标</li>\n<li>围绕 SLO 做告警和 error budget 管理</li>\n<li>当 error budget 被大量消耗时，优先稳态而不是继续冲功能</li>\n</ul>\n<div class=\"key-point\">面试里加一句会很加分：SLO 不是写在 PPT 里的，它应该反过来约束发布节奏和告警策略。</div>",
+        "id": "q-oa37fy"
+      },
+      {
+        "q": "Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>典型链路</h4>\n<p>Go 服务暴露 <code>/metrics</code> → Prometheus 定时抓取 → Grafana 负责可视化和告警。</p>\n<pre><code>import \"github.com/prometheus/client_golang/prometheus\"\nimport \"github.com/prometheus/client_golang/prometheus/promhttp\"\n\nvar requestTotal = prometheus.NewCounterVec(\n    prometheus.CounterOpts{\n        Name: \"http_requests_total\",\n        Help: \"Total HTTP requests\",\n    },\n    []string{\"path\", \"method\", \"status\"},\n)\n\nfunc main() {\n    prometheus.MustRegister(requestTotal)\n    http.Handle(\"/metrics\", promhttp.Handler())\n    http.ListenAndServe(\":9090\", nil)\n}</code></pre>\n<h4>建议监控哪些</h4>\n<ul>\n<li>请求量、错误率、延迟分位数</li>\n<li>goroutine 数、GC、内存、CPU</li>\n<li>DB/Redis 连接池、命中率、超时数</li>\n</ul>",
+        "id": "q-dmidpx"
+      }
+    ]
+  },
+  {
+    "cat": "Linux 基础",
+    "icon": "🐧",
+    "color": "#fbbf24",
+    "items": [
+      {
+        "q": "常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>常用命令</h4>\n<ul>\n<li><code>top / htop</code>：实时查看 CPU、内存占用，按进程排序</li>\n<li><code>ps aux | grep xxx</code>：查看进程信息</li>\n<li><code>netstat -tlnp / ss -tlnp</code>：查看端口监听和连接状态</li>\n<li><code>lsof -i :8080</code>：查看端口被哪个进程占用</li>\n<li><code>df -h / du -sh</code>：磁盘空间</li>\n<li><code>free -h</code>：内存使用</li>\n<li><code>tail -f /var/log/xxx.log</code>：实时查看日志</li>\n<li><code>strace -p PID</code>：跟踪系统调用</li>\n</ul>\n<h4>CPU 飙高排查（Go 服务）</h4>\n<pre><code># 1. top 找到 CPU 最高的进程 PID\ntop -c\n\n# 2. 对 Go 服务，用 pprof\n# 在代码中引入\nimport _ \"net/http/pprof\"\ngo http.ListenAndServe(\":6060\", nil)\n\n# 3. 采集 CPU profile\ngo tool pprof http://localhost:6060/debug/pprof/profile?seconds=30\n\n# 4. 查看火焰图\ngo tool pprof -http=:8081 profile.out\n\n# 5. 常见原因：\n# - 死循环 / 无限递归\n# - GC 压力大（大量小对象分配）\n# - 锁竞争（mutex contention）\n# - 正则表达式回溯</code></pre>",
+        "id": "q-1jr6c9a"
+      },
+      {
+        "q": "Go 服务内存泄漏怎么排查？pprof 怎么用？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>pprof 排查流程</h4>\n<pre><code>// 1. 引入 pprof\nimport _ \"net/http/pprof\"\ngo http.ListenAndServe(\":6060\", nil)\n\n// 2. 查看堆内存分配\ngo tool pprof http://localhost:6060/debug/pprof/heap\n\n// 3. 常用命令\n(pprof) top 10          // 内存分配 Top 10 函数\n(pprof) list funcName   // 查看具体函数的分配详情\n(pprof) web             // 生成调用图（需要 graphviz）\n\n// 4. 对比两个时间点的堆快照\ngo tool pprof -base heap1.out heap2.out  // 查看增量\n\n// 5. Goroutine 泄漏\ngo tool pprof http://localhost:6060/debug/pprof/goroutine\n// goroutine 数量持续增长 → 泄漏</code></pre>\n<h4>常见 Go 内存泄漏原因</h4>\n<ul>\n<li><b>Goroutine 泄漏</b>：channel 无人读/写导致 goroutine 永远阻塞（最常见）</li>\n<li><b>未关闭的资源</b>：HTTP response body、DB rows、文件句柄未 Close()</li>\n<li><b>全局 map 无限增长</b>：如缓存没有淘汰策略</li>\n<li><b>time.After 在循环中</b>：每次创建新的 Timer 未被 GC</li>\n<li><b>slice 引用大数组</b>：<code>s := bigSlice[:2]</code> 仍引用底层大数组</li>\n</ul>\n<div class=\"key-point\">面试时可以结合项目：你的 WAF 中间件访客队列如果消费者挂了，channel 满后会阻塞生产者 goroutine → 需要带 default 或 select+timeout 防护</div>",
+        "id": "q-152su1v"
+      },
+      {
+        "q": "Linux 文件描述符是什么？Too many open files 怎么解决？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>文件描述符 (fd)</h4>\n<p>Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd）</p>\n<ul>\n<li><code>0</code>：stdin | <code>1</code>：stdout | <code>2</code>：stderr</li>\n<li>每个进程有 fd 上限（默认 1024）</li>\n</ul>\n<h4>Too many open files 排查</h4>\n<pre><code># 查看当前进程打开的 fd 数\nls /proc/PID/fd | wc -l\n\n# 查看进程的 fd 限制\ncat /proc/PID/limits | grep \"open files\"\n\n# 查看系统级限制\ncat /proc/sys/fs/file-max\n\n# 解决方案\n# 1. 临时调整\nulimit -n 65535\n\n# 2. 永久调整 (/etc/security/limits.conf)\n* soft nofile 65535\n* hard nofile 65535\n\n# 3. systemd 服务\n[Service]\nLimitNOFILE=65535</code></pre>\n<h4>根本原因</h4>\n<p>通常不是真的需要这么多 fd，而是代码有资源泄漏：</p>\n<ul>\n<li>HTTP 响应 Body 未 <code>resp.Body.Close()</code></li>\n<li>数据库连接未释放</li>\n<li>文件打开后未关闭</li>\n</ul>\n<div class=\"key-point\">Go 中养成习惯：<code>defer resp.Body.Close()</code>、<code>defer rows.Close()</code>、<code>defer f.Close()</code></div>",
+        "id": "q-1vd8czs"
+      }
+    ]
+  }
 ];

@@ -19,3 +19,11 @@
 - 站点运行时题库仍维护在 `assets/data.js`
 - 本目录作为内容规划与人工整理源，不进入 GitHub Pages 发布产物
 - 如果某份素材已经完全并入站点，可以在文件顶部标注并入日期，避免重复维护
+
+## 当前同步状态
+
+- `shoply-deep-dive.md`
+  - 已并入首批项目深挖题，重点覆盖混合架构、结算 Pipeline、Capability、统一商品标识
+
+- `jd-questions.md`
+  - 已并入两批高优先级缺口题，重点覆盖 gRPC、性能分析、慢查询治理、Top K、Bloom Filter、可观测性、CI/CD、DDD、K8s Operator 和 LLM 基础
