@@ -297,6 +297,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>WAL 原理</h4>\n<p>所有修改操作<b>先写日志，再写数据</b>。崩溃恢复时重放日志即可恢复到一致状态</p>\n<h4>go-es 中的 WAL 实现</h4>\n<pre><code>type WAL struct {\n    file   *os.File\n    mu     sync.Mutex\n    offset int64\n}\n\nfunc (w *WAL) Write(op Operation) error {\n    w.mu.Lock()\n    defer w.mu.Unlock()\n    // 1. 序列化操作（type + docId + data + checksum）\n    entry := encodeEntry(op)\n    // 2. 写入日志文件（顺序追加，高性能）\n    _, err := w.file.Write(entry)\n    // 3. fsync 确保持久化\n    return w.file.Sync()\n}\n\n// 崩溃恢复\nfunc (w *WAL) Recover(index *bluge.Writer) error {\n    entries := w.ReadAll()\n    for _, entry := range entries {\n        // 重放：将未持久化的操作重新应用到索引\n        switch entry.Type {\n        case OpIndex:  index.Update(entry.Doc)\n        case OpDelete: index.Delete(entry.DocId)\n        }\n    }\n    return w.Truncate() // 恢复完毕，截断日志\n}</code></pre>\n<h4>为什么需要 WAL</h4>\n<ul>\n<li>Bluge 索引写入有 batch commit 延迟，中间崩溃会丢数据</li>\n<li>WAL 是顺序写（极快），索引是随机写（较慢），WAL 填补了两者之间的安全间隙</li>\n</ul>",
         "id": "q-1xdj11h"
+      },
+      {
+        "q": "搜索/推荐/广告系统的核心架构是什么？召回、粗排、精排、重排分别做什么？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>四层典型链路</h4>\n<ol>\n<li><b>召回</b>：从海量候选中快速捞出一批相关结果，追求覆盖率，常用倒排索引、向量召回、协同过滤</li>\n<li><b>粗排</b>：用轻量模型快速过滤，把几千条候选压到几百条</li>\n<li><b>精排</b>：用更复杂的特征和模型算最终相关性分数</li>\n<li><b>重排</b>：考虑多样性、商业规则、广告位约束、冷热启动等因素做最后调整</li>\n</ol>\n<h4>各层关注点</h4>\n<ul>\n<li>召回关注快和全，宁可多捞，不要漏掉高价值候选</li>\n<li>排序关注准，用特征和模型提高点击率、转化率或 GMV</li>\n<li>重排关注业务目标平衡，不只是相关性最高</li>\n</ul>\n<div class=\"key-point\">这题别答成“一个模型从头算到尾”。真正的工业系统一定是分层做取舍：先快，再准，最后加业务约束。</div>",
+        "id": "q-1ietist"
+      },
+      {
+        "q": "实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三者区别</h4>\n<ul>\n<li><b>离线特征</b>：按小时或天批量产出，如用户长期兴趣、商品历史 CTR，计算成本低但不够实时</li>\n<li><b>实时特征</b>：基于最新行为流实时更新，如最近 5 分钟点击、实时曝光数，时效性强但系统复杂度更高</li>\n<li><b>Feature Store</b>：统一管理特征定义、生成、存储和在线/离线一致性的系统</li>\n</ul>\n<h4>为什么需要 Feature Store</h4>\n<ul>\n<li>避免训练和推理用到的特征口径不一致</li>\n<li>让离线训练特征和在线服务特征共用同一份定义</li>\n<li>便于复用、回溯和权限管理</li>\n</ul>\n<div class=\"key-point\">面试里如果能补一句“推荐系统最怕 feature skew”，会很加分，说明你知道训练和线上不一致会直接把模型效果打废。</div>",
+        "id": "q-je4gks"
       }
     ]
   },
@@ -395,6 +413,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>核心目标</h4>\n<p>不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。</p>\n<h4>常见实现方式</h4>\n<ul>\n<li><b>Kubernetes</b>：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流</li>\n<li><b>Service Mesh</b>：如 Istio 通过 <code>VirtualService</code> 按比例分流，例如 10% → 30% → 100%</li>\n<li><b>应用层</b>：按用户 ID、租户 ID、地区或白名单做 Feature Flag 分桶</li>\n</ul>\n<h4>发布时看什么</h4>\n<ul>\n<li>错误率、延迟、CPU/内存、下游依赖异常</li>\n<li>关键业务指标是否劣化，比如下单成功率、支付成功率</li>\n<li>一旦指标异常，立刻切回旧版本，这就是灰度发布真正的价值</li>\n</ul>",
         "id": "q-1dy8w42"
+      },
+      {
+        "q": "AWS 核心服务有哪些？EC2、S3、RDS、Lambda 分别适合什么场景？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>四个最常见的 AWS 服务</h4>\n<ul>\n<li><b>EC2</b>：云主机，适合自管应用、特殊运行环境或需要完整系统权限的服务</li>\n<li><b>S3</b>：对象存储，适合图片、视频、静态资源、备份和日志归档</li>\n<li><b>RDS</b>：托管数据库，适合 MySQL / PostgreSQL 等关系型数据库场景</li>\n<li><b>Lambda</b>：函数计算，适合事件驱动的小任务、定时任务、轻量 API</li>\n</ul>\n<h4>怎么理解更实用</h4>\n<p>EC2 管的是机器，Lambda 管的是函数，S3 管的是对象，RDS 管的是数据库。答题时别只背服务名，重点说“谁负责运维、谁负责弹性、谁负责存储”。</p>",
+        "id": "q-1snbf9s"
+      },
+      {
+        "q": "如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>基础高可用</h4>\n<ul>\n<li>计算层跨多个 Availability Zone 部署，前面挂 ALB 或 NLB</li>\n<li>数据库用 RDS Multi-AZ，关键数据定期快照</li>\n<li>静态资源放 S3 + CloudFront，减少源站压力</li>\n<li>配置和密钥交给 Parameter Store 或 Secrets Manager</li>\n</ul>\n<h4>容灾设计</h4>\n<ul>\n<li>同 Region 内做 AZ 级容灾，防单机房故障</li>\n<li>跨 Region 做异地备份或热备，防区域级故障</li>\n<li>提前定义 RPO / RTO，别把容灾答成“多备几份”</li>\n</ul>\n<h4>发布与回滚</h4>\n<p>可以用蓝绿或金丝雀发布，配合 Route 53、ALB 权重或应用层开关；回滚时优先切流，再回退镜像或版本。</p>",
+        "id": "q-1aoeo63"
       }
     ]
   },
@@ -501,6 +537,26 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>标准流程</h4>\n<ol>\n<li>文档切块并生成 Embedding</li>\n<li>把向量存到向量库，如 pgvector、Milvus、Weaviate</li>\n<li>用户提问时先做 Query Embedding</li>\n<li>召回最相关片段，拼接到 Prompt 里</li>\n<li>LLM 基于检索到的上下文生成回答</li>\n</ol>\n<h4>为什么常比直接塞长上下文更实用</h4>\n<ul>\n<li>上下文窗口有限，RAG 能把真正相关的信息捞出来</li>\n<li>文档更新时只要重建索引，不必频繁改 Prompt</li>\n<li>更容易做来源引用、权限隔离和内容审计</li>\n</ul>\n<h4>常见坑</h4>\n<ul>\n<li>切块太大导致召回不准，太小又缺上下文</li>\n<li>Embedding 模型和业务语料不匹配</li>\n<li>只做召回不做重排，导致最终上下文质量不稳</li>\n</ul>",
         "id": "q-gebpar"
+      },
+      {
+        "q": "AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三个常见方案</h4>\n<ul>\n<li><b>vLLM</b>：面向 LLM 推理做了高吞吐优化，核心优势是 PagedAttention，适合大模型高并发服务</li>\n<li><b>TGI (Text Generation Inference)</b>：Hugging Face 出的推理服务框架，生态友好，适合快速接入开源模型</li>\n<li><b>Triton Inference Server</b>：NVIDIA 的通用推理服务框架，不只做 LLM，也适合 CV、语音、多模型统一服务</li>\n</ul>\n<h4>怎么选</h4>\n<ul>\n<li>要极致 LLM 吞吐，优先考虑 vLLM</li>\n<li>要 Hugging Face 模型快速上线，TGI 很顺手</li>\n<li>要统一管理多类模型、做企业级推理平台，Triton 更合适</li>\n</ul>\n<div class=\"key-point\">面试官真正想听的是：你知道它们不是“谁更高级”，而是针对不同推理目标的工程取舍。</div>",
+        "id": "q-1xgzadm"
+      },
+      {
+        "q": "Dify 和 LangChain 这类 AI 应用开发框架有什么区别？怎么选？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>定位差异</h4>\n<ul>\n<li><b>LangChain</b> 更像开发框架，适合工程师在代码里编排链路、工具和 Agent</li>\n<li><b>Dify</b> 更像低代码 AI 应用平台，适合快速搭建工作流、知识库和对话应用</li>\n</ul>\n<h4>选择依据</h4>\n<ul>\n<li>如果团队偏工程化、需要深度定制，LangChain 更灵活</li>\n<li>如果团队更看重快速交付和产品同学参与，Dify 更省时间</li>\n<li>复杂场景里也常见组合用法：上层产品流程用 Dify，底层复杂能力自己写服务</li>\n</ul>\n<div class=\"project-link\">简历关联：如果你已经做过 AI Agent 模块，这题最好顺手补一句：框架只是壳，真正难的是上下文管理、工具编排、异常处理和观测。</div>",
+        "id": "q-ewu3mp"
       }
     ]
   },
@@ -559,6 +615,31 @@ window.INTERVIEW_DATA = [
         "tags": [],
         "a": "<h4>核心结构</h4>\n<p>跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。</p>\n<pre><code>type Node struct {\n    score float64\n    value string\n    next  []*Node\n}\n\nfunc search(head *Node, score float64) *Node {\n    cur := head\n    for level := len(head.next) - 1; level >= 0; level-- {\n        for cur.next[level] != nil && cur.next[level].score < score {\n            cur = cur.next[level]\n        }\n    }\n    return cur.next[0]\n}</code></pre>\n<h4>为什么适合有序集合</h4>\n<ul>\n<li>查询、插入、删除的平均复杂度都是 <code>O(log n)</code></li>\n<li>比平衡树更容易实现区间遍历和顺序扫描</li>\n<li>Redis 的 ZSet 在一定规模下就采用了 skiplist + hash 的组合</li>\n</ul>",
         "id": "q-blkq5"
+      }
+    ]
+  },
+  {
+    "cat": "测试与工程质量",
+    "icon": "🧪",
+    "color": "#14b8a6",
+    "items": [
+      {
+        "q": "Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三个关键点</h4>\n<ul>\n<li><b>Table-Driven Tests</b>：把输入、输出和预期错误组织成表格，用例更清晰、扩展更方便</li>\n<li><b>Mock</b>：把外部依赖替换掉，例如数据库、Redis、HTTP 调用，保证单元测试只测当前逻辑</li>\n<li><b>覆盖率</b>：用 <code>go test -cover</code> 看测试有没有覆盖核心路径，但不要把覆盖率当唯一目标</li>\n</ul>\n<pre><code>func TestAdd(t *testing.T) {\n    cases := []struct {\n        a, b int\n        want int\n    }{\n        {1, 2, 3},\n        {0, 0, 0},\n        {-1, 1, 0},\n    }\n    for _, tc := range cases {\n        if got := Add(tc.a, tc.b); got != tc.want {\n            t.Fatalf(\"got %d, want %d\", got, tc.want)\n        }\n    }\n}</code></pre>\n<div class=\"key-point\">高质量单元测试不是追求覆盖率数字，而是优先覆盖核心逻辑、边界条件和典型失败路径。</div>",
+        "id": "q-zwrzuz"
+      },
+      {
+        "q": "TDD（测试驱动开发）的流程是什么？Red-Green-Refactor 分别代表什么？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>经典三步</h4>\n<ul>\n<li><b>Red</b>：先写一个失败的测试，明确想要的行为</li>\n<li><b>Green</b>：写最少的代码让测试通过</li>\n<li><b>Refactor</b>：在测试保护下重构，让实现更干净</li>\n</ul>\n<h4>TDD 的价值</h4>\n<ul>\n<li>逼你先想清楚接口和行为，再写实现</li>\n<li>天然会留下可回归的测试资产</li>\n<li>对复杂规则密集的逻辑特别有效，例如金额计算、状态机和校验器</li>\n</ul>\n<h4>常见误区</h4>\n<p>TDD 不是“所有代码都必须先写测试”，而是对高风险逻辑优先用测试约束设计。否则容易把简单问题流程化过度。</p>",
+        "id": "q-ktllce"
       }
     ]
   },
@@ -706,6 +787,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>Reconcile 的职责</h4>\n<p>Controller 收到资源变更事件后，会进入 <code>Reconcile</code>：读取期望状态，读取实际状态，然后不断执行修正动作，直到两者一致。</p>\n<pre><code>func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n    desired := getDesiredSpec(req)\n    actual := queryClusterState(req)\n    diff := compare(desired, actual)\n    if diff.needScale {\n        scaleStatefulSet(...)\n    }\n    if diff.needConfigUpdate {\n        updateConfigMap(...)\n    }\n    return ctrl.Result{}, nil\n}</code></pre>\n<h4>为什么必须幂等</h4>\n<ul>\n<li>Reconcile 可能被反复触发，甚至同一个对象短时间多次进入循环</li>\n<li>如果逻辑不幂等，就可能重复创建资源、重复发通知或把状态改乱</li>\n<li>好的 Reconcile 不依赖“上次执行到哪一步”，而是每次都基于当前真实状态重新收敛</li>\n</ul>",
         "id": "q-wpeuxb"
+      },
+      {
+        "q": "GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>怎么调度 GPU</h4>\n<ul>\n<li>通过 NVIDIA Device Plugin 把 GPU 作为扩展资源暴露给 Kubernetes</li>\n<li>Pod 通过 <code>resources.limits[\"nvidia.com/gpu\"]</code> 申请 GPU</li>\n<li>调度器会把请求了 GPU 的 Pod 放到有足够 GPU 资源的节点</li>\n</ul>\n<pre><code>resources:\n  limits:\n    nvidia.com/gpu: 1</code></pre>\n<h4>常见挑战</h4>\n<ul>\n<li>GPU 资源昂贵，碎片化严重，容易出现“总量够但没有连续可用卡”</li>\n<li>不同模型对显存、带宽和延迟要求差异很大</li>\n<li>多租户场景下要处理配额、抢占和隔离</li>\n<li>推理任务和训练任务混跑时，调度策略要区分优先级</li>\n</ul>\n<div class=\"key-point\">面试里加一句“MIG、time-slicing、节点池拆分”会显得你更像做过 AI 基础设施的人。</div>",
+        "id": "q-e20dxe"
       }
     ]
   },
