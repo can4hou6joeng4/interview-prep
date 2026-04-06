@@ -1,0 +1,23 @@
+name: Feature request
+description: 提交功能建议、题库增强或仓库流程优化建议
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+      description: 你希望解决什么问题
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 如果你已经有方向，可以直接写出来
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充上下文
+      description: 例如使用场景、题库分类、部署需求等

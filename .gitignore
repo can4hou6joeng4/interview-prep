@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+
+.idea/
+.vscode/
+
+dist/
+output/
+.playwright-cli/
+*.log
+.codex/
