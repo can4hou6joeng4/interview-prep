@@ -1,0 +1,35 @@
+name: Validate Repository
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check required files
+        run: |
+          test -f index.html
+          test -f assets/styles.css
+          test -f assets/data.js
+          test -f assets/app.js
+          test -f scripts/validate-data.mjs
+
+      - name: Validate browser scripts
+        run: |
+          node --check assets/data.js
+          node --check assets/app.js
+
+      - name: Validate question dataset
+        run: node scripts/validate-data.mjs
