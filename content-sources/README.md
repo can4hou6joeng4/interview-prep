@@ -26,4 +26,4 @@
   - 已并入首批项目深挖题，重点覆盖混合架构、结算 Pipeline、Capability、统一商品标识
 
 - `jd-questions.md`
-  - 已并入三批高优先级缺口题，重点覆盖 gRPC、性能分析、慢查询治理、Top K、Bloom Filter、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理和测试工程
+  - 已并入四批高优先级缺口题，重点覆盖 gRPC、性能分析、慢查询治理、Top K、Bloom Filter、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理、测试工程、弱网优化、程序化广告和 LangChain 基础
