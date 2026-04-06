@@ -209,6 +209,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>核心步骤</h4>\n<pre><code>func main() {\n    // 1. 启动服务\n    srv := startServer()\n\n    // 2. 监听信号\n    quit := make(chan os.Signal, 1)\n    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)\n    <-quit\n\n    // 3. 超时保护\n    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\n    defer cancel()\n\n    // 4. 按依赖顺序关闭（与启动顺序相反）\n    g, ctx := errgroup.WithContext(ctx)\n\n    // 4.1 先停止接收新请求\n    g.Go(func() error { return srv.ShutdownWithContext(ctx) })\n\n    // 4.2 等待异步任务完成\n    g.Go(func() error { return asynqSrv.Shutdown() })\n\n    // 4.3 关闭消息队列消费者\n    g.Go(func() error { return listener.Close() })\n\n    if err := g.Wait(); err != nil {\n        log.Error(\"shutdown error\", err)\n    }\n\n    // 5. 最后关闭基础设施（DB/Redis）\n    db.Close()\n    rdb.Close()\n}</code></pre>\n<h4>关键点</h4>\n<ul>\n<li><b>超时保护</b>必须有，防止某组件 hang 住导致进程无法退出</li>\n<li>关闭顺序：流量入口 → 异步任务 → 消息消费 → 数据库连接</li>\n<li>健康检查端点应在 shutdown 开始时立即返回不健康，让 LB 摘掉节点</li>\n</ul>\n<div class=\"project-link\">简历关联：go-fast 框架支持 errgroup 并发管理与优雅关机（10 秒超时保护）</div>",
         "id": "q-1ensob8"
+      },
+      {
+        "q": "DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>四个高频概念</h4>\n<ul>\n<li><b>实体 (Entity)</b>：有唯一身份标识，关注“它是谁”，即使属性变化也还是同一个对象，比如订单、用户</li>\n<li><b>值对象 (Value Object)</b>：没有独立身份，关注“它是什么”，通常不可变，比如金额、地址、时间区间</li>\n<li><b>聚合根 (Aggregate Root)</b>：聚合的一致性边界入口，外部只能通过聚合根访问内部对象，比如订单聚合根统一管理订单项和状态流转</li>\n<li><b>领域事件 (Domain Event)</b>：领域内已经发生的重要事实，用来解耦副作用逻辑，比如“订单已支付”触发积分发放和通知</li>\n</ul>\n<h4>怎么理解更像工程师</h4>\n<p>DDD 不是为了把目录改花，而是先定义业务边界，再让代码结构围绕边界组织，减少跨模块的隐式耦合。</p>\n<div class=\"key-point\">面试里别只背定义，最好顺手举一个电商场景：订单是实体，金额是值对象，订单是聚合根，“订单已支付”是领域事件。</div>",
+        "id": "q-fi8niu"
+      },
+      {
+        "q": "Go 项目如何实践 DDD？目录结构和分层怎么组织？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>推荐分层</h4>\n<pre><code>internal/\n  order/\n    domain/        // 实体、值对象、领域服务、仓储接口\n    application/   // 用例编排、事务边界、DTO 转换\n    infrastructure/ // DB、MQ、第三方实现\n    interfaces/    // HTTP / gRPC Handler</code></pre>\n<h4>职责划分</h4>\n<ul>\n<li><b>Domain</b>：只表达业务规则，不依赖数据库和 Web 框架</li>\n<li><b>Application</b>：负责编排用例、事务和权限校验</li>\n<li><b>Infrastructure</b>：实现仓储、缓存、消息和外部依赖</li>\n<li><b>Interfaces</b>：处理 HTTP / gRPC 请求与响应映射</li>\n</ul>\n<h4>落地注意点</h4>\n<ul>\n<li>不要把 DDD 变成“多一层文件夹”而没有业务边界</li>\n<li>先从复杂领域开始，例如订单、支付、库存，不必全项目一次性改造</li>\n<li>应用服务负责编排，领域对象负责规则，仓储负责持久化，边界要清</li>\n</ul>",
+        "id": "q-10q1978"
       }
     ]
   },
@@ -359,6 +377,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>完整链路</h4>\n<pre><code># K8s Deployment 配置\nspec:\n  containers:\n  - name: app\n    livenessProbe:     # 存活探针：失败则重启容器\n      httpGet: { path: /healthz, port: 8080 }\n      periodSeconds: 10\n    readinessProbe:    # 就绪探针：失败则从 Service 摘除\n      httpGet: { path: /readyz, port: 8080 }\n      periodSeconds: 5\n    lifecycle:\n      preStop:          # 在 SIGTERM 前执行\n        exec:\n          command: [\"sh\", \"-c\", \"sleep 5\"]  # 等待 LB 摘掉流量\n  terminationGracePeriodSeconds: 30</code></pre>\n<h4>滚动更新流程</h4>\n<ol>\n<li>K8s 发送 SIGTERM 给 Pod，同时将 Pod 从 Service Endpoints 移除</li>\n<li>preStop hook 执行（sleep 5s 等 LB 生效）</li>\n<li>应用收到 SIGTERM，readiness 返回不健康，开始优雅关机</li>\n<li>等待处理中的请求完成（你的 10 秒超时保护）</li>\n<li>关闭 DB/Redis 连接，进程退出</li>\n<li>超过 terminationGracePeriodSeconds 仍未退出则 SIGKILL 强杀</li>\n</ol>",
         "id": "q-1ry7gt7"
+      },
+      {
+        "q": "Go 项目的 CI/CD 流程一般怎么设计？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>一条常见流水线</h4>\n<ol>\n<li>代码提交后先跑静态检查和单元测试，例如 <code>golangci-lint</code>、<code>go test ./...</code></li>\n<li>构建可执行文件或 Docker 镜像，产出可部署制品</li>\n<li>将镜像推到镜像仓库，如 GHCR、Docker Hub、ECR</li>\n<li>部署到测试环境，做 smoke test 和关键路径校验</li>\n<li>通过后再进入生产发布，例如滚动更新或灰度发布</li>\n</ol>\n<h4>关键原则</h4>\n<ul>\n<li>把“是否可合并”前置到 CI，而不是等上线后再发现问题</li>\n<li>构建产物要唯一可追踪，最好带 commit SHA 或版本号</li>\n<li>部署后要有健康检查和回滚手段，不能只有发布没有验证</li>\n</ul>\n<div class=\"key-point\">这题别只背工具名，重点是讲清楚：校验、制品、部署、验证、回滚这五步。</div>",
+        "id": "q-1h0a9vw"
+      },
+      {
+        "q": "灰度发布和金丝雀发布怎么实现？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>核心目标</h4>\n<p>不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。</p>\n<h4>常见实现方式</h4>\n<ul>\n<li><b>Kubernetes</b>：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流</li>\n<li><b>Service Mesh</b>：如 Istio 通过 <code>VirtualService</code> 按比例分流，例如 10% → 30% → 100%</li>\n<li><b>应用层</b>：按用户 ID、租户 ID、地区或白名单做 Feature Flag 分桶</li>\n</ul>\n<h4>发布时看什么</h4>\n<ul>\n<li>错误率、延迟、CPU/内存、下游依赖异常</li>\n<li>关键业务指标是否劣化，比如下单成功率、支付成功率</li>\n<li>一旦指标异常，立刻切回旧版本，这就是灰度发布真正的价值</li>\n</ul>",
+        "id": "q-1dy8w42"
       }
     ]
   },
@@ -445,6 +481,26 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>问题背景</h4>\n<p>1688、淘宝、Shopify 等平台的商品 ID 体系不同，直接拿原始平台 ID 做主键会导致跨平台聚合、去重和回显都很难统一。</p>\n<h4>设计思路</h4>\n<ul>\n<li>定义平台无关的统一商品实体，如 <code>UufindProduct</code>，作为内部主标识</li>\n<li>各平台原始商品通过关联表映射到统一实体，例如记录平台类型、平台商品 ID、店铺信息和同步状态</li>\n<li>查询时优先命中统一实体，再按平台信息回查原始详情，实现聚合展示和二次加工</li>\n</ul>\n<h4>好处</h4>\n<ul>\n<li>同一商品可以挂多个来源，方便做比价、聚合和去重</li>\n<li>上层业务不需要关心各平台字段差异，只依赖统一模型</li>\n<li>后续新增平台时，只要新增映射层，不需要改核心业务模型</li>\n</ul>\n<div class=\"project-link\">简历关联：UUFind 通过统一商品标识模型，把多平台原始商品映射到同一业务实体，支撑聚合检索和数据治理。</div>",
         "id": "q-esz930"
+      },
+      {
+        "q": "Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三种常见技巧</h4>\n<ul>\n<li><b>Few-shot</b>：给模型几个输入输出示例，适合让输出格式更稳定</li>\n<li><b>Chain-of-Thought</b>：引导模型分步推理，适合复杂推导、规划和解释型任务</li>\n<li><b>ReAct</b>：让模型在“思考”和“调用工具”之间交替进行，适合 Agent 场景</li>\n</ul>\n<h4>工程上怎么用</h4>\n<ul>\n<li>结构化输出任务优先用 Few-shot + JSON 约束</li>\n<li>复杂任务拆解优先用分步提示和中间状态</li>\n<li>需要查资料、算结果、调接口时，用 ReAct 或工具调用链</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 AI Agent 模块如果要稳定生成文章或 SEO 建议，核心不是“提示词越长越好”，而是提示策略和工具编排要匹配任务。</div>",
+        "id": "q-10vccg3"
+      },
+      {
+        "q": "LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>标准流程</h4>\n<ol>\n<li>文档切块并生成 Embedding</li>\n<li>把向量存到向量库，如 pgvector、Milvus、Weaviate</li>\n<li>用户提问时先做 Query Embedding</li>\n<li>召回最相关片段，拼接到 Prompt 里</li>\n<li>LLM 基于检索到的上下文生成回答</li>\n</ol>\n<h4>为什么常比直接塞长上下文更实用</h4>\n<ul>\n<li>上下文窗口有限，RAG 能把真正相关的信息捞出来</li>\n<li>文档更新时只要重建索引，不必频繁改 Prompt</li>\n<li>更容易做来源引用、权限隔离和内容审计</li>\n</ul>\n<h4>常见坑</h4>\n<ul>\n<li>切块太大导致召回不准，太小又缺上下文</li>\n<li>Embedding 模型和业务语料不匹配</li>\n<li>只做召回不做重排，导致最终上下文质量不稳</li>\n</ul>",
+        "id": "q-gebpar"
       }
     ]
   },
@@ -632,6 +688,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>Deployment 滚动更新策略</h4>\n<pre><code>spec:\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1        # 最多多创建 1 个 Pod\n      maxUnavailable: 0  # 不允许有不可用的 Pod（零停机）\n  minReadySeconds: 10    # Pod Ready 后等 10 秒才算可用</code></pre>\n<h4>零停机部署要点</h4>\n<ol>\n<li><b>maxUnavailable: 0</b>：新 Pod Ready 后才销毁旧 Pod</li>\n<li><b>readinessProbe</b>：应用完全启动后才接收流量</li>\n<li><b>preStop hook + sleep</b>：给 kube-proxy 时间更新 iptables 规则</li>\n<li><b>优雅关机</b>：收到 SIGTERM 后处理完在途请求再退出</li>\n<li><b>PDB (PodDisruptionBudget)</b>：限制同时不可用的 Pod 数量</li>\n</ol>\n<pre><code># PDB：确保至少 2 个 Pod 可用\napiVersion: policy/v1\nkind: PodDisruptionBudget\nspec:\n  minAvailable: 2\n  selector:\n    matchLabels: { app: myapp }</code></pre>\n<div class=\"project-link\">简历关联：你的 go-fast 框架的 10 秒超时优雅关机 + errgroup 并行关闭，正是零停机部署的应用端实现</div>",
         "id": "q-fzaiml"
+      },
+      {
+        "q": "什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>CRD 是什么</h4>\n<p><code>CustomResourceDefinition</code> 允许你在 Kubernetes 里定义自己的资源类型，比如 <code>RedisCluster</code>、<code>AIJob</code>。</p>\n<h4>Operator 是什么</h4>\n<p>Operator 本质上是“理解某类业务资源生命周期的控制器”。它持续监听自定义资源状态，并把集群实际状态修正到期望状态。</p>\n<h4>Kubebuilder 的作用</h4>\n<ul>\n<li>帮你生成 Operator 项目的脚手架</li>\n<li>定义 API、Controller、RBAC、CRD 清单</li>\n<li>底层基于 <code>controller-runtime</code>，减少样板代码</li>\n</ul>\n<div class=\"key-point\">一句话概括：CRD 定义“我要管理什么”，Operator 定义“怎么把它管好”。</div>",
+        "id": "q-1khb0gx"
+      },
+      {
+        "q": "Operator 的 Reconcile 循环是什么？为什么它必须保证幂等？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>Reconcile 的职责</h4>\n<p>Controller 收到资源变更事件后，会进入 <code>Reconcile</code>：读取期望状态，读取实际状态，然后不断执行修正动作，直到两者一致。</p>\n<pre><code>func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n    desired := getDesiredSpec(req)\n    actual := queryClusterState(req)\n    diff := compare(desired, actual)\n    if diff.needScale {\n        scaleStatefulSet(...)\n    }\n    if diff.needConfigUpdate {\n        updateConfigMap(...)\n    }\n    return ctrl.Result{}, nil\n}</code></pre>\n<h4>为什么必须幂等</h4>\n<ul>\n<li>Reconcile 可能被反复触发，甚至同一个对象短时间多次进入循环</li>\n<li>如果逻辑不幂等，就可能重复创建资源、重复发通知或把状态改乱</li>\n<li>好的 Reconcile 不依赖“上次执行到哪一步”，而是每次都基于当前真实状态重新收敛</li>\n</ul>",
+        "id": "q-wpeuxb"
       }
     ]
   },
@@ -799,6 +873,33 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>两类主流方案</h4>\n<ul>\n<li><b>客户端负载均衡</b>：客户端通过 Name Resolver 拿到实例列表，再由 balancer 选择目标实例，常见策略有 <code>pick_first</code> 和 <code>round_robin</code></li>\n<li><b>代理负载均衡</b>：客户端只连 Envoy、Nginx 或 Service Mesh，由代理统一转发到后端实例</li>\n</ul>\n<h4>怎么选</h4>\n<ul>\n<li>客户端负载更轻链路、少一跳，但客户端要理解服务发现和实例变化</li>\n<li>代理负载便于统一治理，如 TLS、熔断、限流、观测，但会增加一层基础设施</li>\n</ul>\n<div class=\"key-point\">小规模服务常用客户端负载，大规模多语言体系更常见代理或 Service Mesh 统一治理。</div>",
         "id": "q-qbpll5"
+      },
+      {
+        "q": "可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三支柱</h4>\n<ul>\n<li><b>Metrics</b>：数值型指标，适合看整体趋势和告警，如 QPS、错误率、P99、CPU 使用率</li>\n<li><b>Logs</b>：事件明细，适合定位具体报错和业务上下文</li>\n<li><b>Traces</b>：跨服务调用链，适合分析请求在哪一跳慢了、哪一层出错</li>\n</ul>\n<h4>各自擅长什么</h4>\n<ul>\n<li>先用 Metrics 发现问题</li>\n<li>再用 Logs 看具体异常</li>\n<li>最后用 Traces 把跨服务链路串起来</li>\n</ul>\n<div class=\"key-point\">真正的可观测性不是三套工具堆在一起，而是你能用它们快速回答：哪里有问题、为什么有问题、影响到谁。</div>",
+        "id": "q-1omm89g"
+      },
+      {
+        "q": "SLO、SLI、SLA 分别是什么？如何在系统里落地？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三个概念</h4>\n<ul>\n<li><b>SLI</b>：服务指标，例如可用性、P99 延迟、错误率</li>\n<li><b>SLO</b>：目标值，例如“月可用性 99.9%”或“P99 &lt; 300ms”</li>\n<li><b>SLA</b>：对外承诺，通常写进合同或客户协议</li>\n</ul>\n<h4>怎么落地</h4>\n<ul>\n<li>先选真正影响用户体验的 SLI，而不是堆一堆无关指标</li>\n<li>围绕 SLO 做告警和 error budget 管理</li>\n<li>当 error budget 被大量消耗时，优先稳态而不是继续冲功能</li>\n</ul>\n<div class=\"key-point\">面试里加一句会很加分：SLO 不是写在 PPT 里的，它应该反过来约束发布节奏和告警策略。</div>",
+        "id": "q-oa37fy"
+      },
+      {
+        "q": "Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>典型链路</h4>\n<p>Go 服务暴露 <code>/metrics</code> → Prometheus 定时抓取 → Grafana 负责可视化和告警。</p>\n<pre><code>import \"github.com/prometheus/client_golang/prometheus\"\nimport \"github.com/prometheus/client_golang/prometheus/promhttp\"\n\nvar requestTotal = prometheus.NewCounterVec(\n    prometheus.CounterOpts{\n        Name: \"http_requests_total\",\n        Help: \"Total HTTP requests\",\n    },\n    []string{\"path\", \"method\", \"status\"},\n)\n\nfunc main() {\n    prometheus.MustRegister(requestTotal)\n    http.Handle(\"/metrics\", promhttp.Handler())\n    http.ListenAndServe(\":9090\", nil)\n}</code></pre>\n<h4>建议监控哪些</h4>\n<ul>\n<li>请求量、错误率、延迟分位数</li>\n<li>goroutine 数、GC、内存、CPU</li>\n<li>DB/Redis 连接池、命中率、超时数</li>\n</ul>",
+        "id": "q-dmidpx"
       }
     ]
   },
