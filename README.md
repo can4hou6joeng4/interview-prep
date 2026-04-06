@@ -1,28 +1,36 @@
-# Go 后端面试题库
+# Go Backend Interview Prep
 
-基于简历项目定制的交互式面试题库，适合用来做 Go 后端岗位面试准备、知识回顾和项目深挖复盘。
+[![Validate](https://img.shields.io/github/actions/workflow/status/can4hou6joeng4/interview-prep/validate.yml?branch=main&label=validate&style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/actions/workflows/validate.yml)
+[![Pages](https://img.shields.io/github/deployments/can4hou6joeng4/interview-prep/github-pages?label=github%20pages&style=flat-square)](https://can4hou6joeng4.github.io/interview-prep/)
+[![License](https://img.shields.io/github/license/can4hou6joeng4/interview-prep?style=flat-square)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/can4hou6joeng4/interview-prep?style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/stargazers)
 
-## 项目特点
+Interactive flashcard-style interview prep for Go backend roles, tailored around real project experience, system design depth, and structured review workflows.
 
-- 19 个分类、114 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
-- 支持卡片学习和列表检索两种模式
-- 支持分类、难度、未掌握、随机顺序、关键词搜索等组合筛选
-- 学习进度保存在本地浏览器，并带有稳定题目 ID 与旧版进度迁移逻辑
-- 零构建、零依赖，可直接部署到 GitHub Pages
+[中文说明](./README_zh.md)
 
-## 在线部署
+## Highlights
 
-仓库内置 GitHub Pages 工作流，`main` 分支更新后会自动发布静态站点产物。
+- 19 categories and 114 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
+- Dual learning modes: flashcards for focused review and list mode for search-heavy browsing
+- Combined filters for category, difficulty, search, unknown items, and random order
+- Stable question IDs with browser-side progress persistence and legacy progress migration
+- Zero-build static architecture, designed for GitHub Pages deployment
 
-## 本地运行
+## Live Demo
+
+- Repository: [github.com/can4hou6joeng4/interview-prep](https://github.com/can4hou6joeng4/interview-prep)
+- Site: [can4hou6joeng4.github.io/interview-prep](https://can4hou6joeng4.github.io/interview-prep/)
+
+## Local Preview
 
 ```bash
 python3 -m http.server 4173
 ```
 
-打开 [http://127.0.0.1:4173](http://127.0.0.1:4173) 即可预览。
+Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
-## 仓库结构
+## Repository Structure
 
 ```text
 .
@@ -37,25 +45,22 @@ python3 -m http.server 4173
 │   └── shoply-deep-dive.md
 ├── scripts/
 │   └── validate-data.mjs
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   └── workflows/
 ├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
 ├── LICENSE
-├── SECURITY.md
-├── index.html
-└── README.md
+├── README.md
+├── README_zh.md
+└── SECURITY.md
 ```
 
-## 维护约定
+## Development Notes
 
-- 题库数据维护在 `assets/data.js`
-- 页面交互维护在 `assets/app.js`
-- 素材源统一维护在 `content-sources/`
-- 其中 `shoply-deep-dive.md` 是高质量项目深挖题源，`jd-questions.md` 是扩题 backlog
-- 当前已并入四批高优题，覆盖 Shoply 项目深挖、gRPC、性能优化、手撕题、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理、测试工程、弱网优化、程序化广告和 LangChain 基础
-- 发布工作流只上传站点实际需要的文件，避免把非站点素材一起公开
-- 提交前建议执行：
+- Runtime question data lives in `assets/data.js`
+- Interaction logic lives in `assets/app.js`
+- Source notes and expansion backlog live under `content-sources/`
+- GitHub Pages only deploys the site artifact, not the full repo contents
+
+## Validation
 
 ```bash
 node --check assets/app.js
@@ -63,8 +68,15 @@ node --check assets/data.js
 node scripts/validate-data.mjs
 ```
 
-## 后续可继续扩展的方向
+## Community
 
-- 将题库数据进一步拆分成按主题维护的独立文件
-- 增加按标签过滤、错题回顾、导出进度等功能
-- 为题库内容建立半自动统计或生成脚本
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Security Policy](./SECURITY.md)
+
+## Roadmap Ideas
+
+- tag-based review mode
+- wrong-answer / weak-topic mode
+- exportable question packs
+- scheduled review plans
