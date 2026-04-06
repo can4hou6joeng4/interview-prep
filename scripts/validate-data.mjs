@@ -13,6 +13,7 @@ if (!Array.isArray(data) || data.length === 0) {
 
 const validDiffs = new Set(['easy', 'medium', 'hard']);
 const identitySet = new Set();
+const idSet = new Set();
 let totalQuestions = 0;
 
 data.forEach((category, categoryIndex) => {
@@ -28,6 +29,9 @@ data.forEach((category, categoryIndex) => {
 
   category.items.forEach((item, itemIndex) => {
     const where = `${category.cat}#${itemIndex + 1}`;
+    if (!item.id || typeof item.id !== 'string') {
+      throw new Error(`题目 ${where} 缺少稳定 id`);
+    }
     if (!item.q || !item.a) {
       throw new Error(`题目 ${where} 缺少 q 或 a`);
     }
@@ -41,6 +45,10 @@ data.forEach((category, categoryIndex) => {
     if (identitySet.has(identity)) {
       throw new Error(`发现重复题目标题，会导致稳定进度键冲突：${identity}`);
     }
+    if (idSet.has(item.id)) {
+      throw new Error(`发现重复题目 id：${item.id}`);
+    }
+    idSet.add(item.id);
     identitySet.add(identity);
     totalQuestions += 1;
   });
