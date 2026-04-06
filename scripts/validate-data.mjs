@@ -1,0 +1,49 @@
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+
+const source = readFileSync(new URL('../assets/data.js', import.meta.url), 'utf8');
+const sandbox = { window: {} };
+vm.createContext(sandbox);
+vm.runInContext(source, sandbox);
+
+const data = sandbox.window.INTERVIEW_DATA;
+if (!Array.isArray(data) || data.length === 0) {
+  throw new Error('题库数据为空，或 assets/data.js 没有正确暴露 window.INTERVIEW_DATA');
+}
+
+const validDiffs = new Set(['easy', 'medium', 'hard']);
+const identitySet = new Set();
+let totalQuestions = 0;
+
+data.forEach((category, categoryIndex) => {
+  if (!category || typeof category !== 'object') {
+    throw new Error(`分类 #${categoryIndex + 1} 不是合法对象`);
+  }
+  if (!category.cat || !category.icon || !category.color) {
+    throw new Error(`分类 ${categoryIndex + 1} 缺少 cat/icon/color`);
+  }
+  if (!Array.isArray(category.items) || category.items.length === 0) {
+    throw new Error(`分类 "${category.cat}" 没有题目`);
+  }
+
+  category.items.forEach((item, itemIndex) => {
+    const where = `${category.cat}#${itemIndex + 1}`;
+    if (!item.q || !item.a) {
+      throw new Error(`题目 ${where} 缺少 q 或 a`);
+    }
+    if (!validDiffs.has(item.diff)) {
+      throw new Error(`题目 ${where} 的 diff 不合法：${item.diff}`);
+    }
+    if (item.tags && !Array.isArray(item.tags)) {
+      throw new Error(`题目 ${where} 的 tags 必须是数组`);
+    }
+    const identity = `${category.cat}::${item.q}`;
+    if (identitySet.has(identity)) {
+      throw new Error(`发现重复题目标题，会导致稳定进度键冲突：${identity}`);
+    }
+    identitySet.add(identity);
+    totalQuestions += 1;
+  });
+});
+
+console.log(`Validated ${data.length} categories and ${totalQuestions} questions.`);

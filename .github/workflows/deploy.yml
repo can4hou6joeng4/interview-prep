@@ -3,6 +3,11 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths:
+      - index.html
+      - assets/**
+      - scripts/validate-data.mjs
+      - .github/workflows/deploy.yml
   workflow_dispatch:
 
 permissions:
@@ -26,13 +31,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate browser scripts
+        run: |
+          node --check assets/data.js
+          node --check assets/app.js
+          node scripts/validate-data.mjs
+
+      - name: Prepare site artifact
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp index.html dist/
+          cp -R assets dist/
+          touch dist/.nojekyll
+          for file in CNAME robots.txt site.webmanifest; do
+            if [ -f "$file" ]; then
+              cp "$file" dist/
+            fi
+          done
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: './dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
