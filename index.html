@@ -63,11 +63,19 @@
 	<section class="fc-v" id="fcV" aria-label="卡片学习模式">
 		<div class="stage"><div class="fc" id="fc"><div class="fc-in">
 			<div class="fc-f" id="fcF">
-				<div class="chrome"><div class="dots"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div><span class="chrome-t" id="chT"></span></div>
+				<div class="chrome">
+					<div class="chrome-side"><span class="chrome-pill">Question</span></div>
+					<span class="chrome-t" id="chT"></span>
+					<div class="chrome-actions"></div>
+				</div>
 				<div class="fc-body"><div class="bgs" id="bgs"></div><div class="qt" id="qt"></div><div class="qh">click to flip</div></div>
 			</div>
 			<div class="fc-b">
-				<div class="chrome"><div class="dots"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div><span class="chrome-t" id="chT2"></span><button type="button" class="chrome-btn" onclick="flip()">&#8592; 翻回</button></div>
+				<div class="chrome">
+					<div class="chrome-side"><span class="chrome-pill chrome-pill-alt">Answer</span></div>
+					<span class="chrome-t" id="chT2"></span>
+					<div class="chrome-actions"><button type="button" class="chrome-btn" onclick="flip()">&#8592; 翻回</button></div>
+				</div>
 				<div class="fc-ans" id="ans"></div>
 			</div>
 		</div></div></div>
