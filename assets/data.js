@@ -165,6 +165,15 @@ window.INTERVIEW_DATA = [
         "tags": [],
         "a": "<h4>基本实现</h4>\n<pre><code>// 加锁：SET key value NX EX seconds\nok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second)\n\n// 解锁：Lua 脚本保证原子性（判断 + 删除）\nconst unlockScript = `\nif redis.call(\"get\", KEYS[1]) == ARGV[1] then\n    return redis.call(\"del\", KEYS[1])\nelse\n    return 0\nend`</code></pre>\n<h4>核心陷阱</h4>\n<ul>\n<li><b>锁过期但业务未完成</b>：A 持锁超时 → 锁自动释放 → B 获得锁 → A 完成后误删 B 的锁。解决：uniqueValue（UUID）+ Lua 原子判删</li>\n<li><b>主从切换丢锁</b>：master 加锁后未同步到 slave 就挂了，slave 提升为 master 后锁丢失。解决：<b>RedLock</b>（多节点过半数加锁）</li>\n<li><b>锁续期</b>：业务耗时不确定时需要看门狗机制（如 Redisson），定期续期</li>\n</ul>",
         "id": "q-x046rc"
+      },
+      {
+        "q": "缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>最常见方案：Cache Aside</h4>\n<ul>\n<li><b>读</b>：先查缓存，miss 再查数据库，然后回填缓存</li>\n<li><b>写</b>：先更新数据库，提交成功后删除缓存，而不是先更新缓存</li>\n</ul>\n<pre><code>// 推荐写路径\nfunc UpdateUser(ctx context.Context, id int64, patch UserPatch) error {\n    if err := db.WithTx(ctx, func(tx *sql.Tx) error {\n        return repo.UpdateUser(tx, id, patch)\n    }); err != nil {\n        return err\n    }\n    return cache.Del(ctx, fmt.Sprintf(\"user:%d\", id))\n}</code></pre>\n<h4>为什么不是“更新 DB + 更新缓存”</h4>\n<ul>\n<li>两个写操作跨系统，天然不是一个事务，任何一步失败都会留下脏数据</li>\n<li>并发场景下还会出现旧值回写覆盖新值的问题</li>\n</ul>\n<h4>延迟双删为什么不是银弹</h4>\n<ul>\n<li>做法：更新 DB 后立即删一次缓存，等待几十到几百毫秒后再删一次</li>\n<li>它只能降低“并发读把旧值重新写回缓存”的概率，不能严格保证一致</li>\n<li>读延迟、主从复制延迟、消息堆积都可能让“第二次删除”仍然踩不准时机</li>\n</ul>\n<h4>更稳妥的工程做法</h4>\n<ul>\n<li>以数据库为准，写后删缓存</li>\n<li>给缓存设置 TTL，避免脏数据无限期存在</li>\n<li>用 Binlog/CDC 或 MQ 做异步修复和批量失效</li>\n<li>对极高一致性场景，考虑版本号、读写穿透或直接放弃缓存</li>\n</ul>\n<div class=\"key-point\">面试里不要把“延迟双删”答成标准答案，重点是说明：它只是 best effort，真正核心是以 DB 为准 + 删除缓存 + 异步修复。</div>",
+        "id": "q-1l47aze"
       }
     ]
   },
@@ -227,6 +236,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>推荐分层</h4>\n<pre><code>internal/\n  order/\n    domain/        // 实体、值对象、领域服务、仓储接口\n    application/   // 用例编排、事务边界、DTO 转换\n    infrastructure/ // DB、MQ、第三方实现\n    interfaces/    // HTTP / gRPC Handler</code></pre>\n<h4>职责划分</h4>\n<ul>\n<li><b>Domain</b>：只表达业务规则，不依赖数据库和 Web 框架</li>\n<li><b>Application</b>：负责编排用例、事务和权限校验</li>\n<li><b>Infrastructure</b>：实现仓储、缓存、消息和外部依赖</li>\n<li><b>Interfaces</b>：处理 HTTP / gRPC 请求与响应映射</li>\n</ul>\n<h4>落地注意点</h4>\n<ul>\n<li>不要把 DDD 变成“多一层文件夹”而没有业务边界</li>\n<li>先从复杂领域开始，例如订单、支付、库存，不必全项目一次性改造</li>\n<li>应用服务负责编排，领域对象负责规则，仓储负责持久化，边界要清</li>\n</ul>",
         "id": "q-10q1978"
+      },
+      {
+        "q": "Go 后端接口如何做 RESTful 设计和版本演进？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>RESTful 不是“URL 长得像资源名”这么简单</h4>\n<ul>\n<li><b>资源导向</b>：URL 表示资源，HTTP Method 表示动作，例如 <code>GET /orders/{id}</code>、<code>POST /orders</code>、<code>PATCH /orders/{id}</code></li>\n<li><b>状态语义清晰</b>：成功返回 200/201/204，参数错误 400，未授权 401/403，找不到资源 404，冲突 409</li>\n<li><b>列表接口规范化</b>：统一支持筛选、排序、分页，避免每个接口都自创参数格式</li>\n<li><b>幂等性意识</b>：<code>PUT</code> / <code>DELETE</code> 要天然幂等，创建类接口如果会重试，最好配合幂等键</li>\n</ul>\n<pre><code>GET    /v1/orders?status=paid&amp;cursor=xxx\nPOST   /v1/orders\nGET    /v1/orders/{id}\nPATCH  /v1/orders/{id}\nPOST   /v1/orders/{id}/refunds</code></pre>\n<h4>版本演进怎么做</h4>\n<ul>\n<li>优先做向后兼容的演进，比如新增可选字段而不是修改旧字段含义</li>\n<li>出现破坏性变更时，再引入 <code>/v1</code>、<code>/v2</code> 或媒体类型版本</li>\n<li>保留废弃窗口和迁移说明，不要一上来直接删旧接口</li>\n<li>错误码、字段命名和分页协议要尽量跨版本稳定</li>\n</ul>\n<div class=\"key-point\">像 AfterShip 这类岗位写了 RESTful，本质想考的是接口抽象能力，不是背 GET/POST，而是看你会不会设计长期可演进的 API。</div>",
+        "id": "q-1nhqd6a"
       }
     ]
   },
@@ -390,6 +408,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>连接管理 Hub</h4>\n<pre><code>type Hub struct {\n    connections map[string]*Connection  // userId → conn\n    mu          sync.RWMutex\n    register    chan *Connection\n    unregister  chan *Connection\n    broadcast   chan Message\n}\n\nfunc (h *Hub) Run() {\n    for {\n        select {\n        case conn := <-h.register:\n            h.mu.Lock()\n            h.connections[conn.UserId] = conn\n            h.mu.Unlock()\n        case conn := <-h.unregister:\n            h.mu.Lock()\n            delete(h.connections, conn.UserId)\n            h.mu.Unlock()\n        case msg := <-h.broadcast:\n            h.mu.RLock()\n            for _, conn := range h.connections {\n                conn.Send(msg)\n            }\n            h.mu.RUnlock()\n        }\n    }\n}</code></pre>\n<h4>心跳保活</h4>\n<pre><code>// 服务端定期发 Ping，客户端回 Pong\n// 超过 60 秒无 Pong 则关闭连接\nconn.SetPongHandler(func(string) error {\n    conn.SetReadDeadline(time.Now().Add(60 * time.Second))\n    return nil\n})</code></pre>\n<h4>多实例广播</h4>\n<p>多个服务实例时，用户可能连在不同实例上。通过 Redis Pub/Sub 广播消息到所有实例，各实例再推送给自己管理的连接</p>",
         "id": "q-10vreb4"
+      },
+      {
+        "q": "SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>两者的核心差异</h4>\n<ul>\n<li><b>SSE (Server-Sent Events)</b>：基于 HTTP 长连接，服务端单向推送文本事件给客户端，浏览器原生支持 <code>EventSource</code></li>\n<li><b>WebSocket</b>：一次 Upgrade 后建立全双工连接，客户端和服务端都能持续发消息</li>\n</ul>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">维度</th><th style=\"text-align:left;padding:6px\">SSE</th><th style=\"text-align:left;padding:6px\">WebSocket</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">通信方向</td><td style=\"padding:6px\">服务端 → 客户端</td><td style=\"padding:6px\">双向</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">协议基础</td><td style=\"padding:6px\">HTTP</td><td style=\"padding:6px\">独立 WebSocket 协议</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">断线重连</td><td style=\"padding:6px\">浏览器原生支持</td><td style=\"padding:6px\">通常要自己实现</td></tr>\n<tr><td style=\"padding:6px\">适合场景</td><td style=\"padding:6px\">流式文本、进度更新、通知</td><td style=\"padding:6px\">聊天、协作、实时控制</td></tr>\n</table>\n<h4>AI 流式输出怎么选</h4>\n<ul>\n<li><b>只需要把 token 连续推给前端</b>：优先 SSE，接入简单、对代理和 CDN 更友好</li>\n<li><b>需要前端同时持续上送控制消息</b>：如语音对话、多人协作、实时打断，选 WebSocket</li>\n<li><b>工程细节</b>：SSE 要考虑心跳注释、防代理超时、事件 ID 断点续传；WebSocket 要考虑连接管理、背压和广播</li>\n</ul>\n<div class=\"key-point\">现在很多 AI Agent 岗写“流式输出”，面试里说“token 流默认 SSE，双向互动再升到 WebSocket”会非常加分。</div>",
+        "id": "q-1g7gty9"
       }
     ]
   },
@@ -726,6 +753,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>对比</h4>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">特性</th><th style=\"text-align:left;padding:6px\">Kafka</th><th style=\"text-align:left;padding:6px\">Asynq (Redis)</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">定位</td><td style=\"padding:6px\">分布式事件流平台</td><td style=\"padding:6px\">异步任务队列</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">消息保留</td><td style=\"padding:6px\">持久化，可重复消费</td><td style=\"padding:6px\">处理完即删除</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">吞吐量</td><td style=\"padding:6px\">百万级/秒</td><td style=\"padding:6px\">万级/秒</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">消费模式</td><td style=\"padding:6px\">发布/订阅 + Consumer Group</td><td style=\"padding:6px\">竞争消费</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">延时任务</td><td style=\"padding:6px\">不原生支持</td><td style=\"padding:6px\">原生支持 (ProcessIn)</td></tr>\n<tr><td style=\"padding:6px\">运维复杂度</td><td style=\"padding:6px\">高（ZK/KRaft + Broker 集群）</td><td style=\"padding:6px\">低（复用 Redis）</td></tr>\n</table>\n<h4>选型建议</h4>\n<ul>\n<li><b>Kafka</b>：大数据量事件流、日志收集、跨服务事件广播、需要消息回溯</li>\n<li><b>Asynq</b>：后台异步任务（邮件/通知）、定时任务、延时任务、业务量中等</li>\n</ul>\n<div class=\"project-link\">简历关联：你的项目用 Asynq 做营销召回（延时任务场景），如果面试岗位问 Kafka，可以说明为什么当前场景选 Asynq 以及何时该引入 Kafka</div>",
         "id": "q-1e0b4eb"
+      },
+      {
+        "q": "延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三个队列各管什么</h4>\n<ul>\n<li><b>延迟队列</b>：消息不是立刻消费，而是在未来某个时间点再处理，适合订单超时关闭、优惠券到期提醒、定时补偿</li>\n<li><b>重试队列</b>：业务失败后稍后再试，适合下游临时不可用、网络抖动、第三方接口超时</li>\n<li><b>死信队列 (DLQ)</b>：消息多次重试仍失败，或明确判定为毒消息时，转入死信队列等待人工排查和补偿</li>\n</ul>\n<pre><code>主队列 --消费失败--> 重试队列(指数退避)\n重试超过阈值 -------> 死信队列\n未来执行任务 -------> 延迟队列</code></pre>\n<h4>为什么会出现重试风暴</h4>\n<ul>\n<li>所有失败消息立刻重试，把本来就不稳定的下游进一步压垮</li>\n<li>多个消费者同时失败并同步重试，形成流量脉冲</li>\n</ul>\n<h4>治理手段</h4>\n<ul>\n<li><b>指数退避 + jitter</b>：第 1 次 1s，第 2 次 5s，第 3 次 30s，避免同一时刻集体重试</li>\n<li><b>限制最大重试次数</b>：超过阈值直接进 DLQ，不要无限打同一个毒消息</li>\n<li><b>错误分类</b>：参数错误、数据脏消息直接进 DLQ；网络抖动、下游 5xx 才进入重试队列</li>\n<li><b>幂等性</b>：消息重试前提是消费逻辑可重复执行，否则越重试越乱</li>\n<li><b>熔断与限流</b>：下游明显异常时先暂停消费或降速，避免雪崩</li>\n</ul>\n<div class=\"key-point\">现在很多 Go 后端岗虽然只写“消息队列”，但真正想听的是：你不仅会发消息，还知道怎么治理失败、重试和毒消息。</div>",
+        "id": "q-1vkbj6o"
       }
     ]
   },
@@ -889,6 +925,15 @@ window.INTERVIEW_DATA = [
         "tags": [],
         "a": "<h4>聚合管道</h4>\n<p>类似 Unix 管道，文档依次通过多个<b>阶段 (Stage)</b>，每个阶段对文档做一种变换</p>\n<pre><code>db.orders.aggregate([\n    { $match: { status: \"paid\" } },              // WHERE\n    { $group: {                                    // GROUP BY\n        _id: \"$storeId\",\n        totalAmount: { $sum: \"$amount\" },\n        count: { $sum: 1 }\n    }},\n    { $sort: { totalAmount: -1 } },               // ORDER BY\n    { $limit: 10 },                                // LIMIT\n    { $lookup: {                                   // LEFT JOIN\n        from: \"stores\",\n        localField: \"_id\",\n        foreignField: \"_id\",\n        as: \"store\"\n    }},\n    { $project: {                                  // SELECT\n        storeName: { $arrayElemAt: [\"$store.name\", 0] },\n        totalAmount: 1,\n        count: 1\n    }}\n])</code></pre>\n<h4>常用阶段</h4>\n<ul>\n<li><code>$match</code>：过滤（尽量放前面，利用索引）</li>\n<li><code>$group</code>：分组聚合（sum/avg/count/max/min）</li>\n<li><code>$sort</code> / <code>$limit</code> / <code>$skip</code>：排序分页</li>\n<li><code>$lookup</code>：类似 LEFT JOIN（跨集合关联）</li>\n<li><code>$unwind</code>：展开数组（一条文档变多条）</li>\n<li><code>$project</code> / <code>$addFields</code>：字段选择/计算</li>\n</ul>",
         "id": "q-jljpb8"
+      },
+      {
+        "q": "MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>MongoDB 事务怎么写</h4>\n<p>MongoDB 4.0+ 支持多文档事务，但需要在副本集或分片集群里，通过 <code>session</code> 开启：</p>\n<pre><code>session, _ := client.StartSession()\ndefer session.EndSession(ctx)\n\nerr := mongo.WithSession(ctx, session, func(sc mongo.SessionContext) error {\n    if err := session.StartTransaction(); err != nil {\n        return err\n    }\n    if _, err := orderCol.InsertOne(sc, orderDoc); err != nil {\n        return session.AbortTransaction(sc)\n    }\n    if _, err := stockCol.UpdateOne(sc, filter, update); err != nil {\n        return session.AbortTransaction(sc)\n    }\n    return session.CommitTransaction(sc)\n})</code></pre>\n<h4>和 MySQL 的差异</h4>\n<ul>\n<li><b>MySQL</b>：事务是第一公民，关系模型、外键、JOIN、锁模型都更成熟，适合订单、支付这类强事务场景</li>\n<li><b>MongoDB</b>：事务是后来补上的能力，能用但成本更高，通常更鼓励通过文档建模减少跨文档事务</li>\n<li><b>性能影响</b>：MongoDB 多文档事务会带来更多协调和资源占用，不适合滥用</li>\n<li><b>设计思路</b>：如果数据能嵌入同一文档，MongoDB 更推荐单文档原子更新；MySQL 则天然适合多表事务</li>\n</ul>\n<h4>工程建议</h4>\n<ul>\n<li>只在确实需要维护跨文档一致性时再上事务</li>\n<li>事务里不要做长时间外部调用，避免持有资源过久</li>\n<li>对高并发读多写少场景，优先靠文档模型设计而不是把 MongoDB 用成另一套 MySQL</li>\n</ul>\n<div class=\"key-point\">现在不少 Go 后端 JD 只写“MongoDB 经验”，真正拉开差距的是你能说清：什么时候该用事务，什么时候应该回到文档建模本身。</div>",
+        "id": "q-ikzhl1"
       }
     ]
   },

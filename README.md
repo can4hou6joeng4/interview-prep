@@ -11,11 +11,12 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 
 ## Highlights
 
-- 19 categories and 114 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
+- 19 categories and 119 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
 - Dual learning modes: flashcards for focused review and list mode for search-heavy browsing
 - Combined filters for category, difficulty, search, unknown items, and random order
 - Stable question IDs with browser-side progress persistence and legacy progress migration
 - Zero-build static architecture, designed for GitHub Pages deployment
+- Repository-level validation keeps README stats, SEO metadata, and required site assets in sync
 
 ## Live Demo
 
@@ -69,6 +70,7 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 node --check assets/app.js
 node --check assets/data.js
 node scripts/validate-data.mjs
+node scripts/validate-site.mjs
 ```
 
 ## Community
