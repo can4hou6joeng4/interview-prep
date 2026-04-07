@@ -52,6 +52,7 @@
 			<div class="modes">
 				<button type="button" class="on" data-m="card">卡片</button>
 				<button type="button" data-m="list">列表</button>
+				<button type="button" data-m="mock">模拟</button>
 			</div>
 		</div>
 
@@ -112,6 +113,105 @@
 			</div>
 		</div>
 		<div id="lsC"></div>
+	</section>
+
+	<section class="mk-v" id="mkV" aria-label="模拟面试模式">
+		<div class="mk-shell">
+			<div class="mk-head">
+				<div class="mk-copy">
+					<p class="mk-kicker">Mock Mode</p>
+					<h2 class="mk-title">模拟面试</h2>
+					<p class="mk-sub">按当前筛选范围抽题，先口述作答，再看参考答案并重新评分。</p>
+				</div>
+				<p class="mk-meta" id="mkMeta">当前范围 0 题</p>
+			</div>
+
+			<div class="mk-controls">
+				<div class="mk-group" aria-label="题源选择">
+					<span class="mk-label">题源</span>
+					<div class="mk-options">
+						<button type="button" class="mk-opt on" data-mock-pool="mastered">掌握回顾</button>
+						<button type="button" class="mk-opt" data-mock-pool="fuzzy">冲刺提升</button>
+						<button type="button" class="mk-opt" data-mock-pool="mixed">真实混合</button>
+					</div>
+				</div>
+
+				<div class="mk-group" aria-label="题量选择">
+					<span class="mk-label">题量</span>
+					<div class="mk-options">
+						<button type="button" class="mk-opt on" data-mock-size="5">5 题</button>
+						<button type="button" class="mk-opt" data-mock-size="8">8 题</button>
+						<button type="button" class="mk-opt" data-mock-size="12">12 题</button>
+					</div>
+				</div>
+
+				<div class="mk-toolbar">
+					<button type="button" class="mk-btn" id="mkStartB">开始模拟</button>
+					<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkRestartB">按当前设置重开</button>
+					<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkFinishB">提前结束</button>
+				</div>
+			</div>
+
+			<p class="mk-hint" id="mkHint">模拟模式会忽略“未掌握”和“随机”开关，只继承分类、难度和搜索范围。</p>
+
+			<div class="mk-stage">
+				<div class="mk-empty" id="mkEmpty">
+					<h3>先开口答，再对照答案复盘</h3>
+					<p id="mkEmptyText">默认会从已掌握题里抽题，检查你是不是真的能像面试一样讲出来，而不是只会看答案。</p>
+				</div>
+
+				<div class="mk-card hidden" id="mkCard">
+					<div class="mk-status">
+						<span class="mk-chip" id="mkRound">第 1 / 5 题</span>
+						<span class="mk-chip" id="mkSourceChip">掌握回顾</span>
+						<span class="mk-chip" id="mkTotalTimer">总时长 00:00</span>
+						<span class="mk-chip" id="mkQuestionTimer">本题 00:00</span>
+					</div>
+
+					<div class="mk-card-head">
+						<div>
+							<p class="mk-cat" id="mkCat">分类</p>
+							<h3 class="mk-question" id="mkQuestion">题目</h3>
+						</div>
+						<span class="mk-score" id="mkInitialScore">当前状态：已掌握</span>
+					</div>
+
+					<p class="mk-prompt">先用你自己的话完整回答，再决定是否查看参考答案。</p>
+
+					<div class="mk-answer hidden" id="mkAnswerWrap">
+						<div class="mk-answer-head">参考答案</div>
+						<div class="mk-answer-body" id="mkAnswer"></div>
+					</div>
+
+					<div class="mk-card-actions">
+						<button type="button" class="mk-btn" id="mkRevealB">我答完了，查看参考答案</button>
+						<div class="mk-rate hidden" id="mkRateGroup">
+							<span class="mk-rate-label">这题你实际回答得怎么样？</span>
+							<div class="mk-rate-actions">
+								<button type="button" class="rt rt-f" id="mkRate1">&#10007; 答得差</button>
+								<button type="button" class="rt rt-z" id="mkRate2">&#8776; 一般</button>
+								<button type="button" class="rt rt-p" id="mkRate3">&#10003; 顺畅</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="mk-summary hidden" id="mkSummary">
+					<div class="mk-summary-head">
+						<div>
+							<p class="mk-kicker">Round Summary</p>
+							<h3 class="mk-summary-title">本轮模拟完成</h3>
+						</div>
+						<span class="mk-score mk-score-strong" id="mkSummaryDuration">总时长 00:00</span>
+					</div>
+					<div class="mk-summary-grid" id="mkSummaryGrid"></div>
+					<div class="mk-review">
+						<h4>建议优先复盘</h4>
+						<ul id="mkReviewList"></ul>
+					</div>
+				</div>
+			</div>
+		</div>
 	</section>
 
 	<div class="prog"><div class="prog-h"><span class="prog-t" id="pL">已掌握 0 / 0</span><span class="prog-t" id="pP">0%</span></div><div class="prog-bar"><div class="prog-fill" id="pF"></div></div></div>
