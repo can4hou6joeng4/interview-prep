@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://can4hou6joeng4.github.io/interview-prep/sitemap.xml

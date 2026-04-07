@@ -13,6 +13,7 @@
 <meta property="og:type" content="website">
 <title>Go 后端面试题库</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -76,14 +77,22 @@
 	</section>
 
 	<section class="ls-v" id="lsV" aria-label="列表检索模式">
-		<div class="ls-bar">
-			<input class="ls-s" type="text" placeholder="搜索关键词..." id="sI" autocomplete="off">
-			<button type="button" class="ls-b" id="clrSearchB">清空搜索</button>
-			<button type="button" class="ls-b" onclick="expAll()">展开</button>
-			<button type="button" class="ls-b" onclick="colAll()">收起</button>
-			<button type="button" class="ls-b" onclick="rstP()">重置进度</button>
+		<div class="ls-shell">
+			<div class="ls-head">
+				<div class="ls-copy">
+					<p class="ls-kicker">List Mode</p>
+					<h2 class="ls-title">按主题浏览、搜索与批量复习</h2>
+				</div>
+				<p class="ls-meta" id="lsMeta">当前筛选 0 题</p>
+			</div>
+			<div class="ls-bar">
+				<input class="ls-s" type="text" placeholder="搜索关键词..." id="sI" autocomplete="off">
+				<button type="button" class="ls-b" id="clrSearchB">清空搜索</button>
+				<button type="button" class="ls-b" onclick="expAll()">展开</button>
+				<button type="button" class="ls-b" onclick="colAll()">收起</button>
+				<button type="button" class="ls-b" onclick="rstP()">重置进度</button>
+			</div>
 		</div>
-		<p class="ls-meta" id="lsMeta">当前筛选 0 题</p>
 		<div id="lsC"></div>
 	</section>
 
