@@ -25,6 +25,8 @@ jobs:
           test -f assets/data.js
           test -f assets/app.js
           test -f scripts/validate-data.mjs
+          test -f scripts/validate-site.mjs
+          test -f assets/social-preview.png
 
       - name: Validate browser scripts
         run: |
@@ -33,3 +35,6 @@ jobs:
 
       - name: Validate question dataset
         run: node scripts/validate-data.mjs
+
+      - name: Validate site metadata and repository summaries
+        run: node scripts/validate-site.mjs

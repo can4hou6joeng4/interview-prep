@@ -27,6 +27,12 @@
    node scripts/validate-data.mjs
    ```
 
+3. 校验 README 统计、站点元信息与关键静态文件：
+
+   ```bash
+   node scripts/validate-site.mjs
+   ```
+
 ## 内容维护约定
 
 - 题库内容集中放在 `assets/data.js`。
