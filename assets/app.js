@@ -11,6 +11,8 @@ const DEFAULT_PREFS = {
   unmV: false,
   rndV: false,
   searchV: '',
+  mockPool: 'mastered',
+  mockSize: 5,
 };
 const DIFF_LABELS = {
   easy: '基础',
@@ -18,7 +20,25 @@ const DIFF_LABELS = {
   hard: '深入',
 };
 const VALID_DIFFS = new Set(['all', 'easy', 'medium', 'hard']);
-const VALID_MODES = new Set(['card', 'list']);
+const VALID_MODES = new Set(['card', 'list', 'mock']);
+const VALID_MOCK_POOLS = new Set(['mastered', 'fuzzy', 'mixed']);
+const VALID_MOCK_SIZES = new Set([5, 8, 12]);
+const SCORE_LABELS = {
+  0: '未标记',
+  1: '不会',
+  2: '模糊',
+  3: '掌握',
+};
+const MOCK_POOL_LABELS = {
+  mastered: '掌握回顾',
+  fuzzy: '冲刺提升',
+  mixed: '真实混合',
+};
+const MOCK_POOL_HINTS = {
+  mastered: '默认从当前已掌握题里抽题，检查自己是不是真的能像面试一样讲出来。',
+  fuzzy: '优先抽当前标记为模糊的题，逼自己把“知道一点”练成“能回答顺”。',
+  mixed: '按 7:3 混合已掌握和模糊题，更接近真实面试时的出题节奏。',
+};
 
 const $ = (id) => document.getElementById(id);
 
@@ -153,6 +173,12 @@ function sanitizePrefs(rawPrefs) {
   if (typeof rawPrefs.searchV === 'string') {
     next.searchV = rawPrefs.searchV.slice(0, 120);
   }
+  if (VALID_MOCK_POOLS.has(rawPrefs.mockPool)) {
+    next.mockPool = rawPrefs.mockPool;
+  }
+  if (VALID_MOCK_SIZES.has(Number(rawPrefs.mockSize))) {
+    next.mockSize = Number(rawPrefs.mockSize);
+  }
   return next;
 }
 
@@ -166,6 +192,8 @@ function savePrefs() {
       unmV,
       rndV,
       searchV,
+      mockPool,
+      mockSize,
     })
   );
 }
@@ -175,21 +203,55 @@ function loadPrefs() {
 }
 
 let S = migrateState();
-let { mode, catV, difV, unmV, rndV, searchV } = loadPrefs();
+let { mode, catV, difV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
 let idx = 0;
 let cards = [];
 let flipped = false;
+let mockSession = null;
+let mockIndex = 0;
+let mockRevealed = false;
+let mockTicker = null;
 
-function filteredCards() {
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+function scoreLabel(score) {
+  return SCORE_LABELS[normalizeScore(score)] || SCORE_LABELS[0];
+}
+
+function scoreTone(score) {
+  if (score === 3) {
+    return 'p';
+  }
+  if (score === 2) {
+    return 'z';
+  }
+  if (score === 1) {
+    return 'f';
+  }
+  return 'n';
+}
+
+function scopeCards() {
   const query = searchV.trim().toLowerCase();
-  let next = all.filter((item) => {
+  return all.filter((item) => {
     if (catV !== 'all' && String(item.ci) !== String(catV)) {
       return false;
     }
     if (difV !== 'all' && item.diff !== difV) {
-      return false;
-    }
-    if (unmV && (S[item.id] || 0) >= 3) {
       return false;
     }
     if (query && !item.searchText.includes(query)) {
@@ -197,7 +259,14 @@ function filteredCards() {
     }
     return true;
   });
+}
 
+function filteredCards() {
+  let next = scopeCards();
+
+  if (unmV) {
+    next = next.filter((item) => (S[item.id] || 0) < 3);
+  }
   if (rndV) {
     next = shuffle(next);
   }
@@ -229,7 +298,12 @@ function syncModeButtons() {
   document.querySelectorAll('[data-m]').forEach((button) => {
     button.classList.toggle('on', button.dataset.m === mode);
   });
-  $('app').className = mode === 'list' ? 'app mode-ls' : 'app';
+  $('app').className =
+    mode === 'list'
+      ? 'app mode-ls'
+      : mode === 'mock'
+        ? 'app mode-mk'
+        : 'app';
 }
 
 function syncDifficultyButtons() {
@@ -260,8 +334,269 @@ function syncSearchUi() {
 }
 
 function syncToggleButtons() {
-  $('unmB').classList.toggle('on', unmV);
-  $('rndB').classList.toggle('on', rndV);
+  const ignoreStudyToggles = mode === 'mock';
+  const unmButton = $('unmB');
+  const rndButton = $('rndB');
+
+  unmButton.classList.toggle('on', !ignoreStudyToggles && unmV);
+  rndButton.classList.toggle('on', !ignoreStudyToggles && rndV);
+  unmButton.disabled = ignoreStudyToggles;
+  rndButton.disabled = ignoreStudyToggles;
+  unmButton.title = ignoreStudyToggles ? '模拟面试模式会忽略“未掌握”开关' : '';
+  rndButton.title = ignoreStudyToggles ? '模拟面试模式会忽略“随机”开关' : '';
+}
+
+function getMockAvailability() {
+  const scoped = scopeCards();
+  const mastered = scoped.filter((item) => (S[item.id] || 0) === 3);
+  const fuzzy = scoped.filter((item) => (S[item.id] || 0) === 2);
+
+  return {
+    scoped,
+    mastered,
+    fuzzy,
+  };
+}
+
+function buildMockDeck() {
+  const { mastered, fuzzy } = getMockAvailability();
+
+  if (mockPool === 'mastered') {
+    return shuffle(mastered).slice(0, mockSize);
+  }
+
+  if (mockPool === 'fuzzy') {
+    return shuffle(fuzzy).slice(0, mockSize);
+  }
+
+  const selected = [];
+  const masteredTarget = Math.min(mastered.length, Math.max(1, Math.round(mockSize * 0.7)));
+  const fuzzyTarget = Math.min(fuzzy.length, mockSize - masteredTarget);
+
+  selected.push(...shuffle(mastered).slice(0, masteredTarget));
+  selected.push(...shuffle(fuzzy).slice(0, fuzzyTarget));
+
+  if (selected.length < mockSize) {
+    const fallback = shuffle([...mastered, ...fuzzy].filter((item) => !selected.includes(item)));
+    selected.push(...fallback.slice(0, mockSize - selected.length));
+  }
+
+  return shuffle(selected);
+}
+
+function getCurrentMockEntry() {
+  return mockSession?.items?.[mockIndex] || null;
+}
+
+function updateMockTimers() {
+  if (
+    mode !== 'mock' ||
+    !mockSession ||
+    mockSession.completedAt
+  ) {
+    return;
+  }
+
+  const entry = getCurrentMockEntry();
+  $('mkTotalTimer').textContent = `总时长 ${formatDuration(Date.now() - mockSession.startedAt)}`;
+  $('mkQuestionTimer').textContent = `本题 ${formatDuration(entry?.startedAt ? Date.now() - entry.startedAt : 0)}`;
+}
+
+function startMockTicker() {
+  if (mockTicker || mode !== 'mock' || !mockSession || mockSession.completedAt) {
+    return;
+  }
+  mockTicker = window.setInterval(updateMockTimers, 1000);
+  updateMockTimers();
+}
+
+function stopMockTicker() {
+  if (mockTicker) {
+    window.clearInterval(mockTicker);
+    mockTicker = null;
+  }
+}
+
+function startMockSession() {
+  const deck = buildMockDeck();
+  if (!deck.length) {
+    mockSession = null;
+    mockIndex = 0;
+    mockRevealed = false;
+    renderMock();
+    return;
+  }
+
+  const now = Date.now();
+  mockSession = {
+    pool: mockPool,
+    requestedSize: mockSize,
+    startedAt: now,
+    completedAt: null,
+    items: deck.map((item, index) => ({
+      item,
+      initialScore: S[item.id] || 0,
+      resultScore: null,
+      startedAt: index === 0 ? now : null,
+      durationMs: 0,
+    })),
+  };
+  mockIndex = 0;
+  mockRevealed = false;
+  startMockTicker();
+  renderMock();
+}
+
+function restartMockSession() {
+  startMockSession();
+}
+
+function finishMockSession() {
+  if (!mockSession || mockSession.completedAt) {
+    return;
+  }
+  mockSession.completedAt = Date.now();
+  mockRevealed = false;
+  stopMockTicker();
+  renderMock();
+}
+
+function revealMockAnswer() {
+  if (!getCurrentMockEntry() || mockSession?.completedAt) {
+    return;
+  }
+  mockRevealed = true;
+  renderMock();
+}
+
+function rateMock(level) {
+  const entry = getCurrentMockEntry();
+  if (!entry || mockSession?.completedAt || entry.resultScore !== null) {
+    return;
+  }
+
+  const now = Date.now();
+  entry.resultScore = level;
+  entry.durationMs = Math.max(0, now - (entry.startedAt || now));
+  S[entry.item.id] = level;
+  saveState();
+  stats();
+
+  if (mockIndex >= mockSession.items.length - 1) {
+    mockSession.completedAt = now;
+    mockRevealed = false;
+    stopMockTicker();
+    renderMock();
+    return;
+  }
+
+  mockIndex += 1;
+  mockRevealed = false;
+  const nextEntry = getCurrentMockEntry();
+  if (nextEntry && !nextEntry.startedAt) {
+    nextEntry.startedAt = now;
+  }
+  renderMock();
+}
+
+function renderMockSummary() {
+  const answered = mockSession.items.filter((entry) => entry.resultScore !== null);
+  const smooth = answered.filter((entry) => entry.resultScore === 3).length;
+  const shaky = answered.filter((entry) => entry.resultScore === 2).length;
+  const weak = answered.filter((entry) => entry.resultScore === 1).length;
+  const downgraded = answered.filter((entry) => entry.resultScore < entry.initialScore).length;
+  const unfinished = mockSession.items.length - answered.length;
+  const duration = (mockSession.completedAt || Date.now()) - mockSession.startedAt;
+  const reviewItems = mockSession.items.filter((entry) => entry.resultScore === null || entry.resultScore < 3);
+
+  $('mkSummaryDuration').textContent = `总时长 ${formatDuration(duration)}`;
+  $('mkSummaryGrid').innerHTML = [
+    ['完成题数', `${answered.length}/${mockSession.items.length}`],
+    ['答得顺畅', `${smooth} 题`],
+    ['仍然模糊', `${shaky} 题`],
+    ['需要重学', `${weak} 题`],
+    ['被打回', `${downgraded} 题`],
+    ['未完成', `${unfinished} 题`],
+  ]
+    .map(
+      ([label, value]) =>
+        `<div class="mk-stat"><span class="mk-stat-label">${label}</span><strong class="mk-stat-value">${value}</strong></div>`
+    )
+    .join('');
+
+  $('mkReviewList').innerHTML = reviewItems.length
+    ? reviewItems
+        .map((entry) => {
+          const resultText = entry.resultScore === null ? '未作答' : scoreLabel(entry.resultScore);
+          return `<li><span>${escapeHtml(entry.item.q)}</span><strong>${resultText}</strong></li>`;
+        })
+        .join('')
+    : '<li><span>这一轮没有需要优先回看的题，可以切到“真实混合”继续练。</span><strong>状态稳定</strong></li>';
+}
+
+function renderMock() {
+  const { scoped, mastered, fuzzy } = getMockAvailability();
+  const availableCount =
+    mockPool === 'mastered'
+      ? mastered.length
+      : mockPool === 'fuzzy'
+        ? fuzzy.length
+        : mastered.length + fuzzy.length;
+
+  document.querySelectorAll('[data-mock-pool]').forEach((button) => {
+    button.classList.toggle('on', button.dataset.mockPool === mockPool);
+  });
+  document.querySelectorAll('[data-mock-size]').forEach((button) => {
+    button.classList.toggle('on', Number(button.dataset.mockSize) === mockSize);
+  });
+
+  $('mkMeta').textContent = `当前范围 ${scoped.length} 题 · 已掌握 ${mastered.length} · 模糊 ${fuzzy.length}`;
+
+  const hasActiveSession = Boolean(mockSession && !mockSession.completedAt);
+  $('mkStartB').classList.toggle('hidden', hasActiveSession);
+  $('mkRestartB').classList.toggle('hidden', !hasActiveSession);
+  $('mkFinishB').classList.toggle('hidden', !hasActiveSession);
+  $('mkStartB').textContent = mockSession?.completedAt ? '再来一轮' : '开始模拟';
+  $('mkStartB').disabled = availableCount === 0;
+
+  $('mkHint').textContent = hasActiveSession
+    ? `当前会话已锁定 ${mockSession.items.length} 题；切换题源、题量或顶部筛选只会影响下一轮。`
+    : `${MOCK_POOL_HINTS[mockPool]} 模拟模式会忽略“未掌握”和“随机”开关，只继承分类、难度和搜索范围。`;
+
+  $('mkEmpty').classList.add('hidden');
+  $('mkCard').classList.add('hidden');
+  $('mkSummary').classList.add('hidden');
+
+  if (!mockSession) {
+    $('mkEmpty').classList.remove('hidden');
+    $('mkEmptyText').textContent = availableCount
+      ? `${MOCK_POOL_LABELS[mockPool]} 当前可抽 ${availableCount} 题。先开口回答，再对照答案复盘。`
+      : `当前筛选范围里没有可用于“${MOCK_POOL_LABELS[mockPool]}”的题。先在卡片模式里把题标成“掌握/模糊”，或者缩小筛选范围。`;
+    stopMockTicker();
+    return;
+  }
+
+  if (mockSession.completedAt) {
+    $('mkSummary').classList.remove('hidden');
+    renderMockSummary();
+    stopMockTicker();
+    return;
+  }
+
+  const entry = getCurrentMockEntry();
+  $('mkCard').classList.remove('hidden');
+  $('mkRound').textContent = `第 ${mockIndex + 1} / ${mockSession.items.length} 题`;
+  $('mkSourceChip').textContent = MOCK_POOL_LABELS[mockSession.pool];
+  $('mkCat').textContent = `${entry.item.icon} ${entry.item.cat} · ${DIFF_LABELS[entry.item.diff]}`;
+  $('mkQuestion').textContent = entry.item.q;
+  $('mkInitialScore').textContent = `当前状态：${scoreLabel(entry.initialScore)}`;
+  $('mkInitialScore').className = `mk-score mk-score-${scoreTone(entry.initialScore)}`;
+  $('mkAnswer').innerHTML = entry.item.a;
+  $('mkAnswerWrap').classList.toggle('hidden', !mockRevealed);
+  $('mkRevealB').classList.toggle('hidden', mockRevealed);
+  $('mkRateGroup').classList.toggle('hidden', !mockRevealed);
+  startMockTicker();
+  updateMockTimers();
 }
 
 function renderFC() {
@@ -397,7 +732,7 @@ function stats() {
 }
 
 function apply() {
-  cards = filteredCards();
+  cards = mode === 'mock' ? scopeCards() : filteredCards();
   idx = Math.min(idx, Math.max(cards.length - 1, 0));
   syncModeButtons();
   syncCategoryTabs();
@@ -406,8 +741,12 @@ function apply() {
   syncSearchUi();
   if (mode === 'card') {
     renderFC();
-  } else {
+    stopMockTicker();
+  } else if (mode === 'list') {
     renderLS();
+    stopMockTicker();
+  } else {
+    renderMock();
   }
   stats();
   savePrefs();
@@ -575,29 +914,64 @@ $('fcF').addEventListener('click', () => {
   }
 });
 
+document.querySelectorAll('[data-mock-pool]').forEach((button) => {
+  button.addEventListener('click', () => {
+    mockPool = button.dataset.mockPool;
+    apply();
+  });
+});
+
+document.querySelectorAll('[data-mock-size]').forEach((button) => {
+  button.addEventListener('click', () => {
+    mockSize = Number(button.dataset.mockSize);
+    apply();
+  });
+});
+
+$('mkStartB').addEventListener('click', startMockSession);
+$('mkRestartB').addEventListener('click', restartMockSession);
+$('mkFinishB').addEventListener('click', finishMockSession);
+$('mkRevealB').addEventListener('click', revealMockAnswer);
+$('mkRate1').addEventListener('click', () => rateMock(1));
+$('mkRate2').addEventListener('click', () => rateMock(2));
+$('mkRate3').addEventListener('click', () => rateMock(3));
+
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && document.activeElement === $('sI')) {
     clearSearch();
     return;
   }
-  if (mode !== 'card' || event.target.tagName === 'INPUT') {
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
     return;
   }
-  if (event.key === ' ' || event.key === 'Enter') {
-    event.preventDefault();
-    flip();
-  } else if (event.key === 'ArrowLeft') {
-    event.preventDefault();
-    prev();
-  } else if (event.key === 'ArrowRight') {
-    event.preventDefault();
-    next();
-  } else if (event.key === '1') {
-    rate(1);
-  } else if (event.key === '2') {
-    rate(2);
-  } else if (event.key === '3') {
-    rate(3);
+  if (mode === 'card') {
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault();
+      flip();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      prev();
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      next();
+    } else if (event.key === '1') {
+      rate(1);
+    } else if (event.key === '2') {
+      rate(2);
+    } else if (event.key === '3') {
+      rate(3);
+    }
+  } else if (mode === 'mock' && mockSession && !mockSession.completedAt) {
+    if ((event.key === ' ' || event.key === 'Enter') && !mockRevealed) {
+      event.preventDefault();
+      revealMockAnswer();
+    } else if (mockRevealed && event.key === '1') {
+      rateMock(1);
+    } else if (mockRevealed && event.key === '2') {
+      rateMock(2);
+    } else if (mockRevealed && event.key === '3') {
+      rateMock(3);
+    }
   }
 });
 
