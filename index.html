@@ -29,29 +29,35 @@
 		<p>基于简历定制 · 记忆卡片</p>
 	</header>
 
-	<div class="sts">
-		<span class="st" id="s-t">0 题</span>
-		<span class="st st-g" id="s-p">0 掌握</span>
-		<span class="st st-o" id="s-z">0 模糊</span>
-		<span class="st st-r" id="s-f">0 不会</span>
-	</div>
+	<section class="nav-band" aria-label="导航与筛选">
+		<div class="nav-band-top">
+			<div class="sts">
+				<span class="st" id="s-t">0 题</span>
+				<span class="st st-g" id="s-p">0 掌握</span>
+				<span class="st st-o" id="s-z">0 模糊</span>
+				<span class="st st-r" id="s-f">0 不会</span>
+			</div>
 
-	<div class="modes">
-		<button type="button" class="on" data-m="card">卡片</button>
-		<button type="button" data-m="list">列表</button>
-	</div>
+			<div class="modes">
+				<button type="button" class="on" data-m="card">卡片</button>
+				<button type="button" data-m="list">列表</button>
+			</div>
+		</div>
 
-	<div class="cat-tabs" id="catF"></div>
+		<div class="nav-band-main">
+			<div class="cat-tabs" id="catF"></div>
 
-	<div class="ctrl-row">
-		<button type="button" class="ctrl on" data-d="all">全部</button>
-		<button type="button" class="ctrl de" data-d="easy">基础</button>
-		<button type="button" class="ctrl dm" data-d="medium">进阶</button>
-		<button type="button" class="ctrl dh" data-d="hard">深入</button>
-		<button type="button" class="ctrl" id="unmB">未掌握</button>
-		<button type="button" class="ctrl" id="rndB">随机</button>
-		<button type="button" class="ctrl ctrl-search hidden" id="searchTagB" aria-live="polite"></button>
-	</div>
+			<div class="ctrl-row">
+				<button type="button" class="ctrl on" data-d="all">全部</button>
+				<button type="button" class="ctrl de" data-d="easy">基础</button>
+				<button type="button" class="ctrl dm" data-d="medium">进阶</button>
+				<button type="button" class="ctrl dh" data-d="hard">深入</button>
+				<button type="button" class="ctrl" id="unmB">未掌握</button>
+				<button type="button" class="ctrl" id="rndB">随机</button>
+				<button type="button" class="ctrl ctrl-search hidden" id="searchTagB" aria-live="polite"></button>
+			</div>
+		</div>
+	</section>
 
 	<section class="fc-v" id="fcV" aria-label="卡片学习模式">
 		<div class="stage"><div class="fc" id="fc"><div class="fc-in">
