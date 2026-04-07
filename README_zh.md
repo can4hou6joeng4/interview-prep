@@ -42,9 +42,11 @@ python3 -m http.server 4173
 │   └── validate-data.mjs
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
+├── 404.html
 ├── LICENSE
 ├── README.md
 ├── README_zh.md
+├── robots.txt
 └── SECURITY.md
 ```
 
@@ -56,6 +58,7 @@ python3 -m http.server 4173
 - 其中 `shoply-deep-dive.md` 是高质量项目深挖题源，`jd-questions.md` 是扩题 backlog
 - 当前已并入四批高优题，覆盖 Shoply 项目深挖、gRPC、性能优化、手撕题、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理、测试工程、弱网优化、程序化广告和 LangChain 基础
 - 发布工作流只上传站点实际需要的文件，避免把非站点素材一起公开
+- 当前静态站点已补齐 `404.html`、`robots.txt`、`site.webmanifest`、`sitemap.xml` 等基础配套文件
 
 ## 提交前建议执行
 

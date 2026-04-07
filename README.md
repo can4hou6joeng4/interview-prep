@@ -47,9 +47,11 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   └── validate-data.mjs
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
+├── 404.html
 ├── LICENSE
 ├── README.md
 ├── README_zh.md
+├── robots.txt
 └── SECURITY.md
 ```
 
@@ -59,6 +61,7 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 - Interaction logic lives in `assets/app.js`
 - Source notes and expansion backlog live under `content-sources/`
 - GitHub Pages only deploys the site artifact, not the full repo contents
+- The static site includes a custom `404.html`, `robots.txt`, `site.webmanifest`, and `sitemap.xml` for a more complete deployment surface
 
 ## Validation
 

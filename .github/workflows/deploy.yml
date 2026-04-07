@@ -49,7 +49,7 @@ jobs:
           cp index.html dist/
           cp -R assets dist/
           touch dist/.nojekyll
-          for file in CNAME robots.txt site.webmanifest; do
+          for file in CNAME robots.txt site.webmanifest sitemap.xml 404.html; do
             if [ -f "$file" ]; then
               cp "$file" dist/
             fi
