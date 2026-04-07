@@ -33,6 +33,7 @@ const MOCK_POOL_LABELS = {
   mastered: '掌握回顾',
   fuzzy: '冲刺提升',
   mixed: '真实混合',
+  review: '薄弱回炉',
 };
 const MOCK_POOL_HINTS = {
   mastered: '默认从当前已掌握题里抽题，检查自己是不是真的能像面试一样讲出来。',
@@ -384,6 +385,35 @@ function buildMockDeck() {
   return shuffle(selected);
 }
 
+function createMockSession(deck, pool = mockPool) {
+  if (!deck.length) {
+    mockSession = null;
+    mockIndex = 0;
+    mockRevealed = false;
+    renderMock();
+    return;
+  }
+
+  const now = Date.now();
+  mockSession = {
+    pool,
+    requestedSize: deck.length,
+    startedAt: now,
+    completedAt: null,
+    items: deck.map((item, index) => ({
+      item,
+      initialScore: S[item.id] || 0,
+      resultScore: null,
+      startedAt: index === 0 ? now : null,
+      durationMs: 0,
+    })),
+  };
+  mockIndex = 0;
+  mockRevealed = false;
+  startMockTicker();
+  renderMock();
+}
+
 function getCurrentMockEntry() {
   return mockSession?.items?.[mockIndex] || null;
 }
@@ -419,36 +449,23 @@ function stopMockTicker() {
 
 function startMockSession() {
   const deck = buildMockDeck();
-  if (!deck.length) {
-    mockSession = null;
-    mockIndex = 0;
-    mockRevealed = false;
-    renderMock();
-    return;
-  }
-
-  const now = Date.now();
-  mockSession = {
-    pool: mockPool,
-    requestedSize: mockSize,
-    startedAt: now,
-    completedAt: null,
-    items: deck.map((item, index) => ({
-      item,
-      initialScore: S[item.id] || 0,
-      resultScore: null,
-      startedAt: index === 0 ? now : null,
-      durationMs: 0,
-    })),
-  };
-  mockIndex = 0;
-  mockRevealed = false;
-  startMockTicker();
-  renderMock();
+  createMockSession(deck, mockPool);
 }
 
 function restartMockSession() {
   startMockSession();
+}
+
+function restartWeakMockSession() {
+  if (!mockSession?.completedAt) {
+    return;
+  }
+  const weakDeck = shuffle(
+    mockSession.items
+      .filter((entry) => entry.resultScore === null || entry.resultScore < 3)
+      .map((entry) => entry.item)
+  );
+  createMockSession(weakDeck, 'review');
 }
 
 function finishMockSession() {
@@ -510,6 +527,7 @@ function renderMockSummary() {
   const reviewItems = mockSession.items.filter((entry) => entry.resultScore === null || entry.resultScore < 3);
 
   $('mkSummaryDuration').textContent = `总时长 ${formatDuration(duration)}`;
+  $('mkRetryWeakB').classList.toggle('hidden', reviewItems.length === 0);
   $('mkSummaryGrid').innerHTML = [
     ['完成题数', `${answered.length}/${mockSession.items.length}`],
     ['答得顺畅', `${smooth} 题`],
@@ -931,6 +949,7 @@ document.querySelectorAll('[data-mock-size]').forEach((button) => {
 $('mkStartB').addEventListener('click', startMockSession);
 $('mkRestartB').addEventListener('click', restartMockSession);
 $('mkFinishB').addEventListener('click', finishMockSession);
+$('mkRetryWeakB').addEventListener('click', restartWeakMockSession);
 $('mkRevealB').addEventListener('click', revealMockAnswer);
 $('mkRate1').addEventListener('click', () => rateMock(1));
 $('mkRate2').addEventListener('click', () => rateMock(2));
