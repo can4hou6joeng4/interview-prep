@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
 };
 const DEFAULT_PREFS = {
   mode: 'card',
+  presetV: 'all',
   catV: 'all',
   difV: 'all',
   tagV: 'all',
@@ -29,7 +30,57 @@ const TAG_FILTERS = [
   { id: 'project', label: '简历项目' },
   { id: 'scene', label: '场景题' },
 ];
+const LEARNING_PATHS = [
+  {
+    id: 'all',
+    label: '自由筛题',
+    summary: '保留完整题库，自由组合筛选条件',
+    hint: '适合你已经知道自己要练哪一类题时，直接按分类、标签和搜索词自由组合。',
+    suggestion: '先按分类粗筛，再叠加标签和搜索词做精确收敛。',
+  },
+  {
+    id: 'commerce',
+    label: '跨境交易',
+    summary: '订单、支付、结算、缓存一致性',
+    categories: ['支付与交易系统', 'MySQL 数据库', 'Redis 缓存与队列', '项目场景深挖'],
+    hint: '更贴近跨境电商、交易履约和金额链路类 JD，能顺手把幂等、快照、分摊和回调一致性串起来。',
+    suggestion: '建议先看列表把链路讲顺，再切卡片或模拟面试练口述。',
+  },
+  {
+    id: 'platform',
+    label: '平台治理',
+    summary: '资源模型、配置分层、微服务治理、高可用',
+    categories: ['设计模式与架构', '微服务治理', '高并发与高可用', 'Docker 与部署'],
+    hint: '适合平台、中后台和基础设施方向，重点训练抽象建模、服务治理和稳定性表达。',
+    suggestion: '先按列表理解边界，再叠加“场景题”标签做系统设计复盘。',
+  },
+  {
+    id: 'realtime',
+    label: '实时系统',
+    summary: '长连接、MQ、协议、容量评估',
+    categories: ['WebSocket 与实时通信', 'Kafka 消息队列', '计算机网络', '高并发与高可用'],
+    hint: '覆盖语音房、直播间、实时统计链路和协议选型，适合练“为什么这么设计”的表达。',
+    suggestion: '建议配合“场景题”标签，重点练时序、吞吐和退化策略。',
+  },
+  {
+    id: 'project',
+    label: '项目深挖',
+    summary: '项目故事线、设计取舍、复盘表达',
+    categories: ['项目场景深挖', '支付与交易系统', '设计模式与架构', 'Go 语言核心'],
+    hint: '适合把简历项目从“做过”打磨成“能讲透”，把业务场景、技术方案和指标结果讲成一条线。',
+    suggestion: '建议再叠加“简历项目”标签，把项目题和通用原理题串成完整故事。',
+  },
+  {
+    id: 'sprint',
+    label: '面试冲刺',
+    summary: '高频架构题、场景题与模拟训练',
+    categories: ['项目场景深挖', '高并发与高可用', '微服务治理', '设计模式与架构'],
+    hint: '适合面试前集中冲刺，范围更偏高频场景题和系统设计题，能快速看出表达短板。',
+    suggestion: '建议切到“模拟面试”并使用“真实混合”，把会看答案和会现场讲清楚分开。',
+  },
+];
 const VALID_TAGS = new Set(TAG_FILTERS.map((tag) => tag.id));
+const VALID_PRESETS = new Set(LEARNING_PATHS.map((path) => path.id));
 const SCORE_LABELS = {
   0: '未标记',
   1: '不会',
@@ -170,6 +221,9 @@ function sanitizePrefs(rawPrefs) {
   if (VALID_MODES.has(rawPrefs.mode)) {
     next.mode = rawPrefs.mode;
   }
+  if (VALID_PRESETS.has(rawPrefs.presetV)) {
+    next.presetV = rawPrefs.presetV;
+  }
   if (rawPrefs.catV === 'all' || DATA[Number(rawPrefs.catV)]) {
     next.catV = String(rawPrefs.catV);
   }
@@ -198,6 +252,7 @@ function savePrefs() {
     STORAGE_KEYS.prefs,
     JSON.stringify({
       mode,
+      presetV,
       catV,
       difV,
       tagV,
@@ -215,7 +270,7 @@ function loadPrefs() {
 }
 
 let S = migrateState();
-let { mode, catV, difV, tagV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
+let { mode, presetV, catV, difV, tagV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
 let idx = 0;
 let cards = [];
 let flipped = false;
@@ -257,9 +312,34 @@ function scoreTone(score) {
   return 'n';
 }
 
+function getLearningPath(id = presetV) {
+  return LEARNING_PATHS.find((path) => path.id === id) || LEARNING_PATHS[0];
+}
+
+function getLearningPathCards(id = presetV) {
+  const path = getLearningPath(id);
+  if (!path.categories?.length) {
+    return all;
+  }
+  return all.filter((item) => path.categories.includes(item.cat));
+}
+
+function resetScopeForLearningPath() {
+  catV = 'all';
+  difV = 'all';
+  tagV = 'all';
+  unmV = false;
+  rndV = false;
+  searchV = '';
+}
+
 function scopeCards() {
   const query = searchV.trim().toLowerCase();
+  const learningPath = getLearningPath();
   return all.filter((item) => {
+    if (learningPath.categories?.length && !learningPath.categories.includes(item.cat)) {
+      return false;
+    }
     if (catV !== 'all' && String(item.ci) !== String(catV)) {
       return false;
     }
@@ -291,6 +371,9 @@ function filteredCards() {
 
 function summaryText() {
   const parts = [];
+  if (presetV !== 'all') {
+    parts.push(`专题 ${getLearningPath().label}`);
+  }
   if (catV !== 'all') {
     parts.push(DATA[Number(catV)]?.cat || '当前分类');
   }
@@ -340,6 +423,25 @@ function syncTagButtons() {
   document.querySelectorAll('.tag-chip').forEach((button) => {
     button.classList.toggle('on', button.dataset.tag === tagV);
   });
+}
+
+function syncLearningPathUi() {
+  const path = getLearningPath();
+  const scopedByPath = getLearningPathCards();
+  const resetButton = $('presetResetB');
+
+  document.querySelectorAll('.path-chip').forEach((button) => {
+    button.classList.toggle('on', button.dataset.path === presetV);
+  });
+
+  resetButton.classList.toggle('hidden', presetV === 'all');
+  resetButton.disabled = presetV === 'all';
+  resetButton.title = presetV === 'all' ? '当前没有启用学习路径' : '返回自由筛题';
+
+  $('presetHint').textContent =
+    presetV === 'all'
+      ? '学习路径会直接切到一组更贴近真实岗位的题目范围；进入专题后，仍可继续叠加难度、标签和搜索词做二次收敛。'
+      : `当前专题「${path.label}」覆盖 ${scopedByPath.length} 题。${path.hint} 建议：${path.suggestion}`;
 }
 
 function syncSearchUi() {
@@ -833,6 +935,7 @@ function apply() {
   cards = mode === 'mock' ? scopeCards() : filteredCards();
   idx = Math.min(idx, Math.max(cards.length - 1, 0));
   syncModeButtons();
+  syncLearningPathUi();
   syncCategoryTabs();
   syncTagButtons();
   syncDifficultyButtons();
@@ -977,6 +1080,23 @@ function buildTagFilters() {
   });
 }
 
+function buildLearningPaths() {
+  const container = $('presetF');
+  container.innerHTML = LEARNING_PATHS.map((path) => {
+    const count = getLearningPathCards(path.id).length;
+    return `<button type="button" class="path-chip${path.id === presetV ? ' on' : ''}" data-path="${path.id}"><span class="path-chip-title">${path.label}</span><span class="path-chip-meta">${count} 题 · ${path.summary}</span></button>`;
+  }).join('');
+
+  container.querySelectorAll('.path-chip').forEach((button) => {
+    button.addEventListener('click', () => {
+      presetV = button.dataset.path === presetV ? 'all' : button.dataset.path;
+      resetScopeForLearningPath();
+      idx = 0;
+      apply();
+    });
+  });
+}
+
 function clearSearch() {
   if (!searchV.trim()) {
     return;
@@ -1010,6 +1130,13 @@ $('unmB').addEventListener('click', () => {
 
 $('rndB').addEventListener('click', () => {
   rndV = !rndV;
+  idx = 0;
+  apply();
+});
+
+$('presetResetB').addEventListener('click', () => {
+  presetV = 'all';
+  resetScopeForLearningPath();
   idx = 0;
   apply();
 });
@@ -1130,4 +1257,5 @@ Object.assign(window, {
 
 buildCategoryTabs();
 buildTagFilters();
+buildLearningPaths();
 apply();
