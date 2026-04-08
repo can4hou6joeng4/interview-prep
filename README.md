@@ -12,7 +12,7 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 
 ## Highlights
 
-- 19 categories and 144 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
+- 19 categories and 147 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
 - Curated learning paths now group the bank into commerce, platform, realtime, project deep-dive, and sprint tracks
 - Dedicated weak-review entry now lets you jump into wrong-answer, fuzzy, weak, and mastered-only review within the current learning path
@@ -51,7 +51,12 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   ├── jd-questions.md
 │   └── shoply-deep-dive.md
 ├── scripts/
-│   └── validate-data.mjs
+│   ├── check-fast.sh
+│   ├── check-full.sh
+│   ├── jd-coverage.mjs
+│   ├── jd-keywords.json
+│   ├── validate-data.mjs
+│   └── validate-site.mjs
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── CHANGELOG.md
@@ -77,6 +82,20 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 ./scripts/check-fast.sh
 ./scripts/check-full.sh
 ```
+
+## JD Coverage Audit
+
+Use the coverage scanner to compare recurring JD keywords against the current bank:
+
+```bash
+node scripts/jd-coverage.mjs
+node scripts/jd-coverage.mjs --json
+node scripts/jd-coverage.mjs --strict
+```
+
+- `scripts/jd-keywords.json` stores the curated keyword sets
+- default mode prints a report without failing your shell
+- `--strict` is useful when you want missing coverage to fail a pipeline or manual gate
 
 ## Local Hooks
 

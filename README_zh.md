@@ -7,7 +7,7 @@
 
 ## 项目特点
 
-- 19 个分类、144 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
+- 19 个分类、147 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
 - 支持卡片学习、列表检索和模拟面试三种模式
 - 新增学习路径专题入口，可一键切到跨境交易、平台治理、实时系统、项目深挖和面试冲刺 5 条训练路径
 - 新增专项复习入口，可在当前学习路径内一键切到错题回顾、模糊巩固、薄弱专项和掌握抽查
@@ -46,7 +46,12 @@ python3 -m http.server 4173
 │   ├── jd-questions.md
 │   └── shoply-deep-dive.md
 ├── scripts/
-│   └── validate-data.mjs
+│   ├── check-fast.sh
+│   ├── check-full.sh
+│   ├── jd-coverage.mjs
+│   ├── jd-keywords.json
+│   ├── validate-data.mjs
+│   └── validate-site.mjs
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── CHANGELOG.md
@@ -74,6 +79,20 @@ python3 -m http.server 4173
 ./scripts/check-fast.sh
 ./scripts/check-full.sh
 ```
+
+## JD 覆盖率巡检
+
+可以用下面的脚本把常见岗位 JD 关键词和当前题库做一次覆盖率对照：
+
+```bash
+node scripts/jd-coverage.mjs
+node scripts/jd-coverage.mjs --json
+node scripts/jd-coverage.mjs --strict
+```
+
+- `scripts/jd-keywords.json` 维护当前关注岗位的关键词集合
+- 默认模式只输出报告，不会因为仍有缺口而直接让命令失败
+- `--strict` 适合手动卡口或后续接入 CI 时使用
 
 ## 本地 Git Hook
 

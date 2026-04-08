@@ -109,6 +109,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>核心原因</h4>\n<ul>\n<li><b>更轻量</b>：goroutine 初始栈很小，创建和销毁成本低，适合海量并发</li>\n<li><b>调度更灵活</b>：goroutine 由 Go runtime 在用户态调度，切换成本通常比线程更低</li>\n<li><b>通信模型更友好</b>：Go 鼓励用 channel、context 和共享内存最小化的方式组织并发</li>\n</ul>\n<h4>和线程的区别</h4>\n<ul>\n<li>线程由 OS 直接调度，资源占用和上下文切换成本更高</li>\n<li>goroutine 不是替代线程“凭空执行”，而是复用底层线程，由 GMP 模型统一调度</li>\n<li>所以答案不是“线程没用”，而是 Go 用 goroutine 提供了更适合服务端并发的抽象层</li>\n</ul>\n<h4>怎么答得更像做过项目</h4>\n<p>可以补一句：真正的收益不只是“能开很多协程”，而是能把网络请求、批量任务、异步消费这些高并发场景写得更自然；但 goroutine 也不能无限开，否则会把内存和下游一起拖垮。</p>\n<div class=\"key-point\">这题常被答成“goroutine 比线程快”。更好的答法是：它更轻量、调度更灵活、工程抽象更适合高并发服务。</div>",
         "id": "q-1cuk3uh"
+      },
+      {
+        "q": "Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先别把“网络框架”理解成谁 benchmark 更高</h4>\n<p>网络框架选型先看业务边界：你的协议形态、生态依赖、团队维护成本和观测能力，往往比单机 QPS 更重要。</p>\n<h4>三类常见选择</h4>\n<ul>\n<li><b><code>net/http</code></b>：Go 标准库，生态最完整，和中间件、监控、pprof、反向代理配合自然，适合绝大多数 HTTP API 和内部服务</li>\n<li><b><code>fasthttp</code></b>：更激进地减少分配和对象开销，适合对延迟非常敏感、接口模型相对简单的场景，但和标准库 <code>http.Handler</code> 生态不完全兼容</li>\n<li><b><code>gnet</code></b>：事件驱动模型，更贴近底层网络编程，适合自定义协议、长连接网关、代理层、接入层，不是拿来直接替代所有 Web 服务的</li>\n</ul>\n<h4>怎么做选型判断</h4>\n<ul>\n<li><b>普通业务 API</b>：优先 <code>net/http</code>，够稳、够通用、维护成本最低</li>\n<li><b>高吞吐 HTTP 网关</b>：如果确认瓶颈就在 HTTP 栈和对象分配，可以评估 <code>fasthttp</code></li>\n<li><b>连接型或自定义协议服务</b>：如长连接接入层、代理、IM 网关，才更值得看 <code>gnet</code> 一类事件驱动网络框架</li>\n</ul>\n<div class=\"key-point\">面试里高质量回答不是说某个网络框架“最快”，而是你能说明：协议形态、生态兼容、可观测性和团队维护成本，决定了框架选型。</div>",
+        "id": "q-sut1qe"
       }
     ]
   },
@@ -299,6 +308,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>RESTful 不是“URL 长得像资源名”这么简单</h4>\n<ul>\n<li><b>资源导向</b>：URL 表示资源，HTTP Method 表示动作，例如 <code>GET /orders/{id}</code>、<code>POST /orders</code>、<code>PATCH /orders/{id}</code></li>\n<li><b>状态语义清晰</b>：成功返回 200/201/204，参数错误 400，未授权 401/403，找不到资源 404，冲突 409</li>\n<li><b>列表接口规范化</b>：统一支持筛选、排序、分页，避免每个接口都自创参数格式</li>\n<li><b>幂等性意识</b>：<code>PUT</code> / <code>DELETE</code> 要天然幂等，创建类接口如果会重试，最好配合幂等键</li>\n</ul>\n<pre><code>GET    /v1/orders?status=paid&amp;cursor=xxx\nPOST   /v1/orders\nGET    /v1/orders/{id}\nPATCH  /v1/orders/{id}\nPOST   /v1/orders/{id}/refunds</code></pre>\n<h4>版本演进怎么做</h4>\n<ul>\n<li>优先做向后兼容的演进，比如新增可选字段而不是修改旧字段含义</li>\n<li>出现破坏性变更时，再引入 <code>/v1</code>、<code>/v2</code> 或媒体类型版本</li>\n<li>保留废弃窗口和迁移说明，不要一上来直接删旧接口</li>\n<li>错误码、字段命名和分页协议要尽量跨版本稳定</li>\n</ul>\n<div class=\"key-point\">像 AfterShip 这类岗位写了 RESTful，本质想考的是接口抽象能力，不是背 GET/POST，而是看你会不会设计长期可演进的 API。</div>",
         "id": "q-1nhqd6a"
+      },
+      {
+        "q": "分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>分布式存储不是先选产品名，而是先回答四类问题</h4>\n<ul>\n<li><b>存什么</b>：对象、KV、列族、文档还是时序数据，不同模型直接决定系统形态</li>\n<li><b>怎么写</b>：写多读少、读多写少、热点明显还是均匀分布，会影响副本和分片策略</li>\n<li><b>一致性要求</b>：是订单类强一致，还是日志类最终一致，决定你能接受多大读写延迟和复杂度</li>\n<li><b>故障目标</b>：单机故障、机架故障、机房故障都要不要扛住，决定副本拓扑和容灾成本</li>\n</ul>\n<h4>四个高频权衡</h4>\n<ul>\n<li><b>副本</b>：副本数越多，可用性越强，但写放大和成本越高</li>\n<li><b>一致性</b>：强一致简化业务语义，但吞吐和延迟通常更吃紧；最终一致更弹性，但业务要补偿</li>\n<li><b>分片</b>：分片键决定热点是否均匀，选错后期重平衡会非常痛</li>\n<li><b>扩缩容</b>：分布式存储必须预留 rebalancing 机制，不能只考虑“加节点”，还要考虑迁移成本和数据倾斜</li>\n</ul>\n<h4>怎么答更像做过系统设计</h4>\n<p>把问题落成一个路径会更好：先定义访问模式和一致性，再定副本策略和分片键，最后再谈故障恢复、扩缩容和观测指标。</p>\n<div class=\"key-point\">这题真正考的是你有没有“分布式存储”的建模能力，而不是只会背 CAP。高质量回答要体现：数据模型、访问模式、故障域和扩容路径是一起设计的。</div>",
+        "id": "q-1ohx9b9"
       },
       {
         "q": "自动化工单系统如何设计状态机、审批流、幂等和审计？",
@@ -1159,6 +1177,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>三类工具各看什么</h4>\n<ul>\n<li><b><code>pprof</code></b>：看 CPU、堆内存、goroutine、锁阻塞、block profile，适合定位热点函数和资源泄漏</li>\n<li><b><code>trace</code></b>：看 goroutine 调度、系统调用、GC 和网络事件时间线，适合分析“为什么慢”</li>\n<li><b><code>benchmark</code></b>：看某个函数或算法在不同实现下的耗时和分配量，适合做局部优化对比</li>\n</ul>\n<h4>常见命令</h4>\n<pre><code># benchmark\ngo test -bench=. -benchmem ./...\n\n# pprof\ngo tool pprof http://localhost:6060/debug/pprof/profile?seconds=30\n\n# trace\ngo test -run=^$ -trace trace.out ./...\ngo tool trace trace.out</code></pre>\n<div class=\"key-point\">回答这题时不要只背工具名，重点是说明：函数级优化看 benchmark，热点定位看 pprof，时序和调度问题看 trace。</div>",
         "id": "q-94lt8t"
+      },
+      {
+        "q": "性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>性能优化方法论的核心不是“调一把参数”</h4>\n<p>真正有用的性能优化方法论，应该是一条可复用闭环：先定义性能目标，再找瓶颈、做实验、验证收益、沉淀回放，而不是碰到慢就盲目上缓存。</p>\n<h4>一个常见闭环</h4>\n<ol>\n<li><b>定义指标</b>：先确定你要守的是吞吐、P95/P99、错误率、资源成本还是队列积压</li>\n<li><b>建立基线</b>：没有优化前的真实数据，就无法判断改动是不是有效</li>\n<li><b>定位瓶颈</b>：用 metrics、日志、pprof、trace、慢查询把问题收敛到某一层</li>\n<li><b>提出假设并做实验</b>：一次只改一个关键因素，避免多变量一起动导致结论失真</li>\n<li><b>回归验证</b>：看改完后指标有没有稳定改善，而不是只看某次压测截图</li>\n<li><b>沉淀 SOP</b>：把有效动作、阈值和回滚条件写下来，下一次才能复用</li>\n</ol>\n<h4>为什么这叫方法论</h4>\n<ul>\n<li>它能解释“为什么慢”而不是只会“我试过调大连接池”</li>\n<li>它能区分瓶颈是在 CPU、锁、网络、缓存、数据库还是下游依赖</li>\n<li>它能把一次性能事故变成后续可以复用的工程经验</li>\n</ul>\n<div class=\"key-point\">这题真正拉开差距的地方在于：你能把性能优化讲成“指标 → 定位 → 实验 → 回归 → 沉淀”的工程闭环，这才是岗位里常写的“性能优化方法论”。</div>",
+        "id": "q-6ao1y7"
       },
       {
         "q": "Redis 热点 Key 和大 Key 怎么治理？",
