@@ -353,6 +353,26 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>幂等性保证</h4>\n<ul>\n<li><b>唯一订单号</b>：每个支付请求携带唯一 order_no，网关端去重</li>\n<li><b>状态机前置判断</b>：处理回调前先检查订单状态，已完成的直接返回成功</li>\n<li><b>数据库唯一约束</b>：payment_trade 表对 (gateway, trade_no) 建唯一索引</li>\n</ul>\n<h4>Webhook 处理流程</h4>\n<pre><code>func HandleWebhook(c *fiber.Ctx) error {\n    // 1. 验签（每个网关签名方式不同）\n    payload, err := gateway.Verify(c.Request())\n\n    // 2. 解析事件\n    event, err := gateway.Parse(payload)\n\n    // 3. 幂等检查\n    trade, err := findTrade(event.TradeNo)\n    if trade.Status == \"completed\" {\n        return c.SendStatus(200) // 已处理，直接返回成功\n    }\n\n    // 4. 加分布式锁（防止并发回调）\n    lock := redis.Lock(\"webhook:\" + event.TradeNo, 30*time.Second)\n    if !lock.Acquire() { return c.SendStatus(200) }\n    defer lock.Release()\n\n    // 5. 业务处理（更新订单状态、触发发货等）\n    // 6. 返回 200（告诉网关不要重试）\n}</code></pre>\n<div class=\"key-point\">PayPal/Stripe 都会在收到非 2xx 响应时重试 Webhook（最多重试数天），必须做好幂等处理</div>",
         "id": "q-15z7zx"
+      },
+      {
+        "q": "优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>为什么这题很容易出事故</h4>\n<ul>\n<li>优惠、运费、税费往往不是天然属于某一行商品，而是订单级费用，需要再拆回到商品行</li>\n<li>如果直接用 <code>float</code>，金额会有精度误差</li>\n<li>分摊后的尾差如果不收敛，最终“行金额之和”就会和订单总额对不上</li>\n<li>退款时如果重新按当前规则计算，而不是按下单时的分摊快照回放，金额就会失真</li>\n</ul>\n<h4>常见处理方式</h4>\n<ul>\n<li>统一使用 <code>decimal</code> 做金额计算</li>\n<li>先确定分摊权重：按金额、数量、重量或混合规则来分</li>\n<li>尾差通过“最大项补差”或“最后一项补差”收敛，确保合计严格等于订单级金额</li>\n<li>把每一行的分摊结果落快照，退款和售后按原始分摊回放，而不是重算</li>\n</ul>\n<pre><code>type LineAllocation struct {\n    OrderLineID   uint\n    DiscountShare decimal.Decimal\n    ShippingShare decimal.Decimal\n    TaxShare      decimal.Decimal\n}</code></pre>\n<div class=\"key-point\">这题真正想听的是：你知道分摊不是“算一下比例”这么简单，而是必须同时满足精度正确、合计闭合、可审计、可退款回放。</div>",
+        "id": "q-ro9kaq"
+      },
+      {
+        "q": "为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>为什么必须做快照</h4>\n<ul>\n<li>商品标题、价格、规格、库存策略都会变化，如果订单只引用实时商品表，后续对账和售后会失真</li>\n<li>地址会变，税区和运费命中结果也会跟着变</li>\n<li>汇率波动会直接影响退款、结算和财务解释口径</li>\n</ul>\n<h4>通常要冻结哪些字段</h4>\n<ul>\n<li><b>商品快照</b>：SKU、标题、规格、单价、折扣前后金额、税类目</li>\n<li><b>地址快照</b>：国家、省份、城市、邮编、关键收货信息</li>\n<li><b>汇率快照</b>：基础币种、结算币种、换算汇率、生效时间</li>\n<li><b>规则命中快照</b>：运费规则、税费规则、优惠规则的命中结果</li>\n</ul>\n<h4>工程价值</h4>\n<ul>\n<li>保证支付、退款、售后、审计时使用的是“下单当时的事实”</li>\n<li>避免商品改价、地址修改、汇率波动影响已成交订单</li>\n<li>能清晰解释一笔订单当时为什么是这个金额</li>\n</ul>\n<div class=\"key-point\">这题别答成“为了方便查历史”。更完整的说法是：快照是订单事实层，后续支付、退款、税费解释和财务对账都依赖它。</div>",
+        "id": "q-1bwu8at"
       }
     ]
   },
@@ -480,6 +500,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>两者的核心差异</h4>\n<ul>\n<li><b>SSE (Server-Sent Events)</b>：基于 HTTP 长连接，服务端单向推送文本事件给客户端，浏览器原生支持 <code>EventSource</code></li>\n<li><b>WebSocket</b>：一次 Upgrade 后建立全双工连接，客户端和服务端都能持续发消息</li>\n</ul>\n<table style=\"width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse\">\n<tr style=\"border-bottom:1px solid var(--border)\"><th style=\"text-align:left;padding:6px\">维度</th><th style=\"text-align:left;padding:6px\">SSE</th><th style=\"text-align:left;padding:6px\">WebSocket</th></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">通信方向</td><td style=\"padding:6px\">服务端 → 客户端</td><td style=\"padding:6px\">双向</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">协议基础</td><td style=\"padding:6px\">HTTP</td><td style=\"padding:6px\">独立 WebSocket 协议</td></tr>\n<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:6px\">断线重连</td><td style=\"padding:6px\">浏览器原生支持</td><td style=\"padding:6px\">通常要自己实现</td></tr>\n<tr><td style=\"padding:6px\">适合场景</td><td style=\"padding:6px\">流式文本、进度更新、通知</td><td style=\"padding:6px\">聊天、协作、实时控制</td></tr>\n</table>\n<h4>AI 流式输出怎么选</h4>\n<ul>\n<li><b>只需要把 token 连续推给前端</b>：优先 SSE，接入简单、对代理和 CDN 更友好</li>\n<li><b>需要前端同时持续上送控制消息</b>：如语音对话、多人协作、实时打断，选 WebSocket</li>\n<li><b>工程细节</b>：SSE 要考虑心跳注释、防代理超时、事件 ID 断点续传；WebSocket 要考虑连接管理、背压和广播</li>\n</ul>\n<div class=\"key-point\">现在很多 AI Agent 岗写“流式输出”，面试里说“token 流默认 SSE，双向互动再升到 WebSocket”会非常加分。</div>",
         "id": "q-1g7gty9"
+      },
+      {
+        "q": "语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>一个常见的模块拆分</h4>\n<ul>\n<li><b>房间服务</b>：创建房间、上下线、状态流转、权限控制</li>\n<li><b>在线状态服务</b>：管理用户进房、离房、心跳和在线人数</li>\n<li><b>消息服务</b>：处理聊天消息、系统通知、礼物消息、禁言踢人广播</li>\n<li><b>互动与风控</b>：礼物、连麦、禁言、黑名单、限流、防刷</li>\n<li><b>统计链路</b>：在线峰值、消息吞吐、礼物流水、房间活跃度</li>\n</ul>\n<h4>一致性怎么做</h4>\n<ul>\n<li><b>房间状态</b>：要有明确 source of truth，不能完全依赖前端上报</li>\n<li><b>在线人数</b>：通常采用“缓存实时值 + 异步校准”的思路，而不是每次都强依赖数据库精确计数</li>\n<li><b>消息投递</b>：房间广播和状态通知要区分可靠性等级，关键控制消息优先保证送达和顺序</li>\n<li><b>加入 / 离开幂等</b>：重复进房、断线重连、心跳丢失都要能安全重放</li>\n</ul>\n<div class=\"key-point\">这题不是考你背 IM 架构，而是看你能不能讲清：实时系统里“在线态、房间态、消息流”是三条不同的一致性问题。</div>",
+        "id": "q-1s009sz"
       }
     ]
   },
@@ -1157,6 +1186,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>为什么 goroutine 不能无限开</h4>\n<ul>\n<li>单个 goroutine 虽轻量，但不是零成本：有初始栈、调度开销、上下文切换成本</li>\n<li>任务如果会打 DB、Redis、RPC，下游资源通常比 goroutine 本身更早被打满</li>\n<li>无上限并发会带来内存膨胀、队列堆积、调度抖动，严重时把系统拖进雪崩</li>\n</ul>\n<h4>一个常见协程池设计</h4>\n<pre><code>type Pool struct {\n    jobs chan func()\n    wg   sync.WaitGroup\n}\n\nfunc NewPool(workerCount, queueSize int) *Pool {\n    p := &Pool{jobs: make(chan func(), queueSize)}\n    for i := 0; i < workerCount; i++ {\n        go func() {\n            for job := range p.jobs {\n                job()\n                p.wg.Done()\n            }\n        }()\n    }\n    return p\n}\n\nfunc (p *Pool) Submit(job func()) {\n    p.wg.Add(1)\n    p.jobs <- job\n}\n\nfunc (p *Pool) Wait() { p.wg.Wait() }</code></pre>\n<h4>设计时要想清楚的点</h4>\n<ul>\n<li><b>并发度上限</b>：通常按 CPU、连接池大小、下游吞吐能力共同决定</li>\n<li><b>队列长度</b>：太短会频繁拒绝，太长会造成排队过久</li>\n<li><b>拒绝策略</b>：阻塞等待、直接丢弃、返回错误、降级到异步补偿</li>\n<li><b>超时与取消</b>：最好配合 <code>context</code>，否则任务堆积后很难止损</li>\n</ul>\n<div class=\"key-point\">这题真正想听的不是你会写 worker pool，而是你知道协程池的价值在于控制并发和保护下游，不是为了“把 goroutine 用满”。</div>",
         "id": "q-lf7hbg"
+      },
+      {
+        "q": "程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先把链路拆开看</h4>\n<ul>\n<li><b>入口</b>：曝光、点击、转化等事件先统一写入 MQ / Kafka</li>\n<li><b>去重</b>：依赖 requestId、impressionId、traceId 或业务指纹做幂等去重</li>\n<li><b>实时聚合</b>：按事件时间做窗口聚合，输出近实时统计值</li>\n<li><b>明细留存</b>：原始日志异步落明细库或 OLAP，供离线对账和校准</li>\n</ul>\n<h4>为什么不能只做“实时加一”</h4>\n<ul>\n<li>会遇到重复上报、乱序到达、延迟上报、补发重放</li>\n<li>如果口径不清，实时面板和离线报表很容易打架</li>\n<li>高峰时如果同步落库，主链路延迟会被直接拖垮</li>\n</ul>\n<h4>常见工程做法</h4>\n<ul>\n<li><b>Redis / 本地缓存</b>：承接热点计数，先给近实时看板用</li>\n<li><b>流式处理</b>：按窗口聚合，控制延迟和迟到事件策略</li>\n<li><b>离线校准</b>：把实时近似值和离线精确值分层表达，别混成一个数字</li>\n<li><b>背压与降级</b>：高峰时优先保主链路，统计链路允许近似和延迟</li>\n</ul>\n<div class=\"key-point\">这题真正的核心不是“会不会统计”，而是你知不知道实时统计系统要同时处理去重、口径、一致性和高峰延迟这四个矛盾。</div>",
+        "id": "q-1m8jgdz"
       }
     ]
   },

@@ -6,6 +6,7 @@
 
 ### Added
 
+- 继续吸收广州 shortlist backlog，再新增 4 道正式题，覆盖金额分摊与尾差处理、订单快照设计、语音房/直播间核心模块，以及程序化广告/实时统计链路。
 - 继续吸收广州 shortlist 的高信号 backlog，再新增 4 道正式题，覆盖自动化工单系统、时序数据库选型边界、压测方案设计，以及告警到回滚止损的排障闭环。
 - 结合 5 篇后端 / AI Agent 面试复盘文章，再新增 5 道正式题，覆盖 goroutine vs 线程、Agent 框架选型、Agent 失败场景治理、ReAct/CoT/ToT 取舍、企业客服 Agent 分层架构与幻觉防控。
 - 基于真实面试经历新增 8 道正式题，覆盖 WaitGroup、select 调度、协程池、sync.Map 引用安全、InnoDB/MyISAM 的 `count(*)` 差异、Redis 宕机降级、Redis List 与 MQ 选型、gRPC 底层机制。
