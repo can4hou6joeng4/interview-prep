@@ -68,11 +68,24 @@ python3 -m http.server 4173
 ## 提交前建议执行
 
 ```bash
-node --check assets/app.js
-node --check assets/data.js
-node scripts/validate-data.mjs
-node scripts/validate-site.mjs
+./scripts/check-fast.sh
+./scripts/check-full.sh
 ```
+
+## 本地 Git Hook
+
+建议在仓库根目录执行：
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+这会自动配置：
+
+- `pre-commit` → `./scripts/check-fast.sh`
+- `pre-push` → `./scripts/check-full.sh`
+
+这样做可以减少你每次手动跑校验命令的成本，但它不能替代 GitHub Pages 的远程发布。想让线上 Pages 更新，最终仍然需要一次推送触发 GitHub Actions。
 
 ## 社区文档
 

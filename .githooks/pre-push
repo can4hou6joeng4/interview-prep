@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+echo "[pre-push] Running full validation..."
+./scripts/check-full.sh
+echo "[pre-push] Local checks passed. GitHub Pages still needs a remote push to publish changes."

@@ -71,11 +71,24 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 ## Validation
 
 ```bash
-node --check assets/app.js
-node --check assets/data.js
-node scripts/validate-data.mjs
-node scripts/validate-site.mjs
+./scripts/check-fast.sh
+./scripts/check-full.sh
 ```
+
+## Local Hooks
+
+Enable repository-local Git hooks with:
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+This configures:
+
+- `pre-commit` → `./scripts/check-fast.sh`
+- `pre-push` → `./scripts/check-full.sh`
+
+These hooks reduce manual validation work locally, but they do not replace pushing to GitHub. GitHub Pages still updates only after a remote push triggers the workflow.
 
 ## Community
 
