@@ -208,9 +208,19 @@
 						</div>
 					</div>
 					<div class="mk-summary-grid" id="mkSummaryGrid"></div>
-					<div class="mk-review">
-						<h4>建议优先复盘</h4>
-						<ul id="mkReviewList"></ul>
+					<div class="mk-summary-sections">
+						<div class="mk-review">
+							<h4>建议优先复盘</h4>
+							<ul id="mkReviewList"></ul>
+						</div>
+						<div class="mk-review">
+							<h4>薄弱分类分布</h4>
+							<ul id="mkWeakCategoryList"></ul>
+						</div>
+						<div class="mk-review">
+							<h4>下一轮建议</h4>
+							<p class="mk-next-step" id="mkNextStep"></p>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -218,6 +228,32 @@
 	</section>
 
 	<div class="prog"><div class="prog-h"><span class="prog-t" id="pL">已掌握 0 / 0</span><span class="prog-t" id="pP">0%</span></div><div class="prog-bar"><div class="prog-fill" id="pF"></div></div></div>
+	<section class="updates" aria-label="最近更新">
+		<div class="updates-head">
+			<div>
+				<p class="updates-kicker">Recent Updates</p>
+				<h2>最近更新</h2>
+			</div>
+			<a class="updates-link" href="https://github.com/can4hou6joeng4/interview-prep/blob/main/CHANGELOG.md" target="_blank" rel="noreferrer">查看完整 Changelog</a>
+		</div>
+		<div class="updates-list">
+			<article class="update-item">
+				<p class="update-date">2026-04-08</p>
+				<h3>模拟面试结果页支持薄弱题再练一轮</h3>
+				<p>在本轮 summary 中直接基于模糊题、被打回题和未作答题重开一轮，减少“看完报告但不继续练”的断点。</p>
+			</article>
+			<article class="update-item">
+				<p class="update-date">2026-04-08</p>
+				<h3>新增模拟面试模式</h3>
+				<p>支持掌握回顾、冲刺提升和真实混合三种题源，按题量抽题，先答后看答案，并将结果重新写回掌握度。</p>
+			</article>
+			<article class="update-item">
+				<p class="update-date">2026-04-07</p>
+				<h3>JD 驱动扩题与仓库质量校验升级</h3>
+				<p>新增基于当前 Go 后端岗位 JD 收敛出的高频题，并补上社交分享元信息、README 统计校验和站点元数据校验。</p>
+			</article>
+		</div>
+	</section>
 	<p class="ft">进度只保存在当前浏览器。题库升级后会自动迁移旧版进度键。</p>
 </main>
 

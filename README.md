@@ -8,11 +8,13 @@
 Interactive flashcard-style interview prep for Go backend roles, tailored around real project experience, system design depth, and structured review workflows.
 
 [中文说明](./README_zh.md)
+[Changelog](./CHANGELOG.md)
 
 ## Highlights
 
 - 19 categories and 119 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
+- Mock summary now shows weak-category breakdowns and next-round recommendations
 - Combined filters for category, difficulty, search, unknown items, and random order
 - Stable question IDs with browser-side progress persistence and legacy progress migration
 - Zero-build static architecture, designed for GitHub Pages deployment
@@ -48,6 +50,7 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   └── validate-data.mjs
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
+├── CHANGELOG.md
 ├── 404.html
 ├── LICENSE
 ├── README.md

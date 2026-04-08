@@ -525,6 +525,14 @@ function renderMockSummary() {
   const unfinished = mockSession.items.length - answered.length;
   const duration = (mockSession.completedAt || Date.now()) - mockSession.startedAt;
   const reviewItems = mockSession.items.filter((entry) => entry.resultScore === null || entry.resultScore < 3);
+  const weakCategories = [...reviewItems.reduce((map, entry) => {
+    const next = map;
+    const current = next.get(entry.item.cat) || { cat: entry.item.cat, count: 0 };
+    current.count += 1;
+    next.set(entry.item.cat, current);
+    return next;
+  }, new Map()).values()].sort((a, b) => b.count - a.count);
+  const topWeakCategory = weakCategories[0];
 
   $('mkSummaryDuration').textContent = `总时长 ${formatDuration(duration)}`;
   $('mkRetryWeakB').classList.toggle('hidden', reviewItems.length === 0);
@@ -550,6 +558,33 @@ function renderMockSummary() {
         })
         .join('')
     : '<li><span>这一轮没有需要优先回看的题，可以切到“真实混合”继续练。</span><strong>状态稳定</strong></li>';
+
+  $('mkWeakCategoryList').innerHTML = weakCategories.length
+    ? weakCategories
+        .map(
+          ({ cat, count }) =>
+            `<li><span>${escapeHtml(cat)}</span><strong>${count} 题</strong></li>`
+        )
+        .join('')
+    : '<li><span>本轮没有明显的薄弱分类分布。</span><strong>结构均衡</strong></li>';
+
+  let nextStep = '下一轮建议切到“真实混合”，把已经答顺和刚补强的题放在一起，再看自己能不能稳定输出。';
+  if (reviewItems.length === 0) {
+    nextStep = '这一轮表现很稳，可以提高题量，或者切到“真实混合”模拟更接近正式面试的出题节奏。';
+  } else if (weak > 0) {
+    nextStep = topWeakCategory
+      ? `本轮有完全没答好的题，优先点击“薄弱题再练一轮”。其中最该先补的是「${topWeakCategory.cat}」，先把这一类讲顺再回到混合训练。`
+      : '本轮有完全没答好的题，优先点击“薄弱题再练一轮”，先把不会的题重新讲一遍。';
+  } else if (downgraded > 0 || unfinished > 0) {
+    nextStep = topWeakCategory
+      ? `你有题被打回或没答完，说明“会看”和“会讲”还没完全重合。建议先回炉「${topWeakCategory.cat}」，再开始下一轮。`
+      : '你有题被打回或没答完，建议先用“薄弱题再练一轮”把断点补上，再开启下一轮完整模拟。';
+  } else if (shaky > 0) {
+    nextStep = topWeakCategory
+      ? `本轮主要问题集中在「${topWeakCategory.cat}」，下一轮建议切到“冲刺提升”，把这类模糊题练到能连续表达。`
+      : '本轮还有几题偏模糊，建议下一轮切到“冲刺提升”，把模糊题练到能连续表达。';
+  }
+  $('mkNextStep').textContent = nextStep;
 }
 
 function renderMock() {
