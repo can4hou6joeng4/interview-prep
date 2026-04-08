@@ -17,21 +17,34 @@
 1. 校验浏览器脚本语法：
 
    ```bash
-   node --check assets/app.js
-   node --check assets/data.js
+   ./scripts/check-fast.sh
    ```
 
 2. 校验题库数据结构与题目唯一性：
 
    ```bash
-   node scripts/validate-data.mjs
+   ./scripts/check-fast.sh
    ```
 
 3. 校验 README 统计、站点元信息与关键静态文件：
 
    ```bash
-   node scripts/validate-site.mjs
+   ./scripts/check-full.sh
    ```
+
+## 本地 Hook
+
+建议在首次克隆仓库后执行：
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+说明：
+
+- `pre-commit` 会跑快速校验
+- `pre-push` 会跑完整校验
+- hook 只能帮你减少手动检查，不会替代 GitHub Pages 的远程发布流程
 
 ## 内容维护约定
 
