@@ -6,6 +6,7 @@
 
 ### Added
 
+- 结合 5 篇后端 / AI Agent 面试复盘文章，再新增 5 道正式题，覆盖 goroutine vs 线程、Agent 框架选型、Agent 失败场景治理、ReAct/CoT/ToT 取舍、企业客服 Agent 分层架构与幻觉防控。
 - 基于真实面试经历新增 8 道正式题，覆盖 WaitGroup、select 调度、协程池、sync.Map 引用安全、InnoDB/MyISAM 的 `count(*)` 差异、Redis 宕机降级、Redis List 与 MQ 选型、gRPC 底层机制。
 - 新增 `模拟面试` 模式，支持 `掌握回顾 / 冲刺提升 / 真实混合` 三种题源与 `5 / 8 / 12` 题量。
 - 模拟结果页新增 `薄弱题再练一轮`，可直接基于本轮模糊题、被打回题和未作答题继续练。
