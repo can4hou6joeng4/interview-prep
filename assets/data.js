@@ -299,6 +299,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>RESTful 不是“URL 长得像资源名”这么简单</h4>\n<ul>\n<li><b>资源导向</b>：URL 表示资源，HTTP Method 表示动作，例如 <code>GET /orders/{id}</code>、<code>POST /orders</code>、<code>PATCH /orders/{id}</code></li>\n<li><b>状态语义清晰</b>：成功返回 200/201/204，参数错误 400，未授权 401/403，找不到资源 404，冲突 409</li>\n<li><b>列表接口规范化</b>：统一支持筛选、排序、分页，避免每个接口都自创参数格式</li>\n<li><b>幂等性意识</b>：<code>PUT</code> / <code>DELETE</code> 要天然幂等，创建类接口如果会重试，最好配合幂等键</li>\n</ul>\n<pre><code>GET    /v1/orders?status=paid&amp;cursor=xxx\nPOST   /v1/orders\nGET    /v1/orders/{id}\nPATCH  /v1/orders/{id}\nPOST   /v1/orders/{id}/refunds</code></pre>\n<h4>版本演进怎么做</h4>\n<ul>\n<li>优先做向后兼容的演进，比如新增可选字段而不是修改旧字段含义</li>\n<li>出现破坏性变更时，再引入 <code>/v1</code>、<code>/v2</code> 或媒体类型版本</li>\n<li>保留废弃窗口和迁移说明，不要一上来直接删旧接口</li>\n<li>错误码、字段命名和分页协议要尽量跨版本稳定</li>\n</ul>\n<div class=\"key-point\">像 AfterShip 这类岗位写了 RESTful，本质想考的是接口抽象能力，不是背 GET/POST，而是看你会不会设计长期可演进的 API。</div>",
         "id": "q-1nhqd6a"
+      },
+      {
+        "q": "自动化工单系统如何设计状态机、审批流、幂等和审计？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先分清两个对象</h4>\n<ul>\n<li><b>工单本身</b>：描述一次变更申请，关注提交、审批、执行和结果</li>\n<li><b>资源本身</b>：真正被操作的对象，如机器、实例、权限、域名，不要和工单揉成一张表</li>\n</ul>\n<h4>一个常见状态机</h4>\n<pre><code>draft → pending → approved → executing → success\n                 └────────→ rejected\nexecuting ───────→ failed / cancelled</code></pre>\n<ul>\n<li><b>draft</b>：草稿，尚未正式发起</li>\n<li><b>pending</b>：等待审批</li>\n<li><b>approved</b>：审批通过，等待执行</li>\n<li><b>executing</b>：执行中</li>\n<li><b>success / failed / cancelled</b>：终态</li>\n</ul>\n<h4>审批流怎么做</h4>\n<ul>\n<li>审批人和执行人要解耦，避免同一个人自己提自己批</li>\n<li>复杂流程支持按组织、资源类型、风险等级动态决定审批链</li>\n<li>审批动作要记录操作者、时间、意见和变更快照</li>\n</ul>\n<h4>幂等和审计</h4>\n<ul>\n<li>提交工单时最好有幂等键，避免前端重试产生重复工单</li>\n<li>执行阶段同样要幂等，防止重复点击“执行”导致多次下发</li>\n<li>每次状态变更都写审计日志，必要时保留请求参数和执行结果快照</li>\n</ul>\n<div class=\"key-point\">这题真正拉开差距的是：你能说清工单系统不是“多一张单据表”，而是“资源变更流程 + 审批约束 + 可追责审计”的组合。</div>",
+        "id": "q-17pttmy"
       }
     ]
   },
@@ -799,6 +808,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>经典三步</h4>\n<ul>\n<li><b>Red</b>：先写一个失败的测试，明确想要的行为</li>\n<li><b>Green</b>：写最少的代码让测试通过</li>\n<li><b>Refactor</b>：在测试保护下重构，让实现更干净</li>\n</ul>\n<h4>TDD 的价值</h4>\n<ul>\n<li>逼你先想清楚接口和行为，再写实现</li>\n<li>天然会留下可回归的测试资产</li>\n<li>对复杂规则密集的逻辑特别有效，例如金额计算、状态机和校验器</li>\n</ul>\n<h4>常见误区</h4>\n<p>TDD 不是“所有代码都必须先写测试”，而是对高风险逻辑优先用测试约束设计。否则容易把简单问题流程化过度。</p>",
         "id": "q-ktllce"
+      },
+      {
+        "q": "压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先别把压测做成“刷一个 QPS 数字”</h4>\n<ul>\n<li>压测流量要尽量接近真实读写比例、热点分布和依赖调用路径</li>\n<li>只看平均值意义不大，必须关注尾延迟和错误率</li>\n<li>压测的目标不是“机器打满”，而是定位系统的第一瓶颈在哪</li>\n</ul>\n<h4>除了 QPS 还要看什么</h4>\n<ul>\n<li><b>延迟</b>：P95 / P99，别只看平均响应时间</li>\n<li><b>错误率</b>：超时、5xx、熔断、限流比例</li>\n<li><b>应用指标</b>：CPU、内存、goroutine、GC 次数和停顿</li>\n<li><b>连接池</b>：DB / Redis / HTTP 连接池是否打满</li>\n<li><b>缓存层</b>：命中率、热点 key、慢日志</li>\n<li><b>队列层</b>：lag、积压时长、消费速率</li>\n<li><b>数据库</b>：慢查询数、锁等待、扫描行数</li>\n</ul>\n<h4>一个更完整的闭环</h4>\n<ol>\n<li>先定义目标链路和业务场景</li>\n<li>压测前做好指标埋点和观测面板</li>\n<li>压测时同步看应用、缓存、DB、MQ 四层指标</li>\n<li>压测后把瓶颈收敛到具体组件或代码路径，而不是只汇报“最高能扛多少 QPS”</li>\n</ol>\n<div class=\"key-point\">这题真正想听的是你的诊断思维：QPS 只是表象，定位瓶颈要靠尾延迟、错误率和分层指标一起看。</div>",
+        "id": "q-izu016"
       }
     ]
   },
@@ -1037,6 +1055,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>MongoDB 事务怎么写</h4>\n<p>MongoDB 4.0+ 支持多文档事务，但需要在副本集或分片集群里，通过 <code>session</code> 开启：</p>\n<pre><code>session, _ := client.StartSession()\ndefer session.EndSession(ctx)\n\nerr := mongo.WithSession(ctx, session, func(sc mongo.SessionContext) error {\n    if err := session.StartTransaction(); err != nil {\n        return err\n    }\n    if _, err := orderCol.InsertOne(sc, orderDoc); err != nil {\n        return session.AbortTransaction(sc)\n    }\n    if _, err := stockCol.UpdateOne(sc, filter, update); err != nil {\n        return session.AbortTransaction(sc)\n    }\n    return session.CommitTransaction(sc)\n})</code></pre>\n<h4>和 MySQL 的差异</h4>\n<ul>\n<li><b>MySQL</b>：事务是第一公民，关系模型、外键、JOIN、锁模型都更成熟，适合订单、支付这类强事务场景</li>\n<li><b>MongoDB</b>：事务是后来补上的能力，能用但成本更高，通常更鼓励通过文档建模减少跨文档事务</li>\n<li><b>性能影响</b>：MongoDB 多文档事务会带来更多协调和资源占用，不适合滥用</li>\n<li><b>设计思路</b>：如果数据能嵌入同一文档，MongoDB 更推荐单文档原子更新；MySQL 则天然适合多表事务</li>\n</ul>\n<h4>工程建议</h4>\n<ul>\n<li>只在确实需要维护跨文档一致性时再上事务</li>\n<li>事务里不要做长时间外部调用，避免持有资源过久</li>\n<li>对高并发读多写少场景，优先靠文档模型设计而不是把 MongoDB 用成另一套 MySQL</li>\n</ul>\n<div class=\"key-point\">现在不少 Go 后端 JD 只写“MongoDB 经验”，真正拉开差距的是你能说清：什么时候该用事务，什么时候应该回到文档建模本身。</div>",
         "id": "q-ikzhl1"
+      },
+      {
+        "q": "时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>什么时候应该考虑 TSDB</h4>\n<ul>\n<li>指标、监控、埋点、设备上报、资源使用率这类“按时间持续写入”的数据</li>\n<li>查询模式通常是“某个时间窗口内的聚合、降采样、趋势分析”</li>\n<li>写多读多但关系不复杂，且数据会按时间自然过期</li>\n</ul>\n<h4>它擅长什么</h4>\n<ul>\n<li>高吞吐写入</li>\n<li>按时间范围查询和聚合</li>\n<li>保留策略、冷热分层、降采样</li>\n</ul>\n<h4>和其他存储的边界</h4>\n<ul>\n<li><b>MySQL</b>：适合事务和关系查询，不适合海量时间序列长期堆积</li>\n<li><b>Redis</b>：适合热点计数、秒级缓存和窗口内近实时状态，不适合长期明细留存</li>\n<li><b>MongoDB</b>：适合文档结构灵活的数据，但如果核心查询就是时间窗口聚合，TSDB 往往更自然</li>\n<li><b>TSDB</b>：适合“时间是第一维度”的数据，而不是所有历史数据都应该无脑塞进去</li>\n</ul>\n<div class=\"key-point\">这题的高质量回答不是背数据库名字，而是说清：数据模型、查询模式、保留周期和成本结构决定了你该不该上 TSDB。</div>",
+        "id": "q-l2i20y"
       }
     ]
   },
@@ -1230,6 +1257,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>先说结论</h4>\n<p>gRPC 通常建立在 <b>HTTP/2 + Protobuf</b> 之上：HTTP/2 负责连接复用和流控，Protobuf 负责结构化二进制编码。</p>\n<h4>底层关键点</h4>\n<ul>\n<li><b>HTTP/2 Stream</b>：一个 TCP 连接里可并行承载多个 RPC 调用，每个调用对应一个 Stream</li>\n<li><b>Frame 分帧</b>：请求和响应最终会拆成 HEADER / DATA 等帧在连接里传输</li>\n<li><b>HPACK</b>：HTTP/2 的头部压缩机制，减少重复 Header 的传输成本</li>\n<li><b>Flow Control</b>：连接级和 Stream 级流控，避免接收方被流量压垮</li>\n<li><b>Protobuf</b>：把消息编码成紧凑的二进制结构，比 JSON 更省带宽</li>\n<li><b>TLS / ALPN</b>：生产环境里通常配合 TLS 使用，通过 ALPN 协商到 HTTP/2</li>\n</ul>\n<h4>为什么它适合内部服务通信</h4>\n<ul>\n<li>连接复用，减少频繁建连成本</li>\n<li>天然支持流式调用</li>\n<li>IDL 驱动，跨语言接口更规范</li>\n<li>配合 deadline、metadata、拦截器，更容易做统一治理</li>\n</ul>\n<div class=\"key-point\">这题别只答“gRPC 基于 HTTP/2”。真正拉开差距的是你能继续往下讲：Stream、多路复用、分帧、流控、Protobuf、TLS 这些机制是怎么一起工作的。</div>",
         "id": "q-108dns7"
+      },
+      {
+        "q": "从告警触发到回滚止损，如何把 Metrics、日志、Trace、灰度发布串成一个排障闭环？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>真正的闭环不是“看到告警”就结束</h4>\n<ol>\n<li><b>Metrics 发现异常</b>：先由错误率、P99、吞吐突变等指标触发告警</li>\n<li><b>Logs 看具体报错</b>：确认异常是参数错误、下游超时、资源耗尽还是业务逻辑问题</li>\n<li><b>Trace 缩小范围</b>：用 TraceID 找到慢在哪个服务、哪一跳、哪个依赖</li>\n<li><b>判断是否只影响灰度流量</b>：如果异常主要集中在新版本，优先切流或回滚，而不是先硬扛</li>\n<li><b>验证恢复</b>：回滚或切流后再看指标是否回归，而不是做完动作就宣布结束</li>\n</ol>\n<h4>为什么这四件事要串起来</h4>\n<ul>\n<li>Metrics 负责“发现哪里不对”</li>\n<li>Logs 负责“看具体报错细节”</li>\n<li>Traces 负责“串联跨服务链路”</li>\n<li>灰度 / 回滚负责“快速止损”</li>\n</ul>\n<h4>落地时最常见的坑</h4>\n<ul>\n<li>只有告警没有 TraceID，看到红色却找不到根因</li>\n<li>回滚后不验证，结果问题根本不在版本本身</li>\n<li>日志和指标没统一标签，排障时跨系统对不上</li>\n<li>没有预先定义好回滚阈值，出问题时全靠拍脑袋</li>\n</ul>\n<div class=\"key-point\">这题能拉开层次的地方在于：你要表现出“发现异常、定位原因、快速止损、验证恢复、沉淀复盘”是一个完整闭环，而不是几套工具的名字清单。</div>",
+        "id": "q-ixcscv"
       }
     ]
   },
