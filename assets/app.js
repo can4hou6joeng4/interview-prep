@@ -8,6 +8,7 @@ const DEFAULT_PREFS = {
   mode: 'card',
   catV: 'all',
   difV: 'all',
+  tagV: 'all',
   unmV: false,
   rndV: false,
   searchV: '',
@@ -23,6 +24,12 @@ const VALID_DIFFS = new Set(['all', 'easy', 'medium', 'hard']);
 const VALID_MODES = new Set(['card', 'list', 'mock']);
 const VALID_MOCK_POOLS = new Set(['mastered', 'fuzzy', 'mixed']);
 const VALID_MOCK_SIZES = new Set([5, 8, 12]);
+const TAG_FILTERS = [
+  { id: 'all', label: '全部标签' },
+  { id: 'project', label: '简历项目' },
+  { id: 'scene', label: '场景题' },
+];
+const VALID_TAGS = new Set(TAG_FILTERS.map((tag) => tag.id));
 const SCORE_LABELS = {
   0: '未标记',
   1: '不会',
@@ -169,6 +176,9 @@ function sanitizePrefs(rawPrefs) {
   if (VALID_DIFFS.has(rawPrefs.difV)) {
     next.difV = rawPrefs.difV;
   }
+  if (VALID_TAGS.has(rawPrefs.tagV)) {
+    next.tagV = rawPrefs.tagV;
+  }
   next.unmV = Boolean(rawPrefs.unmV);
   next.rndV = Boolean(rawPrefs.rndV);
   if (typeof rawPrefs.searchV === 'string') {
@@ -190,6 +200,7 @@ function savePrefs() {
       mode,
       catV,
       difV,
+      tagV,
       unmV,
       rndV,
       searchV,
@@ -204,7 +215,7 @@ function loadPrefs() {
 }
 
 let S = migrateState();
-let { mode, catV, difV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
+let { mode, catV, difV, tagV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
 let idx = 0;
 let cards = [];
 let flipped = false;
@@ -255,6 +266,9 @@ function scopeCards() {
     if (difV !== 'all' && item.diff !== difV) {
       return false;
     }
+    if (tagV !== 'all' && !item.tags.includes(tagV)) {
+      return false;
+    }
     if (query && !item.searchText.includes(query)) {
       return false;
     }
@@ -282,6 +296,9 @@ function summaryText() {
   }
   if (difV !== 'all') {
     parts.push(DIFF_LABELS[difV]);
+  }
+  if (tagV !== 'all') {
+    parts.push(TAG_FILTERS.find((tag) => tag.id === tagV)?.label || '标签筛选');
   }
   if (unmV) {
     parts.push('未掌握');
@@ -316,6 +333,12 @@ function syncDifficultyButtons() {
 function syncCategoryTabs() {
   document.querySelectorAll('.cat-tab').forEach((button) => {
     button.classList.toggle('on', button.dataset.c === String(catV));
+  });
+}
+
+function syncTagButtons() {
+  document.querySelectorAll('.tag-chip').forEach((button) => {
+    button.classList.toggle('on', button.dataset.tag === tagV);
   });
 }
 
@@ -811,6 +834,7 @@ function apply() {
   idx = Math.min(idx, Math.max(cards.length - 1, 0));
   syncModeButtons();
   syncCategoryTabs();
+  syncTagButtons();
   syncDifficultyButtons();
   syncToggleButtons();
   syncSearchUi();
@@ -932,6 +956,21 @@ function buildCategoryTabs() {
   tabs.querySelectorAll('.cat-tab').forEach((button) => {
     button.addEventListener('click', () => {
       catV = button.dataset.c;
+      idx = 0;
+      apply();
+    });
+  });
+}
+
+function buildTagFilters() {
+  const container = $('tagF');
+  container.innerHTML = TAG_FILTERS.map(
+    (tag) => `<button type="button" class="tag-chip${tag.id === tagV ? ' on' : ''}" data-tag="${tag.id}">${tag.label}</button>`
+  ).join('');
+
+  container.querySelectorAll('.tag-chip').forEach((button) => {
+    button.addEventListener('click', () => {
+      tagV = button.dataset.tag;
       idx = 0;
       apply();
     });
@@ -1090,4 +1129,5 @@ Object.assign(window, {
 });
 
 buildCategoryTabs();
+buildTagFilters();
 apply();

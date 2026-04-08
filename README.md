@@ -14,6 +14,7 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 
 - 19 categories and 144 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
+- Tag-based filtering now supports quick review of project-heavy and scenario-heavy questions
 - Mock summary now shows weak-category breakdowns and next-round recommendations
 - Combined filters for category, difficulty, search, unknown items, and random order
 - Stable question IDs with browser-side progress persistence and legacy progress migration
