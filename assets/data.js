@@ -73,6 +73,33 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>原理</h4>\n<pre><code>// 编译插件\n// go build -buildmode=plugin -o myplugin.so myplugin.go\n\np, _ := plugin.Open(\"myplugin.so\")\nsym, _ := p.Lookup(\"NewEngine\")  // 查找导出符号\nfactory := sym.(func() TemplateEngine)\nengine := factory()</code></pre>\n<h4>核心限制</h4>\n<ul>\n<li>仅支持 Linux 和 macOS，不支持 Windows</li>\n<li>主程序和插件必须使用<b>完全相同的 Go 版本</b>编译</li>\n<li>共享依赖的包路径和版本必须一致</li>\n<li>插件一旦加载<b>无法卸载</b>（内存中永驻）</li>\n<li>不支持泛型导出（Go 1.18+）</li>\n</ul>\n<h4>你的实践方案</h4>\n<ul>\n<li>定义统一接口（如 <code>TemplateEngine</code>、<code>ORMExtension</code>、<code>CaptchaProvider</code>）</li>\n<li>插件实现接口并导出工厂函数</li>\n<li>主进程通过 <code>plugin.Open</code> + <code>Lookup</code> + 类型断言加载</li>\n<li>适用场景：模板引擎切换、ORM 扩展、验证码提供商动态替换</li>\n</ul>\n<div class=\"key-point\">面试追问：如果面试官问 \"为什么不用 RPC 微服务替代？\"——Plugin 是进程内调用零延迟，适合同进程功能扩展；微服务适合独立部署的业务拆分</div>",
         "id": "q-1f99wc9"
+      },
+      {
+        "q": "Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>它本质上做什么</h4>\n<p><code>sync.WaitGroup</code> 用来等待一组 goroutine 全部结束。内部维护一个计数器：每启动一个任务就 <code>Add(1)</code>，任务结束时 <code>Done()</code>，主协程调用 <code>Wait()</code> 阻塞直到计数归零。</p>\n<pre><code>var wg sync.WaitGroup\nfor _, job := range jobs {\n    wg.Add(1)\n    go func(j Job) {\n        defer wg.Done()\n        process(j)\n    }(job)\n}\nwg.Wait()</code></pre>\n<h4>常见误用</h4>\n<ul>\n<li><b><code>Add</code> 放到 goroutine 里</b>：主协程可能先执行到 <code>Wait()</code>，导致提前返回</li>\n<li><b>少调或漏调 <code>Done()</code></b>：计数永远不归零，程序卡死</li>\n<li><b>多调 <code>Done()</code></b>：计数变负数会直接 panic</li>\n<li><b>复制 WaitGroup</b>：官方明确不允许 copy，多个副本会让状态错乱</li>\n<li><b>把它当取消机制</b>：WaitGroup 只能等结束，不能通知 goroutine 提前退出；要配合 <code>context</code> 或 channel</li>\n</ul>\n<div class=\"key-point\">面试里最好补一句：WaitGroup 只解决“等待完成”，不解决“错误收集”和“取消传播”；这也是很多场景下要上 <code>errgroup</code> 的原因。</div>",
+        "id": "q-16gf8u3"
+      },
+      {
+        "q": "select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>多个 case 同时满足会怎样</h4>\n<p>Go 的 <code>select</code> 会在所有已就绪的 case 中做<b>伪随机</b>选择，不保证顺序，也不是永远选第一个。</p>\n<pre><code>select {\ncase v := <-ch1:\n    handle1(v)\ncase v := <-ch2:\n    handle2(v)\ndefault:\n    idle()\n}</code></pre>\n<h4>for-select 常见坑</h4>\n<ul>\n<li><b>default 导致忙等</b>：如果循环里有 <code>default</code>，又没有 sleep / 阻塞操作，就会空转占满 CPU</li>\n<li><b>读到关闭 channel 后不退出</b>：必须用 <code>v, ok := <-ch</code> 判断，否则可能一直消费零值</li>\n<li><b>没有退出条件</b>：只写 <code>for { select { ... } }</code> 但不监听 <code>ctx.Done()</code>，goroutine 很容易泄漏</li>\n<li><b>把 select 当公平调度器</b>：它只是在已就绪 case 中随机选，不保证强公平</li>\n</ul>\n<h4>更稳妥的写法</h4>\n<pre><code>for {\n    select {\n    case msg, ok := <-queue:\n        if !ok {\n            return\n        }\n        handle(msg)\n    case <-ctx.Done():\n        return\n    }\n}</code></pre>\n<div class=\"key-point\">真实面试里如果被追问“select 会不会一直循环”，关键不是答“会/不会”，而是说清：有没有 <code>default</code>、有没有阻塞点、有没有退出条件。</div>",
+        "id": "q-m0larr"
+      },
+      {
+        "q": "sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>一个常见误区</h4>\n<p><code>sync.Map</code> 只保证“Map 本身的读写操作”并发安全，比如 <code>Load</code>、<code>Store</code>、<code>Delete</code>。如果里面存的是指针、slice、map 这类引用类型，你把值取出来再改内部字段，已经绕过了 <code>sync.Map</code> 的保护范围。</p>\n<pre><code>type User struct {\n    Name  string\n    Score int\n}\n\nvar m sync.Map\nm.Store(\"u1\", &User{Name: \"A\", Score: 1})\n\n// 两个 goroutine 同时做这个操作，Score++ 仍然可能有竞态\nu, _ := m.Load(\"u1\")\nu.(*User).Score++</code></pre>\n<h4>为什么不安全</h4>\n<ul>\n<li><code>sync.Map</code> 只保护 key 到 value 的引用关系</li>\n<li>value 内部字段怎么改，它并不会自动加锁</li>\n<li>像 <code>Score++</code> 这种复合操作，本身就不是原子操作</li>\n</ul>\n<h4>怎么做更稳妥</h4>\n<ul>\n<li><b>值对象不可变</b>：修改时构造新副本，再用 <code>Store</code> 原子替换</li>\n<li><b>value 内部自己加锁</b>：例如结构体里放 <code>sync.Mutex</code></li>\n<li><b>简单字段用 atomic</b>：计数器、状态位可以用原子操作</li>\n<li><b>单 goroutine 拥有状态</b>：通过 channel 串行修改</li>\n</ul>\n<div class=\"key-point\">这题特别能区分层次：知道 <code>sync.Map</code> 只是起点，真正加分的是你能说清“Map 并发安全”不等于“值对象并发安全”。</div>",
+        "id": "q-1arld6w"
       }
     ]
   },
@@ -120,6 +147,15 @@ window.INTERVIEW_DATA = [
         "tags": [],
         "a": "<h4>锁类型</h4>\n<ul>\n<li><b>全局锁</b>：<code>FLUSH TABLES WITH READ LOCK</code>（全库备份）</li>\n<li><b>表锁</b>：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁</li>\n<li><b>行锁</b>（InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock)</li>\n</ul>\n<h4>行锁升级为表锁的情况</h4>\n<ul>\n<li>WHERE 条件<b>没有命中索引</b>，InnoDB 退化为全表扫描 → 锁住所有扫描到的行（近似表锁）</li>\n<li>索引失效（如对索引列进行函数操作、隐式类型转换）</li>\n</ul>\n<h4>死锁预防</h4>\n<ul>\n<li>按<b>固定顺序</b>访问表和行（如按主键 ASC 顺序更新）</li>\n<li>事务尽量短小，减少持锁时间</li>\n<li>使用合理的索引，避免全表扫描</li>\n<li><code>innodb_deadlock_detect = ON</code>（默认开启），自动检测并回滚代价最小的事务</li>\n</ul>",
         "id": "q-1gxiy1s"
+      },
+      {
+        "q": "InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>核心差异</h4>\n<ul>\n<li><b>MyISAM</b> 会维护整张表的精确行数，所以在没有过滤条件时执行 <code>count(*)</code>，通常可以直接返回元数据里的结果</li>\n<li><b>InnoDB</b> 因为要支持事务和 MVCC，表的“当前可见行数”会因事务视图而不同，没法像 MyISAM 一样只靠一个全局行数回答</li>\n</ul>\n<h4>为什么 InnoDB 不能偷懒</h4>\n<ul>\n<li>不同事务看到的数据版本可能不同</li>\n<li>未提交数据、回滚数据、快照读都会影响“你现在能看到多少行”</li>\n<li>所以 InnoDB 往往需要扫描索引来统计，而不是直接读一个全局计数器</li>\n</ul>\n<h4>工程上怎么优化</h4>\n<ul>\n<li>如果只是后台统计展示，不要每次都现查 <code>count(*)</code>，可以做异步聚合或缓存</li>\n<li>有过滤条件时尽量让查询走覆盖索引，降低扫描成本</li>\n<li>超大表分页和计数拆开做，别把列表查询和总数统计绑死在同一条 SQL 上</li>\n</ul>\n<div class=\"key-point\">这题别只背“一个快一个慢”。真正的关键是：InnoDB 为了事务一致性，放弃了 MyISAM 那种简单粗暴的全局行数统计。</div>",
+        "id": "q-qa08h2"
       }
     ]
   },
@@ -174,6 +210,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>最常见方案：Cache Aside</h4>\n<ul>\n<li><b>读</b>：先查缓存，miss 再查数据库，然后回填缓存</li>\n<li><b>写</b>：先更新数据库，提交成功后删除缓存，而不是先更新缓存</li>\n</ul>\n<pre><code>// 推荐写路径\nfunc UpdateUser(ctx context.Context, id int64, patch UserPatch) error {\n    if err := db.WithTx(ctx, func(tx *sql.Tx) error {\n        return repo.UpdateUser(tx, id, patch)\n    }); err != nil {\n        return err\n    }\n    return cache.Del(ctx, fmt.Sprintf(\"user:%d\", id))\n}</code></pre>\n<h4>为什么不是“更新 DB + 更新缓存”</h4>\n<ul>\n<li>两个写操作跨系统，天然不是一个事务，任何一步失败都会留下脏数据</li>\n<li>并发场景下还会出现旧值回写覆盖新值的问题</li>\n</ul>\n<h4>延迟双删为什么不是银弹</h4>\n<ul>\n<li>做法：更新 DB 后立即删一次缓存，等待几十到几百毫秒后再删一次</li>\n<li>它只能降低“并发读把旧值重新写回缓存”的概率，不能严格保证一致</li>\n<li>读延迟、主从复制延迟、消息堆积都可能让“第二次删除”仍然踩不准时机</li>\n</ul>\n<h4>更稳妥的工程做法</h4>\n<ul>\n<li>以数据库为准，写后删缓存</li>\n<li>给缓存设置 TTL，避免脏数据无限期存在</li>\n<li>用 Binlog/CDC 或 MQ 做异步修复和批量失效</li>\n<li>对极高一致性场景，考虑版本号、读写穿透或直接放弃缓存</li>\n</ul>\n<div class=\"key-point\">面试里不要把“延迟双删”答成标准答案，重点是说明：它只是 best effort，真正核心是以 DB 为准 + 删除缓存 + 异步修复。</div>",
         "id": "q-1l47aze"
+      },
+      {
+        "q": "Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先分清 Redis 在系统里的角色</h4>\n<ul>\n<li><b>纯缓存</b>：目标是保护数据库和降低延迟，挂了之后系统应该降级而不是整体崩掉</li>\n<li><b>状态 / 锁 / 队列</b>：它已经不只是缓存，一旦挂掉会影响登录态、分布式锁、延时任务等能力</li>\n</ul>\n<h4>可能丢什么</h4>\n<ul>\n<li><b>缓存数据</b>：理论上可接受，应该能从数据库或其他源重建</li>\n<li><b>AOF / RDB 窗口内的数据</b>：如果 Redis 故障且持久化策略不够强，最近一段写入可能丢失</li>\n<li><b>依赖 Redis 承载业务语义的数据</b>：例如队列、会话、锁状态，一旦没兜底就会放大事故影响</li>\n</ul>\n<h4>常见降级手段</h4>\n<ul>\n<li><b>本地缓存兜底</b>：给热点数据一层进程内缓存，避免所有流量直冲数据库</li>\n<li><b>限流和熔断</b>：防止 Redis 故障后 DB 被瞬时流量打穿</li>\n<li><b>读写分级</b>：优先保证下单、查询等核心链路，非核心推荐、统计、排行榜先降级</li>\n<li><b>高可用架构</b>：主从、Sentinel、Cluster 降低单点故障概率</li>\n</ul>\n<h4>工程原则</h4>\n<ul>\n<li>不要把“能重建的缓存”设计成唯一数据源</li>\n<li>真正重要的数据必须先落库，再考虑缓存</li>\n<li>如果 Redis 同时承担缓存和 MQ/锁，面试里要主动指出：这会显著放大故障半径</li>\n</ul>\n<div class=\"key-point\">这题想听的不是“等 Redis 恢复”，而是你有没有降级思维：先保住核心链路，再逐步恢复性能层能力。</div>",
+        "id": "q-sheogy"
       }
     ]
   },
@@ -762,6 +807,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>三个队列各管什么</h4>\n<ul>\n<li><b>延迟队列</b>：消息不是立刻消费，而是在未来某个时间点再处理，适合订单超时关闭、优惠券到期提醒、定时补偿</li>\n<li><b>重试队列</b>：业务失败后稍后再试，适合下游临时不可用、网络抖动、第三方接口超时</li>\n<li><b>死信队列 (DLQ)</b>：消息多次重试仍失败，或明确判定为毒消息时，转入死信队列等待人工排查和补偿</li>\n</ul>\n<pre><code>主队列 --消费失败--> 重试队列(指数退避)\n重试超过阈值 -------> 死信队列\n未来执行任务 -------> 延迟队列</code></pre>\n<h4>为什么会出现重试风暴</h4>\n<ul>\n<li>所有失败消息立刻重试，把本来就不稳定的下游进一步压垮</li>\n<li>多个消费者同时失败并同步重试，形成流量脉冲</li>\n</ul>\n<h4>治理手段</h4>\n<ul>\n<li><b>指数退避 + jitter</b>：第 1 次 1s，第 2 次 5s，第 3 次 30s，避免同一时刻集体重试</li>\n<li><b>限制最大重试次数</b>：超过阈值直接进 DLQ，不要无限打同一个毒消息</li>\n<li><b>错误分类</b>：参数错误、数据脏消息直接进 DLQ；网络抖动、下游 5xx 才进入重试队列</li>\n<li><b>幂等性</b>：消息重试前提是消费逻辑可重复执行，否则越重试越乱</li>\n<li><b>熔断与限流</b>：下游明显异常时先暂停消费或降速，避免雪崩</li>\n</ul>\n<div class=\"key-point\">现在很多 Go 后端岗虽然只写“消息队列”，但真正想听的是：你不仅会发消息，还知道怎么治理失败、重试和毒消息。</div>",
         "id": "q-1vkbj6o"
+      },
+      {
+        "q": "为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>Redis List 能做队列，但它不是完整 MQ 产品</h4>\n<ul>\n<li>用 <code>LPUSH/RPOP</code> 或 <code>BRPOP</code> 能很快搭一个简单队列</li>\n<li>但一旦涉及确认、重试、消费组、积压治理、死信处理，Redis List 就需要你自己补很多逻辑</li>\n</ul>\n<h4>为什么很多业务不会直接选它</h4>\n<ul>\n<li><b>确认语义弱</b>：消息处理失败后如何重新投递、如何避免丢失，要自己设计</li>\n<li><b>消费模型单一</b>：不像 Kafka 有 Consumer Group，不像 RabbitMQ 有成熟的 ack 和路由体系</li>\n<li><b>回溯能力弱</b>：普通 List 更偏“取走即删”，不适合事件流和回放场景</li>\n<li><b>角色不纯</b>：Redis 更擅长缓存、计数器、轻量任务，不适合无限堆叠复杂 MQ 语义</li>\n</ul>\n<h4>怎么选更合理</h4>\n<ul>\n<li><b>Kafka</b>：高吞吐事件流、日志、回溯消费、多消费组</li>\n<li><b>RabbitMQ</b>：复杂路由、ack、死信、延迟消息</li>\n<li><b>Asynq</b>：Go 业务里的后台任务、延时任务、轻中量异步作业</li>\n<li><b>Redis List</b>：只适合极轻量、容忍简单语义的小队列</li>\n</ul>\n<div class=\"key-point\">这题的高质量回答不是“Redis 不行”，而是你能讲清：不是不能做，而是随着可靠性要求上升，自己补语义的成本会越来越高。</div>",
+        "id": "q-p7xed0"
       }
     ]
   },
@@ -1018,6 +1072,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>先减少竞争，再谈无锁</h4>\n<ul>\n<li><b>分片锁</b>：把全局一把锁拆成多个 shard，按 key 哈希落到不同锁上</li>\n<li><b>读写分离</b>：读多写少场景用 <code>RWMutex</code> 或 <code>sync.Map</code></li>\n<li><b>缩小临界区</b>：把耗时逻辑移出锁内，减少持锁时间</li>\n<li><b>批量处理</b>：把频繁小操作合并，降低锁进入次数</li>\n</ul>\n<h4>常见无锁思路</h4>\n<ul>\n<li><b>atomic</b>：计数器、状态位、指针切换这类简单共享状态优先用原子操作</li>\n<li><b>Copy-on-Write</b>：读多写少时写入复制新副本，再原子替换指针</li>\n<li><b>Channel ownership</b>：让单 goroutine 独占状态，其他协程通过消息通信而不是共享内存</li>\n<li><b>CAS 结构</b>：如 lock-free queue，但实现复杂、易踩 ABA 和内存序问题</li>\n</ul>\n<div class=\"key-point\">面试里别上来就吹 lock-free。大多数业务系统的最优解是先把数据结构和临界区设计好，再谈无锁。</div>",
         "id": "q-lpgq5z"
+      },
+      {
+        "q": "协程池怎么设计？为什么 goroutine 不能无上限地开？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么 goroutine 不能无限开</h4>\n<ul>\n<li>单个 goroutine 虽轻量，但不是零成本：有初始栈、调度开销、上下文切换成本</li>\n<li>任务如果会打 DB、Redis、RPC，下游资源通常比 goroutine 本身更早被打满</li>\n<li>无上限并发会带来内存膨胀、队列堆积、调度抖动，严重时把系统拖进雪崩</li>\n</ul>\n<h4>一个常见协程池设计</h4>\n<pre><code>type Pool struct {\n    jobs chan func()\n    wg   sync.WaitGroup\n}\n\nfunc NewPool(workerCount, queueSize int) *Pool {\n    p := &Pool{jobs: make(chan func(), queueSize)}\n    for i := 0; i < workerCount; i++ {\n        go func() {\n            for job := range p.jobs {\n                job()\n                p.wg.Done()\n            }\n        }()\n    }\n    return p\n}\n\nfunc (p *Pool) Submit(job func()) {\n    p.wg.Add(1)\n    p.jobs <- job\n}\n\nfunc (p *Pool) Wait() { p.wg.Wait() }</code></pre>\n<h4>设计时要想清楚的点</h4>\n<ul>\n<li><b>并发度上限</b>：通常按 CPU、连接池大小、下游吞吐能力共同决定</li>\n<li><b>队列长度</b>：太短会频繁拒绝，太长会造成排队过久</li>\n<li><b>拒绝策略</b>：阻塞等待、直接丢弃、返回错误、降级到异步补偿</li>\n<li><b>超时与取消</b>：最好配合 <code>context</code>，否则任务堆积后很难止损</li>\n</ul>\n<div class=\"key-point\">这题真正想听的不是你会写 worker pool，而是你知道协程池的价值在于控制并发和保护下游，不是为了“把 goroutine 用满”。</div>",
+        "id": "q-lf7hbg"
       }
     ]
   },
@@ -1109,6 +1172,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>典型链路</h4>\n<p>Go 服务暴露 <code>/metrics</code> → Prometheus 定时抓取 → Grafana 负责可视化和告警。</p>\n<pre><code>import \"github.com/prometheus/client_golang/prometheus\"\nimport \"github.com/prometheus/client_golang/prometheus/promhttp\"\n\nvar requestTotal = prometheus.NewCounterVec(\n    prometheus.CounterOpts{\n        Name: \"http_requests_total\",\n        Help: \"Total HTTP requests\",\n    },\n    []string{\"path\", \"method\", \"status\"},\n)\n\nfunc main() {\n    prometheus.MustRegister(requestTotal)\n    http.Handle(\"/metrics\", promhttp.Handler())\n    http.ListenAndServe(\":9090\", nil)\n}</code></pre>\n<h4>建议监控哪些</h4>\n<ul>\n<li>请求量、错误率、延迟分位数</li>\n<li>goroutine 数、GC、内存、CPU</li>\n<li>DB/Redis 连接池、命中率、超时数</li>\n</ul>",
         "id": "q-dmidpx"
+      },
+      {
+        "q": "gRPC 的底层实现依赖哪些协议和机制？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先说结论</h4>\n<p>gRPC 通常建立在 <b>HTTP/2 + Protobuf</b> 之上：HTTP/2 负责连接复用和流控，Protobuf 负责结构化二进制编码。</p>\n<h4>底层关键点</h4>\n<ul>\n<li><b>HTTP/2 Stream</b>：一个 TCP 连接里可并行承载多个 RPC 调用，每个调用对应一个 Stream</li>\n<li><b>Frame 分帧</b>：请求和响应最终会拆成 HEADER / DATA 等帧在连接里传输</li>\n<li><b>HPACK</b>：HTTP/2 的头部压缩机制，减少重复 Header 的传输成本</li>\n<li><b>Flow Control</b>：连接级和 Stream 级流控，避免接收方被流量压垮</li>\n<li><b>Protobuf</b>：把消息编码成紧凑的二进制结构，比 JSON 更省带宽</li>\n<li><b>TLS / ALPN</b>：生产环境里通常配合 TLS 使用，通过 ALPN 协商到 HTTP/2</li>\n</ul>\n<h4>为什么它适合内部服务通信</h4>\n<ul>\n<li>连接复用，减少频繁建连成本</li>\n<li>天然支持流式调用</li>\n<li>IDL 驱动，跨语言接口更规范</li>\n<li>配合 deadline、metadata、拦截器，更容易做统一治理</li>\n</ul>\n<div class=\"key-point\">这题别只答“gRPC 基于 HTTP/2”。真正拉开差距的是你能继续往下讲：Stream、多路复用、分帧、流控、Protobuf、TLS 这些机制是怎么一起工作的。</div>",
+        "id": "q-108dns7"
       }
     ]
   },
