@@ -12,7 +12,7 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 
 ## Highlights
 
-- 19 categories and 119 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
+- 19 categories and 127 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
 - Mock summary now shows weak-category breakdowns and next-round recommendations
 - Combined filters for category, difficulty, search, unknown items, and random order
@@ -44,6 +44,7 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   └── styles.css
 ├── content-sources/
 │   ├── README.md
+│   ├── interview-experience-map.md
 │   ├── jd-questions.md
 │   └── shoply-deep-dive.md
 ├── scripts/

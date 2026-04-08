@@ -7,7 +7,7 @@
 
 ## 项目特点
 
-- 19 个分类、119 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
+- 19 个分类、127 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
 - 支持卡片学习、列表检索和模拟面试三种模式
 - 模拟结果页支持薄弱分类统计、下一轮建议和薄弱题回炉再练
 - 支持分类、难度、未掌握、随机顺序、关键词搜索等组合筛选
@@ -39,6 +39,7 @@ python3 -m http.server 4173
 │   └── styles.css
 ├── content-sources/
 │   ├── README.md
+│   ├── interview-experience-map.md
 │   ├── jd-questions.md
 │   └── shoply-deep-dive.md
 ├── scripts/
@@ -60,7 +61,7 @@ python3 -m http.server 4173
 - 页面交互维护在 `assets/app.js`
 - 素材源统一维护在 `content-sources/`
 - 其中 `shoply-deep-dive.md` 是高质量项目深挖题源，`jd-questions.md` 是扩题 backlog
-- 当前已并入五批高优题，覆盖 Shoply 项目深挖、gRPC、性能优化、手撕题、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理、测试工程、弱网优化、程序化广告、LangChain 基础，以及 RESTful 设计、缓存一致性、队列治理、SSE 流式输出和 MongoDB 事务
+- 当前已并入六批高优题，覆盖 Shoply 项目深挖、gRPC、性能优化、手撕题、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理、测试工程、弱网优化、程序化广告、LangChain 基础，以及 RESTful 设计、缓存一致性、队列治理、SSE 流式输出、MongoDB 事务和首批真实面经高频题
 - 发布工作流只上传站点实际需要的文件，避免把非站点素材一起公开
 - 当前静态站点已补齐 `404.html`、`robots.txt`、`site.webmanifest`、`sitemap.xml` 等基础配套文件
 
