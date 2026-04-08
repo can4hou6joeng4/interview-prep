@@ -68,6 +68,7 @@
 				<button type="button" class="ctrl" id="rndB">随机</button>
 				<button type="button" class="ctrl ctrl-search hidden" id="searchTagB" aria-live="polite"></button>
 			</div>
+			<p class="ctrl-hint" id="navHint" aria-live="polite"></p>
 		</div>
 	</section>
 
@@ -92,6 +93,7 @@
 		</div></div></div>
 		<div class="nav"><button type="button" class="nav-b" id="pB" onclick="prev()">&#8592;</button><span class="nav-c" id="nC">0 / 0</span><button type="button" class="nav-b" id="nB" onclick="next()">&#8594;</button></div>
 		<div class="rtg"><button type="button" class="rt rt-f" onclick="rate(1)">&#10007; 不会</button><button type="button" class="rt rt-z" onclick="rate(2)">&#8776; 模糊</button><button type="button" class="rt rt-p" onclick="rate(3)">&#10003; 掌握</button></div>
+		<p class="fc-hint" id="fcHint" aria-live="polite"></p>
 		<div class="keys"><kbd>Space</kbd> 翻转 <kbd>&#8592;</kbd><kbd>&#8594;</kbd> 切换 <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 评分</div>
 	</section>
 
@@ -111,6 +113,7 @@
 				<button type="button" class="ls-b" onclick="colAll()">收起</button>
 				<button type="button" class="ls-b" onclick="rstP()">重置进度</button>
 			</div>
+			<p class="ls-hint" id="lsHint" aria-live="polite"></p>
 		</div>
 		<div id="lsC"></div>
 	</section>

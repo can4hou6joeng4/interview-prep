@@ -321,9 +321,15 @@ function syncCategoryTabs() {
 
 function syncSearchUi() {
   $('sI').value = searchV;
-  $('clrSearchB').disabled = !searchV.trim();
+  const clearButton = $('clrSearchB');
+  const hasSearch = Boolean(searchV.trim());
+  clearButton.disabled = !hasSearch;
+  clearButton.title = hasSearch ? '清空当前搜索关键词' : '当前没有可清空的搜索关键词';
+  $('lsHint').textContent = hasSearch
+    ? `当前搜索关键词为“${searchV.trim()}”，可以点击“清空搜索”恢复完整结果。`
+    : '输入关键词后可以快速筛题；当前没有可清空的搜索条件。';
   const searchTag = $('searchTagB');
-  if (searchV.trim()) {
+  if (hasSearch) {
     searchTag.classList.remove('hidden');
     searchTag.classList.add('on');
     searchTag.textContent = `搜索: ${searchV.trim()} ×`;
@@ -338,6 +344,7 @@ function syncToggleButtons() {
   const ignoreStudyToggles = mode === 'mock';
   const unmButton = $('unmB');
   const rndButton = $('rndB');
+  const navHint = $('navHint');
 
   unmButton.classList.toggle('on', !ignoreStudyToggles && unmV);
   rndButton.classList.toggle('on', !ignoreStudyToggles && rndV);
@@ -345,6 +352,9 @@ function syncToggleButtons() {
   rndButton.disabled = ignoreStudyToggles;
   unmButton.title = ignoreStudyToggles ? '模拟面试模式会忽略“未掌握”开关' : '';
   rndButton.title = ignoreStudyToggles ? '模拟面试模式会忽略“随机”开关' : '';
+  navHint.textContent = ignoreStudyToggles
+    ? '模拟面试模式中，“未掌握”和“随机”开关会暂时禁用，只继承分类、难度和搜索范围。'
+    : '';
 }
 
 function getMockAvailability() {
@@ -611,6 +621,7 @@ function renderMock() {
   $('mkFinishB').classList.toggle('hidden', !hasActiveSession);
   $('mkStartB').textContent = mockSession?.completedAt ? '再来一轮' : '开始模拟';
   $('mkStartB').disabled = availableCount === 0;
+  $('mkStartB').title = availableCount === 0 ? `当前范围内没有可用于“${MOCK_POOL_LABELS[mockPool]}”的题目` : '';
 
   $('mkHint').textContent = hasActiveSession
     ? `当前会话已锁定 ${mockSession.items.length} 题；切换题源、题量或顶部筛选只会影响下一轮。`
@@ -663,6 +674,9 @@ function renderFC() {
     $('chT2').textContent = '';
     $('pB').disabled = true;
     $('nB').disabled = true;
+    $('pB').title = '当前没有上一题可切换';
+    $('nB').title = '当前没有下一题可切换';
+    $('fcHint').textContent = '当前筛选结果为空，请调整分类、难度或搜索关键词。';
     unflip();
     return;
   }
@@ -697,6 +711,14 @@ function renderFC() {
   document.querySelector('.qh').textContent = 'click to flip';
   $('pB').disabled = idx === 0;
   $('nB').disabled = idx >= cards.length - 1;
+  $('pB').title = idx === 0 ? '已经是当前范围的第一题' : '上一题';
+  $('nB').title = idx >= cards.length - 1 ? '已经是当前范围的最后一题' : '下一题';
+  $('fcHint').textContent =
+    idx === 0 && cards.length > 1
+      ? '已经到第一题，可以继续翻面或向后切换。'
+      : idx >= cards.length - 1 && cards.length > 1
+        ? '已经到最后一题，可以评分后调整筛选继续复习。'
+        : '点击卡片或按空格翻面，使用左右方向键切题，按 1 / 2 / 3 快速评分。';
   unflip();
 }
 
