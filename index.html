@@ -77,6 +77,13 @@
 				<div class="path-row" id="presetF"></div>
 				<p class="path-hint" id="presetHint" aria-live="polite"></p>
 			</div>
+			<div class="review-shell" aria-label="专项复习">
+				<div class="review-head">
+					<p class="review-label">专项复习</p>
+				</div>
+				<div class="review-row" id="reviewF"></div>
+				<p class="review-hint" id="reviewHint" aria-live="polite"></p>
+			</div>
 			<p class="ctrl-hint" id="navHint" aria-live="polite"></p>
 		</div>
 	</section>
@@ -216,6 +223,7 @@
 						</div>
 						<div class="mk-summary-actions">
 							<span class="mk-score mk-score-strong" id="mkSummaryDuration">总时长 00:00</span>
+							<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkOpenWeakB">去薄弱专项</button>
 							<button type="button" class="mk-btn hidden" id="mkRetryWeakB">薄弱题再练一轮</button>
 						</div>
 					</div>
@@ -249,6 +257,11 @@
 			<a class="updates-link" href="https://github.com/can4hou6joeng4/interview-prep/blob/main/CHANGELOG.md" target="_blank" rel="noreferrer">查看完整 Changelog</a>
 		</div>
 		<div class="updates-list">
+			<article class="update-item">
+				<p class="update-date">2026-04-09</p>
+				<h3>新增错题 / 薄弱题专项复习入口</h3>
+				<p>支持在当前学习路径里一键切到错题回顾、模糊巩固、薄弱专项和掌握抽查，并在模拟面试结束后直接跳回薄弱专项继续回炉。</p>
+			</article>
 			<article class="update-item">
 				<p class="update-date">2026-04-09</p>
 				<h3>新增学习路径专题入口</h3>

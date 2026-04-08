@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
 const DEFAULT_PREFS = {
   mode: 'card',
   presetV: 'all',
+  reviewV: 'all',
   catV: 'all',
   difV: 'all',
   tagV: 'all',
@@ -29,6 +30,13 @@ const TAG_FILTERS = [
   { id: 'all', label: '全部标签' },
   { id: 'project', label: '简历项目' },
   { id: 'scene', label: '场景题' },
+];
+const REVIEW_FILTERS = [
+  { id: 'all', label: '全部状态', hint: '保留当前范围内的全部题目，适合继续自由筛题。' },
+  { id: 'wrong', label: '错题回顾', hint: '只看已经明确标成“不会”的题，适合先补最危险的断点。' },
+  { id: 'fuzzy', label: '模糊巩固', hint: '只看“知道一点但讲不顺”的题，适合把模糊点讲成完整答案。' },
+  { id: 'weak', label: '薄弱专项', hint: '把“不会 + 模糊”合并成一个清单，适合做一轮集中回炉。' },
+  { id: 'mastered', label: '掌握抽查', hint: '只看已掌握题，检查自己是否真的能脱稿讲出来。' },
 ];
 const LEARNING_PATHS = [
   {
@@ -80,6 +88,7 @@ const LEARNING_PATHS = [
   },
 ];
 const VALID_TAGS = new Set(TAG_FILTERS.map((tag) => tag.id));
+const VALID_REVIEW_FILTERS = new Set(REVIEW_FILTERS.map((filter) => filter.id));
 const VALID_PRESETS = new Set(LEARNING_PATHS.map((path) => path.id));
 const SCORE_LABELS = {
   0: '未标记',
@@ -224,6 +233,9 @@ function sanitizePrefs(rawPrefs) {
   if (VALID_PRESETS.has(rawPrefs.presetV)) {
     next.presetV = rawPrefs.presetV;
   }
+  if (VALID_REVIEW_FILTERS.has(rawPrefs.reviewV)) {
+    next.reviewV = rawPrefs.reviewV;
+  }
   if (rawPrefs.catV === 'all' || DATA[Number(rawPrefs.catV)]) {
     next.catV = String(rawPrefs.catV);
   }
@@ -253,6 +265,7 @@ function savePrefs() {
     JSON.stringify({
       mode,
       presetV,
+      reviewV,
       catV,
       difV,
       tagV,
@@ -270,7 +283,7 @@ function loadPrefs() {
 }
 
 let S = migrateState();
-let { mode, presetV, catV, difV, tagV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
+let { mode, presetV, reviewV, catV, difV, tagV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
 let idx = 0;
 let cards = [];
 let flipped = false;
@@ -324,7 +337,57 @@ function getLearningPathCards(id = presetV) {
   return all.filter((item) => path.categories.includes(item.cat));
 }
 
+function getReviewFilter(id = reviewV) {
+  return REVIEW_FILTERS.find((filter) => filter.id === id) || REVIEW_FILTERS[0];
+}
+
+function matchesReviewFilter(item, filter = reviewV) {
+  const score = S[item.id] || 0;
+  if (filter === 'wrong') {
+    return score === 1;
+  }
+  if (filter === 'fuzzy') {
+    return score === 2;
+  }
+  if (filter === 'weak') {
+    return score === 1 || score === 2;
+  }
+  if (filter === 'mastered') {
+    return score === 3;
+  }
+  return true;
+}
+
+function getReviewBuckets(items = scopeCards()) {
+  const buckets = {
+    total: items.length,
+    wrong: 0,
+    fuzzy: 0,
+    weak: 0,
+    mastered: 0,
+    unmarked: 0,
+  };
+
+  items.forEach((item) => {
+    const score = S[item.id] || 0;
+    if (score === 1) {
+      buckets.wrong += 1;
+      buckets.weak += 1;
+    } else if (score === 2) {
+      buckets.fuzzy += 1;
+      buckets.weak += 1;
+    } else if (score === 3) {
+      buckets.mastered += 1;
+    } else {
+      buckets.unmarked += 1;
+    }
+  });
+
+  return buckets;
+}
+
 function resetScopeForLearningPath() {
+  reviewV = 'all';
   catV = 'all';
   difV = 'all';
   tagV = 'all';
@@ -359,6 +422,9 @@ function scopeCards() {
 function filteredCards() {
   let next = scopeCards();
 
+  if (reviewV !== 'all') {
+    next = next.filter((item) => matchesReviewFilter(item));
+  }
   if (unmV) {
     next = next.filter((item) => (S[item.id] || 0) < 3);
   }
@@ -373,6 +439,9 @@ function summaryText() {
   const parts = [];
   if (presetV !== 'all') {
     parts.push(`专题 ${getLearningPath().label}`);
+  }
+  if (reviewV !== 'all') {
+    parts.push(getReviewFilter().label);
   }
   if (catV !== 'all') {
     parts.push(DATA[Number(catV)]?.cat || '当前分类');
@@ -442,6 +511,37 @@ function syncLearningPathUi() {
     presetV === 'all'
       ? '学习路径会直接切到一组更贴近真实岗位的题目范围；进入专题后，仍可继续叠加难度、标签和搜索词做二次收敛。'
       : `当前专题「${path.label}」覆盖 ${scopedByPath.length} 题。${path.hint} 建议：${path.suggestion}`;
+}
+
+function syncReviewUi() {
+  const buckets = getReviewBuckets();
+  const filter = getReviewFilter();
+
+  document.querySelectorAll('.review-chip').forEach((button) => {
+    const id = button.dataset.review;
+    const count =
+      id === 'all'
+        ? buckets.total
+        : id === 'wrong'
+          ? buckets.wrong
+          : id === 'fuzzy'
+            ? buckets.fuzzy
+            : id === 'weak'
+              ? buckets.weak
+              : buckets.mastered;
+    button.classList.toggle('on', id === reviewV);
+    button.disabled = id !== 'all' && count === 0;
+    button.title = id !== 'all' && count === 0 ? '当前范围内没有可用于这个专项的题目' : '';
+    const countNode = button.querySelector('.review-chip-count');
+    if (countNode) {
+      countNode.textContent = `${count} 题`;
+    }
+  });
+
+  $('reviewHint').textContent =
+    reviewV === 'all'
+      ? '专项复习会基于当前学习路径与筛选范围，快速收敛到错题、模糊题、薄弱题和已掌握题。'
+      : `当前专项「${filter.label}」覆盖 ${reviewV === 'wrong' ? buckets.wrong : reviewV === 'fuzzy' ? buckets.fuzzy : reviewV === 'weak' ? buckets.weak : buckets.mastered} 题。${filter.hint}${mode === 'mock' ? ' 模拟面试本身按题源抽题；切回卡片或列表时会继续保留这个专项。' : ''}`;
 }
 
 function syncSearchUi() {
@@ -603,6 +703,15 @@ function restartWeakMockSession() {
   createMockSession(weakDeck, 'review');
 }
 
+function openWeakReview() {
+  reviewV = 'weak';
+  unmV = false;
+  rndV = false;
+  mode = 'list';
+  idx = 0;
+  apply();
+}
+
 function finishMockSession() {
   if (!mockSession || mockSession.completedAt) {
     return;
@@ -671,6 +780,7 @@ function renderMockSummary() {
 
   $('mkSummaryDuration').textContent = `总时长 ${formatDuration(duration)}`;
   $('mkRetryWeakB').classList.toggle('hidden', reviewItems.length === 0);
+  $('mkOpenWeakB').classList.toggle('hidden', reviewItems.length === 0);
   $('mkSummaryGrid').innerHTML = [
     ['完成题数', `${answered.length}/${mockSession.items.length}`],
     ['答得顺畅', `${smooth} 题`],
@@ -801,7 +911,10 @@ function renderFC() {
     $('nB').disabled = true;
     $('pB').title = '当前没有上一题可切换';
     $('nB').title = '当前没有下一题可切换';
-    $('fcHint').textContent = '当前筛选结果为空，请调整分类、难度或搜索关键词。';
+    $('fcHint').textContent =
+      reviewV !== 'all'
+        ? `当前专项「${getReviewFilter().label}」没有匹配题目，可以切回“全部状态”或换一个学习路径。`
+        : '当前筛选结果为空，请调整分类、难度或搜索关键词。';
     unflip();
     return;
   }
@@ -855,7 +968,9 @@ function renderLS() {
   meta.textContent = `当前筛选 ${cards.length} 题 · ${summaryText()}`;
 
   if (!cards.length) {
-    container.innerHTML = '<div class="empty-state">没有匹配的题目，试试清空搜索或切换筛选条件。</div>';
+    container.innerHTML = reviewV !== 'all'
+      ? `<div class="empty-state">当前专项「${escapeHtml(getReviewFilter().label)}」在这个范围内还没有题目。可以先切回“全部状态”，或者去模拟面试打一轮分后再回来回炉。</div>`
+      : '<div class="empty-state">没有匹配的题目，试试清空搜索或切换筛选条件。</div>';
     return;
   }
 
@@ -936,6 +1051,7 @@ function apply() {
   idx = Math.min(idx, Math.max(cards.length - 1, 0));
   syncModeButtons();
   syncLearningPathUi();
+  syncReviewUi();
   syncCategoryTabs();
   syncTagButtons();
   syncDifficultyButtons();
@@ -1080,6 +1196,25 @@ function buildTagFilters() {
   });
 }
 
+function buildReviewFilters() {
+  const container = $('reviewF');
+  container.innerHTML = REVIEW_FILTERS.map(
+    (filter) =>
+      `<button type="button" class="review-chip${filter.id === reviewV ? ' on' : ''}" data-review="${filter.id}"><span class="review-chip-title">${filter.label}</span><span class="review-chip-count">0 题</span></button>`
+  ).join('');
+
+  container.querySelectorAll('.review-chip').forEach((button) => {
+    button.addEventListener('click', () => {
+      reviewV = button.dataset.review;
+      if (mode === 'mock' && reviewV !== 'all') {
+        mode = 'list';
+      }
+      idx = 0;
+      apply();
+    });
+  });
+}
+
 function buildLearningPaths() {
   const container = $('presetF');
   container.innerHTML = LEARNING_PATHS.map((path) => {
@@ -1173,6 +1308,7 @@ $('mkStartB').addEventListener('click', startMockSession);
 $('mkRestartB').addEventListener('click', restartMockSession);
 $('mkFinishB').addEventListener('click', finishMockSession);
 $('mkRetryWeakB').addEventListener('click', restartWeakMockSession);
+$('mkOpenWeakB').addEventListener('click', openWeakReview);
 $('mkRevealB').addEventListener('click', revealMockAnswer);
 $('mkRate1').addEventListener('click', () => rateMock(1));
 $('mkRate2').addEventListener('click', () => rateMock(2));
@@ -1257,5 +1393,6 @@ Object.assign(window, {
 
 buildCategoryTabs();
 buildTagFilters();
+buildReviewFilters();
 buildLearningPaths();
 apply();
