@@ -16,6 +16,7 @@ const requiredFiles = [
   'assets/social-preview.png',
   'README.md',
   'README_zh.md',
+  'CHANGELOG.md',
 ];
 
 for (const relPath of requiredFiles) {

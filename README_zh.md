@@ -3,11 +3,13 @@
 基于简历项目定制的交互式面试题库，适合用来做 Go 后端岗位面试准备、知识回顾和项目深挖复盘。
 
 [English README](./README.md)
+[更新记录](./CHANGELOG.md)
 
 ## 项目特点
 
 - 19 个分类、119 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
 - 支持卡片学习、列表检索和模拟面试三种模式
+- 模拟结果页支持薄弱分类统计、下一轮建议和薄弱题回炉再练
 - 支持分类、难度、未掌握、随机顺序、关键词搜索等组合筛选
 - 学习进度保存在本地浏览器，并带有稳定题目 ID 与旧版进度迁移逻辑
 - 零构建、零依赖，可直接部署到 GitHub Pages
@@ -43,6 +45,7 @@ python3 -m http.server 4173
 │   └── validate-data.mjs
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
+├── CHANGELOG.md
 ├── 404.html
 ├── LICENSE
 ├── README.md
