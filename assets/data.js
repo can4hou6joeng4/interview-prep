@@ -400,6 +400,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>为什么必须做快照</h4>\n<ul>\n<li>商品标题、价格、规格、库存策略都会变化，如果订单只引用实时商品表，后续对账和售后会失真</li>\n<li>地址会变，税区和运费命中结果也会跟着变</li>\n<li>汇率波动会直接影响退款、结算和财务解释口径</li>\n</ul>\n<h4>通常要冻结哪些字段</h4>\n<ul>\n<li><b>商品快照</b>：SKU、标题、规格、单价、折扣前后金额、税类目</li>\n<li><b>地址快照</b>：国家、省份、城市、邮编、关键收货信息</li>\n<li><b>汇率快照</b>：基础币种、结算币种、换算汇率、生效时间</li>\n<li><b>规则命中快照</b>：运费规则、税费规则、优惠规则的命中结果</li>\n</ul>\n<h4>工程价值</h4>\n<ul>\n<li>保证支付、退款、售后、审计时使用的是“下单当时的事实”</li>\n<li>避免商品改价、地址修改、汇率波动影响已成交订单</li>\n<li>能清晰解释一笔订单当时为什么是这个金额</li>\n</ul>\n<div class=\"key-point\">这题别答成“为了方便查历史”。更完整的说法是：快照是订单事实层，后续支付、退款、税费解释和财务对账都依赖它。</div>",
         "id": "q-1bwu8at"
+      },
+      {
+        "q": "工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先分清两者</h4>\n<ul>\n<li><b>工作流引擎</b>：编排多步骤、多角色的流程推进，核心是状态流转和节点编排。典型：订单审批流、退款审核流、采购入库流</li>\n<li><b>规则引擎</b>：在某个决策点，根据条件集合计算出结果。典型：运费规则、税费规则、风控规则、优惠叠加规则</li>\n<li>两者经常配合：工作流某个节点调用规则引擎做决策，决策结果决定流程走向</li>\n</ul>\n<h4>跨境电商的常见场景</h4>\n<ul>\n<li><b>工作流</b>：采购单审批 → 供应商确认 → 入库 → 质检 → 上架；退款申请 → 客服审核 → 财务放款</li>\n<li><b>规则引擎</b>：根据目的国+商品类目+重量命中运费模板；根据收货地址命中税率和税种（VAT/Sales Tax）；根据用户标签+订单金额命中优惠策略</li>\n</ul>\n<h4>工程实现要点</h4>\n<ul>\n<li>工作流引擎的核心是状态机 + 节点注册 + 条件分支 + 超时/补偿</li>\n<li>规则引擎的核心是规则匹配优先级（精确 > 通配 > 默认）和命中结果可审计</li>\n<li>不要把业务逻辑硬编码在流程代码里，要做到规则和流程可配置、可追溯</li>\n</ul>\n<div class=\"key-point\">面试高分点：能说清工作流管「流程推进」、规则引擎管「决策计算」，两者边界清晰但常配合使用。</div>",
+        "id": "q-wf1rul"
+      },
+      {
+        "q": "跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>WMS（仓储管理）核心问题</h4>\n<ul>\n<li><b>库存模型</b>：可售库存、在途库存、冻结库存、预扣库存要分开记账，不能只靠一个字段</li>\n<li><b>入库流程</b>：采购到货 → 质检 → 上架 → 库位分配，每一步都要有状态和审计</li>\n<li><b>出库流程</b>：订单锁库 → 拣货 → 打包 → 交接物流，库存扣减时机要明确</li>\n<li><b>库位管理</b>：SKU 和库位的映射关系，支持多仓、多区域</li>\n</ul>\n<h4>TMS（运输管理）核心问题</h4>\n<ul>\n<li><b>物流商对接</b>：不同物流商 API 差异大，需要统一抽象层（类似支付网关抽象）</li>\n<li><b>运单生命周期</b>：下单 → 揽收 → 转运 → 清关 → 派送 → 签收，每个节点都靠回调或轮询更新</li>\n<li><b>物流轨迹</b>：多来源轨迹合并、时区统一、异常状态检测（长时间无更新告警）</li>\n</ul>\n<h4>跨境特有挑战</h4>\n<ul>\n<li>海外仓 + 国内仓的库存同步和调拨</li>\n<li>清关环节的不确定性（状态长时间卡住）</li>\n<li>退货逆向物流链路复杂度远高于国内电商</li>\n</ul>\n<div class=\"key-point\">这题和你的项目直接相关：你做过订单和支付链路，面试时可以顺着说「订单确认后进入履约环节」，展示你对全链路的理解。</div>",
+        "id": "q-tms1wm"
       }
     ]
   },
@@ -790,6 +808,22 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>一个生产可用的分层思路</h4>\n<pre><code>接入层       → 网页 / App / 企微 / 公众号\n对话管理层   → 会话状态、多轮上下文、意图识别\nAgent 核心层 → 规划、工具调用、反思、记忆\n工具层       → 知识库检索、工单系统、用户信息、物流查询\n输出管控层   → 敏感词过滤、内容审核、话术规范</code></pre>\n<h4>记忆怎么设计</h4>\n<ul>\n<li><b>短期记忆</b>：当前会话上下文，通常放 Redis，设置过期时间</li>\n<li><b>长期记忆</b>：用户画像、历史问题总结、偏好信息，放向量库或业务库，需要时召回</li>\n<li>不要把“所有历史”都当长期记忆，应该做抽取、压缩和业务归档</li>\n</ul>\n<h4>幻觉怎么防控</h4>\n<ul>\n<li><b>RAG</b>：让回答尽量基于知识库，而不是放任模型胡编</li>\n<li><b>置信度校验</b>：没把握就转人工，不要强答</li>\n<li><b>事实核查</b>：把生成结果和检索原文做比对，不一致就打回</li>\n<li><b>人工复核</b>：金融、医疗、售后争议等高风险场景要有人兜底</li>\n</ul>\n<div class=\"key-point\">这题不是考你会不会画一个大图，而是看你知不知道企业级 Agent 的核心不是“能回答”，而是“能控风险、能追踪、能接管”。</div>",
         "id": "q-1vy0rvs"
+      },
+      {
+        "q": "AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>数据清洗管道的典型流程</h4>\n<pre><code>数据采集 → 格式统一 → 去重去噪 → 标注/校验 → 质量评估 → 入库/交付</code></pre>\n<ul>\n<li><b>数据采集</b>：从多源拉取（API、爬虫、日志、数据库导出），统一写入消息队列或对象存储</li>\n<li><b>格式统一</b>：编码归一、字段映射、时间格式标准化、多语言处理</li>\n<li><b>去重去噪</b>：基于内容哈希或 SimHash 去重；过滤无效数据（空值、乱码、过短文本）</li>\n<li><b>质量评估</b>：抽样人工校验 + 自动化规则检查（覆盖率、一致性、完整性）</li>\n</ul>\n<h4>后端工程师的职责</h4>\n<ul>\n<li>构建稳定的数据处理管道（Kafka + Worker Pool / Flink）</li>\n<li>设计任务调度和重试机制，保证幂等和断点续跑</li>\n<li>管理数据版本和血缘关系，知道每批数据从哪来、经过什么处理</li>\n<li>提供 API 给标注团队和模型训练侧消费清洗后的数据</li>\n</ul>\n<h4>和普通业务 ETL 的区别</h4>\n<ul>\n<li>AI 数据清洗对质量的要求更高——脏数据进模型，训练结果直接崩</li>\n<li>数据量通常更大，需要分布式处理能力</li>\n<li>需要支持「人在回路」（Human-in-the-Loop），标注和校验环节有人工介入</li>\n</ul>\n<div class=\"key-point\">面试不会让你讲模型训练，而是看你能不能把数据管道讲清楚：采集、清洗、调度、质量保障、交付，这些全是后端能力。</div>",
+        "id": "q-ai1etl"
+      },
+      {
+        "q": "Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？",
+        "diff": "hard",
+        "tags": [],
+        "a": "<h4>渐进式 Rehash</h4>\n<ul>\n<li>Redis 的 dict 使用两个哈希表（ht[0] 和 ht[1]），扩容时不会一次性迁移所有 key</li>\n<li>每次读写操作顺带迁移一部分（分摊到每次命令），避免长时间阻塞</li>\n<li>rehash 期间，查询先查 ht[0]，miss 再查 ht[1]；写入直接写 ht[1]</li>\n</ul>\n<h4>过期策略</h4>\n<ul>\n<li><b>惰性删除</b>：访问 key 时检查是否过期，过期才删——省 CPU 但可能有内存浪费</li>\n<li><b>定期删除</b>：每 100ms 随机抽查一批 key，删除已过期的——平衡 CPU 和内存</li>\n<li>两种策略配合使用，既不会漏删太多，也不会占太多 CPU</li>\n</ul>\n<h4>内存淘汰策略</h4>\n<ul>\n<li><code>noeviction</code>：内存满了直接报错（默认）</li>\n<li><code>allkeys-lru</code>：在所有 key 中淘汰最近最少使用的</li>\n<li><code>volatile-lru</code>：只在有过期时间的 key 中做 LRU 淘汰</li>\n<li><code>allkeys-lfu</code>：基于访问频率淘汰（Redis 4.0+），比 LRU 更准确</li>\n<li><code>volatile-ttl</code>：优先淘汰 TTL 最短的 key</li>\n</ul>\n<h4>其他值得了解的内部机制</h4>\n<ul>\n<li><b>SDS（Simple Dynamic String）</b>：预分配 + 惰性释放，避免频繁内存分配</li>\n<li><b>ziplist → listpack</b>：小数据量时的紧凑编码，省内存</li>\n<li><b>IO 多路复用</b>：单线程 + epoll 事件循环处理所有连接</li>\n</ul>\n<div class=\"key-point\">这题在外企面试中很常见——不是问你会不会用 SET/GET，而是看你理不理解 Redis 为什么快、内存怎么管、扩容怎么做到不阻塞。</div>",
+        "id": "q-rd1int"
       }
     ]
   },
@@ -1401,6 +1435,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>文件描述符 (fd)</h4>\n<p>Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd）</p>\n<ul>\n<li><code>0</code>：stdin | <code>1</code>：stdout | <code>2</code>：stderr</li>\n<li>每个进程有 fd 上限（默认 1024）</li>\n</ul>\n<h4>Too many open files 排查</h4>\n<pre><code># 查看当前进程打开的 fd 数\nls /proc/PID/fd | wc -l\n\n# 查看进程的 fd 限制\ncat /proc/PID/limits | grep \"open files\"\n\n# 查看系统级限制\ncat /proc/sys/fs/file-max\n\n# 解决方案\n# 1. 临时调整\nulimit -n 65535\n\n# 2. 永久调整 (/etc/security/limits.conf)\n* soft nofile 65535\n* hard nofile 65535\n\n# 3. systemd 服务\n[Service]\nLimitNOFILE=65535</code></pre>\n<h4>根本原因</h4>\n<p>通常不是真的需要这么多 fd，而是代码有资源泄漏：</p>\n<ul>\n<li>HTTP 响应 Body 未 <code>resp.Body.Close()</code></li>\n<li>数据库连接未释放</li>\n<li>文件打开后未关闭</li>\n</ul>\n<div class=\"key-point\">Go 中养成习惯：<code>defer resp.Body.Close()</code>、<code>defer rows.Close()</code>、<code>defer f.Close()</code></div>",
         "id": "q-1vd8czs"
+      },
+      {
+        "q": "Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>后端工程师常用的 Shell 场景</h4>\n<ul>\n<li><b>日志分析</b>：<code>grep + awk + sort + uniq -c</code> 快速统计错误分布、慢请求 Top N</li>\n<li><b>批量操作</b>：批量重启服务、批量更新配置、批量清理过期文件</li>\n<li><b>健康检查</b>：定时检测端口、进程、磁盘空间，异常时发告警</li>\n<li><b>部署脚本</b>：编译、打包、推送、滚动重启的自动化串联</li>\n</ul>\n<h4>实用示例</h4>\n<pre><code># 统计最近 1 小时 5xx 错误的 Top 10 接口\ngrep '$(date +%H):' access.log | awk '$9 >= 500 {print $7}' | sort | uniq -c | sort -rn | head -10\n\n# 批量检查多台机器的服务状态\nfor host in $(cat hosts.txt); do\n  ssh $host 'systemctl is-active myservice' 2>/dev/null || echo \"$host: DOWN\"\ndone\n\n# 清理 7 天前的日志\nfind /var/log/app/ -name '*.log' -mtime +7 -exec rm -f {} \\;</code></pre>\n<h4>写 Shell 脚本的工程习惯</h4>\n<ul>\n<li>开头加 <code>set -euo pipefail</code>，遇错即停，未定义变量报错</li>\n<li>关键操作前做 dry-run 或加确认提示</li>\n<li>日志输出带时间戳，方便事后排查</li>\n</ul>\n<div class=\"key-point\">面试时别只说\\\"会用 grep\\\"，能举一个你实际写过的脚本场景（比如日志分析、批量部署），说清输入输出和用到的命令组合。</div>",
+        "id": "q-sh1ops"
+      },
+      {
+        "q": "Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>Code Review 的核心目标</h4>\n<ul>\n<li>不是找 typo，而是<b>发现设计问题、逻辑漏洞和潜在风险</b></li>\n<li>同时也是团队知识传递和技术标准对齐的手段</li>\n</ul>\n<h4>Go 项目审查重点</h4>\n<ul>\n<li><b>错误处理</b>：error 是否被忽略、是否有合适的上下文包装（<code>fmt.Errorf(\"xxx: %w\", err)</code>）</li>\n<li><b>并发安全</b>：共享变量有没有加锁或用 channel 保护、goroutine 有没有泄漏风险</li>\n<li><b>资源释放</b>：DB 连接、HTTP Body、文件句柄是否 defer Close</li>\n<li><b>接口设计</b>：函数签名是否清晰、参数是否过多、返回值是否合理</li>\n<li><b>测试覆盖</b>：关键路径有没有测试、边界条件有没有覆盖</li>\n<li><b>性能隐患</b>：循环内是否有不必要的分配、SQL 是否有 N+1 问题</li>\n</ul>\n<h4>流程规范</h4>\n<ul>\n<li>PR 粒度要小，一个 PR 解决一个问题，不要混杂无关改动</li>\n<li>CI 先过（lint + test），再请人 Review</li>\n<li>Review 意见分级：Must Fix / Suggestion / Nit</li>\n<li>作者要写清 PR 描述：做了什么、为什么、怎么测的</li>\n</ul>\n<div class=\"key-point\">面试时的高分回答：不只是说\\\"我们有 CR 流程\\\"，而是能举例你在 Review 中发现过什么问题（比如并发 bug、资源泄漏），以及这个发现避免了什么线上事故。</div>",
+        "id": "q-cr1rev"
       }
     ]
   }
