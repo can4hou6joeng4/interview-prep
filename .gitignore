@@ -9,3 +9,8 @@ output/
 .playwright-cli/
 *.log
 .codex/
+
+# Personal content sources (JD analysis, interview notes, project deep dives)
+content-sources/
+scripts/jd-keywords.json
+scripts/jd-coverage.mjs
