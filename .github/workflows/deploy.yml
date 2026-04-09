@@ -5,7 +5,11 @@ on:
     branches: [main]
     paths:
       - index.html
+      - 404.html
       - assets/**
+      - robots.txt
+      - sitemap.xml
+      - site.webmanifest
       - scripts/validate-data.mjs
       - scripts/validate-site.mjs
       - .github/workflows/deploy.yml

@@ -122,7 +122,9 @@ function safeParse(key, fallback) {
 function safeSet(key, value) {
   try {
     localStorage.setItem(key, value);
-  } catch {}
+  } catch {
+    console.warn('localStorage full – progress may not be saved');
+  }
 }
 
 function safeRemove(key) {
