@@ -51,8 +51,10 @@ window.INTERVIEW_DATA = [
       {
         "q": "Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？",
         "diff": "medium",
-        "tags": [],
-        "a": "<h4>普通 map + sync.Mutex / sync.RWMutex</h4>\n<ul>\n<li>读写都需要加锁，RWMutex 允许并发读</li>\n<li>适合读写比例均衡、需要遍历、需要精确控制锁粒度的场景</li>\n</ul>\n<h4>sync.Map</h4>\n<ul>\n<li>内部维护两个 map：<code>read</code>（只读，无锁访问）和 <code>dirty</code>（写入时加锁）</li>\n<li>读操作优先查 read map（无锁 CAS），miss 时穿透到 dirty</li>\n<li>当 miss 次数达到 dirty 长度时，dirty 提升为新的 read</li>\n</ul>\n<h4>适用场景</h4>\n<ul>\n<li><b>sync.Map 适合</b>：读多写少、key 集合相对稳定（如缓存、配置）</li>\n<li><b>map+mutex 适合</b>：写多读少、需要遍历或批量操作、需要泛型类型安全</li>\n</ul>\n<div class=\"project-link\">简历关联：你的国际化系统中「并发安全的 Localizer Map」很可能用到了 sync.Map 或 RWMutex + map 的方案</div>",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>普通 map + sync.Mutex / sync.RWMutex</h4>\n<ul>\n<li>读写都需要加锁，RWMutex 允许并发读</li>\n<li>适合读写比例均衡、需要遍历、需要精确控制锁粒度的场景</li>\n</ul>\n<h4>sync.Map</h4>\n<ul>\n<li>内部维护两个 map：<code>read</code>（只读，无锁访问）和 <code>dirty</code>（写入时加锁）</li>\n<li>读操作优先查 read map（无锁 CAS），miss 时穿透到 dirty</li>\n<li>当 miss 次数达到 dirty 长度时，dirty 提升为新的 read</li>\n</ul>\n<h4>适用场景</h4>\n<ul>\n<li><b>sync.Map 适合</b>：读多写少、key 集合相对稳定（如缓存、配置）</li>\n<li><b>map+mutex 适合</b>：写多读少、需要遍历或批量操作、需要泛型类型安全</li>\n</ul>\n<div class=\"project-link\">简历关联：你的国际化系统中「并发安全的 Localizer Map」很可能用到了 sync.Map 或 RWMutex + map 的方案</div>\n<div class=\"key-point\">面试追问：如果被问到 sync.Map 的 dirty 提升机制，能说出 miss 次数达到 dirty 长度时触发提升，就是加分项。</div>",
         "id": "q-1cw0vwp"
       },
       {
@@ -62,7 +64,7 @@ window.INTERVIEW_DATA = [
           "project",
           "scene"
         ],
-        "a": "<h4>errgroup 原理</h4>\n<pre><code>type Group struct {\n    cancel  func()          // 关联 context 的 cancel\n    wg      sync.WaitGroup\n    errOnce sync.Once       // 只记录第一个错误\n    err     error\n}\n// Go() 启动 goroutine, Wait() 等待所有完成并返回第一个错误</code></pre>\n<h4>框架初始化链设计</h4>\n<pre><code>func (app *App) Bootstrap() error {\n    // 阶段一：串行有序初始化（有依赖关系）\n    steps := []func() error{\n        app.initConfig,    // 1. conf\n        app.initDB,        // 2. db（依赖 conf）\n        app.initRedis,     // 3. redis（依赖 conf）\n        app.initCache,     // 4. cache（依赖 redis）\n    }\n    for _, step := range steps {\n        if err := step(); err != nil { return err }\n    }\n\n    // 阶段二：并行初始化（无依赖关系）\n    g, ctx := errgroup.WithContext(app.ctx)\n    g.Go(func() error { return app.initRPC(ctx) })\n    g.Go(func() error { return app.initJob(ctx) })\n    g.Go(func() error { return app.initWorker(ctx) })\n    g.Go(func() error { return app.initListener(ctx) })\n    return g.Wait() // 任一失败，ctx 取消，其他收到信号\n}</code></pre>\n<h4>优雅关机配合</h4>\n<pre><code>// 10 秒超时保护\nctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\ndefer cancel()\n// 并行关闭各组件\ng, ctx := errgroup.WithContext(ctx)\ng.Go(func() error { return app.server.ShutdownWithContext(ctx) })\ng.Go(func() error { return app.db.Close() })\ng.Go(func() error { return app.rdb.Close() })\nreturn g.Wait()</code></pre>\n<div class=\"project-link\">简历关联：go-fast 框架 18 步有序初始化链 + errgroup 并发管理 + 10 秒超时优雅关机</div>",
+        "a": "<h4>errgroup 原理</h4>\n<pre><code>type Group struct {\n    cancel  func()          // 关联 context 的 cancel\n    wg      sync.WaitGroup\n    errOnce sync.Once       // 只记录第一个错误\n    err     error\n}\n// Go() 启动 goroutine, Wait() 等待所有完成并返回第一个错误</code></pre>\n<h4>框架初始化链设计</h4>\n<pre><code>func (app *App) Bootstrap() error {\n    // 阶段一：串行有序初始化（有依赖关系）\n    steps := []func() error{\n        app.initConfig,    // 1. conf\n        app.initDB,        // 2. db（依赖 conf）\n        app.initRedis,     // 3. redis（依赖 conf）\n        app.initCache,     // 4. cache（依赖 redis）\n    }\n    for _, step := range steps {\n        if err := step(); err != nil { return err }\n    }\n\n    // 阶段二：并行初始化（无依赖关系）\n    g, ctx := errgroup.WithContext(app.ctx)\n    g.Go(func() error { return app.initRPC(ctx) })\n    g.Go(func() error { return app.initJob(ctx) })\n    g.Go(func() error { return app.initWorker(ctx) })\n    g.Go(func() error { return app.initListener(ctx) })\n    return g.Wait() // 任一失败，ctx 取消，其他收到信号\n}</code></pre>\n<h4>优雅关机配合</h4>\n<pre><code>// 10 秒超时保护\nctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\ndefer cancel()\n// 并行关闭各组件\ng, ctx := errgroup.WithContext(ctx)\ng.Go(func() error { return app.server.ShutdownWithContext(ctx) })\ng.Go(func() error { return app.db.Close() })\ng.Go(func() error { return app.rdb.Close() })\nreturn g.Wait()</code></pre>\n<div class=\"project-link\">简历关联：go-fast 框架 18 步有序初始化链 + errgroup 并发管理 + 10 秒超时优雅关机</div>\n<div class=\"key-point\">面试时能画出「串行有依赖 → 并行无依赖」的两阶段图，再加上 errgroup 的 ctx cancel 传播，就是完整回答。</div>",
         "id": "q-7hw7o6"
       },
       {
@@ -140,14 +142,14 @@ window.INTERVIEW_DATA = [
           "project",
           "scene"
         ],
-        "a": "<h4>索引优化方法论</h4>\n<ol>\n<li><b>EXPLAIN 分析</b>：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化）</li>\n<li><b>覆盖索引</b>：让查询所需字段全在索引中，避免回表。如 <code>INDEX(store_id, status, created_at)</code> 覆盖 <code>SELECT status, created_at WHERE store_id = ?</code></li>\n<li><b>最左前缀</b>：联合索引 <code>(a, b, c)</code> 能命中 <code>a</code>、<code>a,b</code>、<code>a,b,c</code> 的查询</li>\n<li><b>索引下推 (ICP)</b>：MySQL 5.6+ 在存储引擎层过滤索引条件，减少回表次数</li>\n</ol>\n<h4>UUFind 商品列表的实际优化</h4>\n<pre><code>-- 优化前：全表扫描\nSELECT * FROM products WHERE store_id = 123 ORDER BY created_at DESC;\n\n-- 优化后：联合索引\nALTER TABLE products ADD INDEX idx_store_created (store_id, created_at DESC);\n\n-- 统计查询拆分：避免 COUNT 与业务查询混合\n-- 原：SELECT *, (SELECT COUNT(*) ...) FROM products ...\n-- 改：独立统计查询 + 请求级汇率缓存避免重复计算</code></pre>\n<div class=\"project-link\">简历关联：UUFind 平台 — 新增数据库索引、重构统计查询逻辑、引入请求级汇率缓存，显著降低高频接口响应时间</div>",
+        "a": "<h4>索引优化方法论</h4>\n<ol>\n<li><b>EXPLAIN 分析</b>：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化）</li>\n<li><b>覆盖索引</b>：让查询所需字段全在索引中，避免回表。如 <code>INDEX(store_id, status, created_at)</code> 覆盖 <code>SELECT status, created_at WHERE store_id = ?</code></li>\n<li><b>最左前缀</b>：联合索引 <code>(a, b, c)</code> 能命中 <code>a</code>、<code>a,b</code>、<code>a,b,c</code> 的查询</li>\n<li><b>索引下推 (ICP)</b>：MySQL 5.6+ 在存储引擎层过滤索引条件，减少回表次数</li>\n</ol>\n<h4>UUFind 商品列表的实际优化</h4>\n<pre><code>-- 优化前：全表扫描\nSELECT * FROM products WHERE store_id = 123 ORDER BY created_at DESC;\n\n-- 优化后：联合索引\nALTER TABLE products ADD INDEX idx_store_created (store_id, created_at DESC);\n\n-- 统计查询拆分：避免 COUNT 与业务查询混合\n-- 原：SELECT *, (SELECT COUNT(*) ...) FROM products ...\n-- 改：独立统计查询 + 请求级汇率缓存避免重复计算</code></pre>\n<div class=\"project-link\">简历关联：UUFind 平台 — 新增数据库索引、重构统计查询逻辑、引入请求级汇率缓存，显著降低高频接口响应时间</div>\n<div class=\"key-point\">高分回答不是背索引类型，而是说清你在哪张表、哪个查询上加了什么索引、查询时间从多少降到多少。</div>",
         "id": "q-sqoeth"
       },
       {
         "q": "MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？",
         "diff": "medium",
         "tags": [],
-        "a": "<h4>ACID 保证机制</h4>\n<ul>\n<li><b>A (原子性)</b>：<code>undo log</code> — 记录反向操作，回滚时逆向执行</li>\n<li><b>C (一致性)</b>：由 A + I + D 共同保证</li>\n<li><b>I (隔离性)</b>：锁 + <code>MVCC</code></li>\n<li><b>D (持久性)</b>：<code>redo log</code> — WAL (Write-Ahead Logging)，先写日志再写磁盘</li>\n</ul>\n<h4>redo log (重做日志)</h4>\n<ul>\n<li>InnoDB 引擎层日志，物理日志（记录数据页的修改）</li>\n<li>循环写入（固定大小文件组），write pos 和 checkpoint 追赶</li>\n<li>保证 crash-safe：事务提交时先写 redo log（顺序 IO），数据页后续异步刷盘</li>\n</ul>\n<h4>undo log (回滚日志)</h4>\n<ul>\n<li>逻辑日志（记录反向 SQL），存储在系统表空间或独立 undo 表空间</li>\n<li>用途：(1) 事务回滚 (2) MVCC 多版本读（通过版本链回溯历史版本）</li>\n</ul>\n<h4>binlog vs redo log</h4>\n<ul>\n<li><code>binlog</code>：Server 层，逻辑日志，追加写入，用于主从复制和数据恢复</li>\n<li><code>redo log</code>：InnoDB 引擎层，物理日志，循环写入，用于崩溃恢复</li>\n<li>两阶段提交 (2PC)：先写 redo log (prepare) → 写 binlog → 写 redo log (commit)，保证数据一致性</li>\n</ul>",
+        "a": "<h4>ACID 保证机制</h4>\n<ul>\n<li><b>A (原子性)</b>：<code>undo log</code> — 记录反向操作，回滚时逆向执行</li>\n<li><b>C (一致性)</b>：由 A + I + D 共同保证</li>\n<li><b>I (隔离性)</b>：锁 + <code>MVCC</code></li>\n<li><b>D (持久性)</b>：<code>redo log</code> — WAL (Write-Ahead Logging)，先写日志再写磁盘</li>\n</ul>\n<h4>redo log (重做日志)</h4>\n<ul>\n<li>InnoDB 引擎层日志，物理日志（记录数据页的修改）</li>\n<li>循环写入（固定大小文件组），write pos 和 checkpoint 追赶</li>\n<li>保证 crash-safe：事务提交时先写 redo log（顺序 IO），数据页后续异步刷盘</li>\n</ul>\n<h4>undo log (回滚日志)</h4>\n<ul>\n<li>逻辑日志（记录反向 SQL），存储在系统表空间或独立 undo 表空间</li>\n<li>用途：(1) 事务回滚 (2) MVCC 多版本读（通过版本链回溯历史版本）</li>\n</ul>\n<h4>binlog vs redo log</h4>\n<ul>\n<li><code>binlog</code>：Server 层，逻辑日志，追加写入，用于主从复制和数据恢复</li>\n<li><code>redo log</code>：InnoDB 引擎层，物理日志，循环写入，用于崩溃恢复</li>\n<li>两阶段提交 (2PC)：先写 redo log (prepare) → 写 binlog → 写 redo log (commit)，保证数据一致性</li>\n</ul>\n<div class=\"key-point\">面试里最容易被追问的是 redo log 和 binlog 的两阶段提交，能说清 prepare → commit 就是加分点。</div>",
         "id": "q-m41whe"
       },
       {
@@ -199,8 +201,10 @@ window.INTERVIEW_DATA = [
       {
         "q": "缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？",
         "diff": "medium",
-        "tags": [],
-        "a": "<h4>缓存穿透</h4>\n<p>查询一个<b>不存在</b>的数据，缓存和 DB 都没有，每次请求都打到 DB</p>\n<ul>\n<li>解决：(1) 缓存空值/空对象（设较短 TTL） (2) <b>布隆过滤器</b>前置拦截</li>\n</ul>\n<h4>缓存击穿</h4>\n<p><b>热点 key 过期</b>的瞬间，大量并发请求同时打到 DB</p>\n<ul>\n<li>解决：(1) <b>singleflight</b> 合并并发请求，只有一个去查 DB (2) 互斥锁（Redis SETNX）(3) 热点 key 永不过期 + 异步更新</li>\n</ul>\n<h4>缓存雪崩</h4>\n<p>大量 key <b>同时过期</b>或 Redis 宕机，请求全部打到 DB</p>\n<ul>\n<li>解决：(1) 过期时间加<b>随机偏移</b> (2) Redis 集群高可用 (3) 本地缓存兜底 (4) 限流降级</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 go-cache 适配器支持 Redis/Badger/File 三后端，可实现多级缓存兜底策略</div>",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>缓存穿透</h4>\n<p>查询一个<b>不存在</b>的数据，缓存和 DB 都没有，每次请求都打到 DB</p>\n<ul>\n<li>解决：(1) 缓存空值/空对象（设较短 TTL） (2) <b>布隆过滤器</b>前置拦截</li>\n</ul>\n<h4>缓存击穿</h4>\n<p><b>热点 key 过期</b>的瞬间，大量并发请求同时打到 DB</p>\n<ul>\n<li>解决：(1) <b>singleflight</b> 合并并发请求，只有一个去查 DB (2) 互斥锁（Redis SETNX）(3) 热点 key 永不过期 + 异步更新</li>\n</ul>\n<h4>缓存雪崩</h4>\n<p>大量 key <b>同时过期</b>或 Redis 宕机，请求全部打到 DB</p>\n<ul>\n<li>解决：(1) 过期时间加<b>随机偏移</b> (2) Redis 集群高可用 (3) 本地缓存兜底 (4) 限流降级</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 go-cache 适配器支持 Redis/Badger/File 三后端，可实现多级缓存兜底策略</div>\n<div class=\"key-point\">三者的核心区别：穿透是数据不存在，击穿是热点过期，雪崩是大面积失效。面试时先一句话概括再展开。</div>",
         "id": "q-6ie2jz"
       },
       {
@@ -210,14 +214,14 @@ window.INTERVIEW_DATA = [
           "project",
           "scene"
         ],
-        "a": "<h4>Asynq 架构</h4>\n<ul>\n<li>基于 Redis 的分布式任务队列（类似 Sidekiq/Celery）</li>\n<li>核心数据结构：<code>asynq:{queue}:pending</code> (List)、<code>asynq:{queue}:active</code> (Set)、<code>asynq:{queue}:scheduled</code> (ZSet，按执行时间排序)</li>\n<li>Scheduler 定时将到期任务从 scheduled → pending，Worker 从 pending 取任务执行</li>\n<li>支持重试（指数退避）、唯一任务（去重）、超时控制、优先级队列</li>\n</ul>\n<h4>营销召回系统设计</h4>\n<pre><code>// 三条召回链\nconst (\n    TaskCartRecall     = \"recall:cart\"      // 购物车召回\n    TaskCheckoutRecall = \"recall:checkout\"  // 结账页召回\n    TaskOrderRecall    = \"recall:order\"     // 订单召回\n)\n\n// 10 分钟定时扫描 + 分步邮件\nfunc HandleCartRecall(ctx context.Context, t *asynq.Task) error {\n    // 1. 查询 10 分钟内有购物车但未下单的用户\n    // 2. 第一封邮件：温馨提醒\n    // 3. 注册延时任务：24 小时后发第二封（含优惠券）\n    task := asynq.NewTask(TaskCartRecallStep2, payload,\n        asynq.ProcessIn(24 * time.Hour),\n        asynq.Unique(24 * time.Hour), // 去重\n    )\n    return client.Enqueue(task)\n}\n\n// 定时调度\nscheduler.Register(\"*/10 * * * *\", // 每 10 分钟\n    asynq.NewTask(TaskCartRecall, nil))</code></pre>\n<div class=\"project-link\">简历关联：基于 Asynq (Redis-backed) 实现购物车召回、结账页召回、订单召回三条异步任务链，10 分钟级定时扫描配合分步邮件提醒</div>",
+        "a": "<h4>Asynq 架构</h4>\n<ul>\n<li>基于 Redis 的分布式任务队列（类似 Sidekiq/Celery）</li>\n<li>核心数据结构：<code>asynq:{queue}:pending</code> (List)、<code>asynq:{queue}:active</code> (Set)、<code>asynq:{queue}:scheduled</code> (ZSet，按执行时间排序)</li>\n<li>Scheduler 定时将到期任务从 scheduled → pending，Worker 从 pending 取任务执行</li>\n<li>支持重试（指数退避）、唯一任务（去重）、超时控制、优先级队列</li>\n</ul>\n<h4>营销召回系统设计</h4>\n<pre><code>// 三条召回链\nconst (\n    TaskCartRecall     = \"recall:cart\"      // 购物车召回\n    TaskCheckoutRecall = \"recall:checkout\"  // 结账页召回\n    TaskOrderRecall    = \"recall:order\"     // 订单召回\n)\n\n// 10 分钟定时扫描 + 分步邮件\nfunc HandleCartRecall(ctx context.Context, t *asynq.Task) error {\n    // 1. 查询 10 分钟内有购物车但未下单的用户\n    // 2. 第一封邮件：温馨提醒\n    // 3. 注册延时任务：24 小时后发第二封（含优惠券）\n    task := asynq.NewTask(TaskCartRecallStep2, payload,\n        asynq.ProcessIn(24 * time.Hour),\n        asynq.Unique(24 * time.Hour), // 去重\n    )\n    return client.Enqueue(task)\n}\n\n// 定时调度\nscheduler.Register(\"*/10 * * * *\", // 每 10 分钟\n    asynq.NewTask(TaskCartRecall, nil))</code></pre>\n<div class=\"project-link\">简历关联：基于 Asynq (Redis-backed) 实现购物车召回、结账页召回、订单召回三条异步任务链，10 分钟级定时扫描配合分步邮件提醒</div>\n<div class=\"key-point\">能说出 Asynq 底层就是 Redis List + ZSET 实现延迟和重试，比背 API 更有说服力。</div>",
         "id": "q-18vz82y"
       },
       {
         "q": "Redis 分布式锁怎么实现？有什么陷阱？",
         "diff": "medium",
         "tags": [],
-        "a": "<h4>基本实现</h4>\n<pre><code>// 加锁：SET key value NX EX seconds\nok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second)\n\n// 解锁：Lua 脚本保证原子性（判断 + 删除）\nconst unlockScript = `\nif redis.call(\"get\", KEYS[1]) == ARGV[1] then\n    return redis.call(\"del\", KEYS[1])\nelse\n    return 0\nend`</code></pre>\n<h4>核心陷阱</h4>\n<ul>\n<li><b>锁过期但业务未完成</b>：A 持锁超时 → 锁自动释放 → B 获得锁 → A 完成后误删 B 的锁。解决：uniqueValue（UUID）+ Lua 原子判删</li>\n<li><b>主从切换丢锁</b>：master 加锁后未同步到 slave 就挂了，slave 提升为 master 后锁丢失。解决：<b>RedLock</b>（多节点过半数加锁）</li>\n<li><b>锁续期</b>：业务耗时不确定时需要看门狗机制（如 Redisson），定期续期</li>\n</ul>",
+        "a": "<h4>基本实现</h4>\n<pre><code>// 加锁：SET key value NX EX seconds\nok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second)\n\n// 解锁：Lua 脚本保证原子性（判断 + 删除）\nconst unlockScript = `\nif redis.call(\"get\", KEYS[1]) == ARGV[1] then\n    return redis.call(\"del\", KEYS[1])\nelse\n    return 0\nend`</code></pre>\n<h4>核心陷阱</h4>\n<ul>\n<li><b>锁过期但业务未完成</b>：A 持锁超时 → 锁自动释放 → B 获得锁 → A 完成后误删 B 的锁。解决：uniqueValue（UUID）+ Lua 原子判删</li>\n<li><b>主从切换丢锁</b>：master 加锁后未同步到 slave 就挂了，slave 提升为 master 后锁丢失。解决：<b>RedLock</b>（多节点过半数加锁）</li>\n<li><b>锁续期</b>：业务耗时不确定时需要看门狗机制（如 Redisson），定期续期</li>\n</ul>\n<div class=\"key-point\">面试必答陷阱：锁的过期时间必须大于业务执行时间，否则锁自动释放后别人拿到锁，两个进程同时操作。</div>",
         "id": "q-x046rc"
       },
       {
@@ -349,7 +353,7 @@ window.INTERVIEW_DATA = [
         "tags": [
           "project"
         ],
-        "a": "<h4>四层抽象架构</h4>\n<pre><code>// 第一层：Checkout（结账会话）\ntype CheckoutService interface {\n    Create(ctx context.Context, req CheckoutReq) (*Checkout, error)\n    // 生成商品快照、地址快照、计算金额\n}\n\n// 第二层：Payment（支付意图）\ntype PaymentService interface {\n    Create(ctx context.Context, checkout *Checkout) (*Payment, error)\n    // 根据支付方式路由到具体 gateway\n}\n\n// 第三层：PaymentTrade（支付交易）\ntype PaymentGateway interface {\n    CreateTrade(ctx context.Context, payment *Payment) (*Trade, error)\n    Capture(ctx context.Context, tradeId string) error\n    Refund(ctx context.Context, tradeId string, amount decimal.Decimal) error\n}\n\n// 第四层：Webhook（异步回调）\ntype WebhookHandler interface {\n    Verify(req *http.Request) ([]byte, error)  // 验签\n    Parse(payload []byte) (*WebhookEvent, error)\n    Handle(ctx context.Context, event *WebhookEvent) error\n}\n\n// 具体实现\ntype PayPalGateway struct{ ... }   // Standard/Advanced/Embed/Redirect\ntype StripeGateway struct{ ... }\ntype ApplePayGateway struct{ ... }\ntype GooglePayGateway struct{ ... }</code></pre>\n<h4>PayPal Express 快捷支付会话复用</h4>\n<p>用户首次 PayPal 支付后缓存 payer_id，后续支付跳过登录步骤。Capture 兜底：先尝试 authorize → capture，失败则走 direct capture</p>\n<div class=\"project-link\">简历关联：统一 Checkout→Payment→PaymentTrade→Webhook 四层抽象，支持 PayPal 4 种接入模式，实现 Express 快捷支付会话复用与 capture 兜底</div>",
+        "a": "<h4>四层抽象架构</h4>\n<pre><code>// 第一层：Checkout（结账会话）\ntype CheckoutService interface {\n    Create(ctx context.Context, req CheckoutReq) (*Checkout, error)\n    // 生成商品快照、地址快照、计算金额\n}\n\n// 第二层：Payment（支付意图）\ntype PaymentService interface {\n    Create(ctx context.Context, checkout *Checkout) (*Payment, error)\n    // 根据支付方式路由到具体 gateway\n}\n\n// 第三层：PaymentTrade（支付交易）\ntype PaymentGateway interface {\n    CreateTrade(ctx context.Context, payment *Payment) (*Trade, error)\n    Capture(ctx context.Context, tradeId string) error\n    Refund(ctx context.Context, tradeId string, amount decimal.Decimal) error\n}\n\n// 第四层：Webhook（异步回调）\ntype WebhookHandler interface {\n    Verify(req *http.Request) ([]byte, error)  // 验签\n    Parse(payload []byte) (*WebhookEvent, error)\n    Handle(ctx context.Context, event *WebhookEvent) error\n}\n\n// 具体实现\ntype PayPalGateway struct{ ... }   // Standard/Advanced/Embed/Redirect\ntype StripeGateway struct{ ... }\ntype ApplePayGateway struct{ ... }\ntype GooglePayGateway struct{ ... }</code></pre>\n<h4>PayPal Express 快捷支付会话复用</h4>\n<p>用户首次 PayPal 支付后缓存 payer_id，后续支付跳过登录步骤。Capture 兜底：先尝试 authorize → capture，失败则走 direct capture</p>\n<div class=\"project-link\">简历关联：统一 Checkout→Payment→PaymentTrade→Webhook 四层抽象，支持 PayPal 4 种接入模式，实现 Express 快捷支付会话复用与 capture 兜底</div>\n<div class=\"key-point\">面试时画一个 PaymentGateway 接口 + 4 个实现（Stripe/PayPal/Airwallex/IPay88）的类图，比口述更清晰。</div>",
         "id": "q-atv685"
       },
       {
@@ -369,7 +373,7 @@ window.INTERVIEW_DATA = [
           "project",
           "scene"
         ],
-        "a": "<h4>浮点数问题</h4>\n<pre><code>// 经典陷阱\n0.1 + 0.2 = 0.30000000000000004\n// 金融场景绝不能用 float</code></pre>\n<h4>你的双轨金额方案</h4>\n<pre><code>type OrderAmount struct {\n    // 基础币种（商品原始币种，如 CNY）\n    SubtotalPrice decimal.Decimal  // 小计\n    TotalPrice    decimal.Decimal  // 总价\n    PayPrice      decimal.Decimal  // 实付\n\n    // 结算币种（用户支付币种，如 USD）\n    SettleSubtotalPrice decimal.Decimal\n    SettleTotalPrice    decimal.Decimal\n    SettlePayPrice      decimal.Decimal\n\n    ExchangeRate decimal.Decimal   // 下单时锁定汇率\n    BaseCurrency string            // \"CNY\"\n    SettleCurrency string          // \"USD\"\n}</code></pre>\n<h4>关键设计</h4>\n<ul>\n<li>使用 <code>shopspring/decimal</code> 库，避免浮点精度丢失</li>\n<li>下单时<b>锁定汇率快照</b>，退款时按原汇率计算，不受汇率波动影响</li>\n<li>DB 中用 <code>DECIMAL(20,4)</code> 存储，Go 中全程 decimal 运算</li>\n<li>Checkout 时生成商品快照和地址快照，确保支付时数据不变</li>\n</ul>",
+        "a": "<h4>浮点数问题</h4>\n<pre><code>// 经典陷阱\n0.1 + 0.2 = 0.30000000000000004\n// 金融场景绝不能用 float</code></pre>\n<h4>你的双轨金额方案</h4>\n<pre><code>type OrderAmount struct {\n    // 基础币种（商品原始币种，如 CNY）\n    SubtotalPrice decimal.Decimal  // 小计\n    TotalPrice    decimal.Decimal  // 总价\n    PayPrice      decimal.Decimal  // 实付\n\n    // 结算币种（用户支付币种，如 USD）\n    SettleSubtotalPrice decimal.Decimal\n    SettleTotalPrice    decimal.Decimal\n    SettlePayPrice      decimal.Decimal\n\n    ExchangeRate decimal.Decimal   // 下单时锁定汇率\n    BaseCurrency string            // \"CNY\"\n    SettleCurrency string          // \"USD\"\n}</code></pre>\n<h4>关键设计</h4>\n<ul>\n<li>使用 <code>shopspring/decimal</code> 库，避免浮点精度丢失</li>\n<li>下单时<b>锁定汇率快照</b>，退款时按原汇率计算，不受汇率波动影响</li>\n<li>DB 中用 <code>DECIMAL(20,4)</code> 存储，Go 中全程 decimal 运算</li>\n<li>Checkout 时生成商品快照和地址快照，确保支付时数据不变</li>\n</ul>\n<div class=\"key-point\">核心原则：永远不用 float 算钱。用最小货币单位（分）的整数运算，或用 decimal 库。</div>",
         "id": "q-1y3mnwx"
       },
       {
@@ -1007,7 +1011,9 @@ window.INTERVIEW_DATA = [
       {
         "q": "HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？",
         "diff": "medium",
-        "tags": [],
+        "tags": [
+          "project"
+        ],
         "a": "<h4>TLS 1.2 握手（简化）</h4>\n<pre><code>客户端                    服务端\n  |--- ClientHello -------->|   支持的加密套件、随机数A\n  |<-- ServerHello ---------|   选定加密套件、随机数B、证书\n  |  验证证书（CA 链）        |\n  |--- ClientKeyExchange -->|   用证书公钥加密预主密钥 (Pre-Master Secret)\n  |  双方计算会话密钥          |   Key = PRF(PreMaster, 随机数A, 随机数B)\n  |--- ChangeCipherSpec --->|   切换到加密通信\n  |<-- ChangeCipherSpec ----|\n  |=== 加密数据传输 =========|</code></pre>\n<h4>两种加密的角色</h4>\n<ul>\n<li><b>非对称加密 (RSA/ECDHE)</b>：仅用于握手阶段安全地交换密钥，速度慢但安全</li>\n<li><b>对称加密 (AES-GCM)</b>：用于数据传输阶段，速度快</li>\n</ul>\n<h4>TLS 1.3 改进</h4>\n<ul>\n<li>握手从 2-RTT 缩减到 1-RTT（0-RTT 可选）</li>\n<li>移除了 RSA 密钥交换（仅保留前向安全的 ECDHE）</li>\n<li>精简加密套件（只保留 AEAD）</li>\n</ul>\n<div class=\"project-link\">简历关联：你的 go-utils 实现了 AES-CBC + RSA 混合加密，原理与 TLS 的混合加密思路一致</div>",
         "id": "q-1cu35pj"
       },
@@ -1086,7 +1092,8 @@ window.INTERVIEW_DATA = [
         "q": "K8s 滚动更新的策略？如何实现零停机部署？",
         "diff": "medium",
         "tags": [
-          "scene"
+          "scene",
+          "project"
         ],
         "a": "<h4>Deployment 滚动更新策略</h4>\n<pre><code>spec:\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1        # 最多多创建 1 个 Pod\n      maxUnavailable: 0  # 不允许有不可用的 Pod（零停机）\n  minReadySeconds: 10    # Pod Ready 后等 10 秒才算可用</code></pre>\n<h4>零停机部署要点</h4>\n<ol>\n<li><b>maxUnavailable: 0</b>：新 Pod Ready 后才销毁旧 Pod</li>\n<li><b>readinessProbe</b>：应用完全启动后才接收流量</li>\n<li><b>preStop hook + sleep</b>：给 kube-proxy 时间更新 iptables 规则</li>\n<li><b>优雅关机</b>：收到 SIGTERM 后处理完在途请求再退出</li>\n<li><b>PDB (PodDisruptionBudget)</b>：限制同时不可用的 Pod 数量</li>\n</ol>\n<pre><code># PDB：确保至少 2 个 Pod 可用\napiVersion: policy/v1\nkind: PodDisruptionBudget\nspec:\n  minAvailable: 2\n  selector:\n    matchLabels: { app: myapp }</code></pre>\n<div class=\"project-link\">简历关联：你的 go-fast 框架的 10 秒超时优雅关机 + errgroup 并行关闭，正是零停机部署的应用端实现</div>",
         "id": "q-fzaiml"
@@ -1175,7 +1182,8 @@ window.INTERVIEW_DATA = [
         "q": "高并发系统设计的常见手段有哪些？",
         "diff": "medium",
         "tags": [
-          "scene"
+          "scene",
+          "project"
         ],
         "a": "<h4>六大核心手段</h4>\n<ul>\n<li><b>缓存</b>：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级</li>\n<li><b>异步</b>：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计</li>\n<li><b>限流</b>：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现了高频访问防护</li>\n<li><b>分库分表</b>：水平拆分降低单库压力。你的多租户 SaaS 按 StoreId 分片</li>\n<li><b>池化</b>：连接池（DB/Redis/HTTP）、goroutine 池。你的连接池根据 CPU/内存动态计算</li>\n<li><b>读写分离</b>：主库写、从库读，分担读压力</li>\n</ul>\n<h4>架构层面</h4>\n<ul>\n<li><b>微服务拆分</b>：独立扩缩容高负载服务</li>\n<li><b>CDN + 静态资源</b>：减少服务端压力</li>\n<li><b>数据库索引优化</b>：你在 UUFind 项目中的实践</li>\n</ul>\n<div class=\"project-link\">简历关联：你的项目几乎覆盖了所有高并发手段 — 面试时可以逐个对应到具体实现</div>",
         "id": "q-1sk5mxj"
