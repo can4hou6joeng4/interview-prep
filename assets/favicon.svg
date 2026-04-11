@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Go Interview Prep">
-  <rect width="128" height="128" rx="28" fill="#09090b"/>
-  <rect x="12" y="12" width="104" height="104" rx="22" fill="#151413" stroke="#d4a853" stroke-opacity=".35"/>
-  <path d="M36 44h24c11.046 0 20 8.954 20 20s-8.954 20-20 20H36V44zm20 28c4.418 0 8-3.582 8-8s-3.582-8-8-8h-8v16h8z" fill="#f0ece4"/>
-  <path d="M82 43h11v42H82z" fill="#d4a853"/>
-  <circle cx="87.5" cy="33.5" r="6.5" fill="#d4a853"/>
+  <rect width="128" height="128" rx="0" fill="#ffe156"/>
+  <rect x="4" y="4" width="120" height="120" rx="0" fill="#fffdf7" stroke="#222" stroke-width="4"/>
+  <path d="M36 44h24c11.046 0 20 8.954 20 20s-8.954 20-20 20H36V44zm20 28c4.418 0 8-3.582 8-8s-3.582-8-8-8h-8v16h8z" fill="#1a1a2e"/>
+  <path d="M82 43h11v42H82z" fill="#ff6b9d"/>
+  <circle cx="87.5" cy="33.5" r="6.5" fill="#ff6b9d"/>
+  <rect x="4" y="4" width="120" height="120" rx="0" fill="none" stroke="#222" stroke-width="4"/>
 </svg>

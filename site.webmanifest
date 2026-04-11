@@ -3,8 +3,8 @@
   "short_name": "Interview Prep",
   "start_url": "/interview-prep/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
+  "background_color": "#fffdf7",
+  "theme_color": "#fffdf7",
   "icons": [
     {
       "src": "/interview-prep/assets/favicon.svg",

@@ -935,11 +935,11 @@ function renderFC() {
   });
 
   if (score === 3) {
-    badges += '<span class="bg" style="background:var(--green-bg);color:var(--green);border-color:rgba(92,184,122,.12)">已掌握</span>';
+    badges += '<span class="bg bg-e">已掌握</span>';
   } else if (score === 2) {
-    badges += '<span class="bg" style="background:var(--orange-bg);color:var(--orange);border-color:rgba(212,148,60,.12)">模糊</span>';
+    badges += '<span class="bg bg-m">模糊</span>';
   } else if (score === 1) {
-    badges += '<span class="bg" style="background:var(--red-bg);color:var(--red);border-color:rgba(199,95,95,.12)">不会</span>';
+    badges += '<span class="bg bg-h">不会</span>';
   }
 
   $('chT').textContent = `${current.icon} ${current.cat} · ${DIFF_LABELS[current.diff]}`;
@@ -994,7 +994,7 @@ function renderLS() {
   grouped.forEach((group) => {
     const section = document.createElement('div');
     section.className = 'csec';
-    section.innerHTML = `<div class="chdr" onclick="togC(${group.ci})"><div class="cico" style="background:${group.color}12;color:${group.color}">${group.icon}</div><div class="cnam" style="color:${group.color}">${group.cat}</div><div class="ccnt">${group.items.length}</div><div class="carr" id="ar-${group.ci}">▼</div></div><div class="ql" id="ql-${group.ci}"></div>`;
+    section.innerHTML = `<div class="chdr" onclick="togC(${group.ci})"><div class="cico" style="background:${group.color}">${group.icon}</div><div class="cnam">${group.cat}</div><div class="ccnt">${group.items.length}</div><div class="carr" id="ar-${group.ci}">▼</div></div><div class="ql" id="ql-${group.ci}"></div>`;
     container.appendChild(section);
     const list = section.querySelector('.ql');
 
