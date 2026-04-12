@@ -26,228 +26,51 @@
 <link rel="manifest" href="site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-<noscript>
-	<div class="ns">需要启用 JavaScript 才能使用卡片翻转、过滤和进度追踪功能。</div>
-</noscript>
-
-<main class="app" id="app">
+<main class="app">
 	<header class="hd">
 		<h1>Go 后端面试题库</h1>
 		<p>基于简历定制 · 记忆卡片</p>
 	</header>
 
-	<section class="nav-band" aria-label="导航与筛选">
-		<div class="nav-band-top">
-			<div class="sts">
-				<span class="st" id="s-t">0 题</span>
-				<span class="st st-g" id="s-p">0 掌握</span>
-				<span class="st st-o" id="s-z">0 模糊</span>
-				<span class="st st-r" id="s-f">0 不会</span>
-			</div>
+	<section class="home-stats" id="homeStats">
+		<div class="stat-card"><span class="stat-value" id="hs-total">0</span><span class="stat-label">总题数</span></div>
+		<div class="stat-card stat-green"><span class="stat-value" id="hs-mastered">0</span><span class="stat-label">已掌握</span></div>
+		<div class="stat-card stat-orange"><span class="stat-value" id="hs-fuzzy">0</span><span class="stat-label">模糊</span></div>
+		<div class="stat-card stat-red"><span class="stat-value" id="hs-unknown">0</span><span class="stat-label">不会</span></div>
+	</section>
 
-			<div class="modes">
-				<button type="button" class="on" data-m="card">卡片</button>
-				<button type="button" data-m="list">列表</button>
-				<button type="button" data-m="mock">模拟</button>
-			</div>
-		</div>
+	<div class="prog"><div class="prog-h"><span class="prog-t" id="hs-prog-label">已掌握 0 / 0</span><span class="prog-t" id="hs-prog-pct">0%</span></div><div class="prog-bar"><div class="prog-fill" id="hs-prog-fill"></div></div></div>
 
-		<div class="nav-band-main">
-			<div class="cat-tabs" id="catF"></div>
-
-			<div class="ctrl-row">
-				<button type="button" class="ctrl on" data-d="all">全部</button>
-				<button type="button" class="ctrl de" data-d="easy">基础</button>
-				<button type="button" class="ctrl dm" data-d="medium">进阶</button>
-				<button type="button" class="ctrl dh" data-d="hard">深入</button>
-				<button type="button" class="ctrl" id="unmB">未掌握</button>
-				<button type="button" class="ctrl" id="rndB">随机</button>
-				<button type="button" class="ctrl ctrl-search hidden" id="searchTagB" aria-live="polite"></button>
-			</div>
-			<div class="tag-row" id="tagF" aria-label="标签筛选"></div>
-			<div class="path-shell" aria-label="学习路径">
-				<div class="path-head">
-					<p class="path-label">学习路径</p>
-					<button type="button" class="path-reset hidden" id="presetResetB">返回自由筛题</button>
-				</div>
-				<div class="path-row" id="presetF"></div>
-				<p class="path-hint" id="presetHint" aria-live="polite"></p>
-			</div>
-			<div class="review-shell" aria-label="专项复习">
-				<div class="review-head">
-					<p class="review-label">专项复习</p>
-				</div>
-				<div class="review-row" id="reviewF"></div>
-				<p class="review-hint" id="reviewHint" aria-live="polite"></p>
-			</div>
-			<p class="ctrl-hint" id="navHint" aria-live="polite"></p>
+	<section class="home-modes">
+		<h2 class="home-section-title">选择学习模式</h2>
+		<div class="home-grid">
+			<a href="study.html?mode=card" class="mode-card mode-pink">
+				<span class="mode-icon">Q</span>
+				<span class="mode-title">卡片学习</span>
+				<span class="mode-desc">翻转卡片，逐题评分，训练即时回忆</span>
+			</a>
+			<a href="study.html?mode=list" class="mode-card mode-blue">
+				<span class="mode-icon">&#9776;</span>
+				<span class="mode-title">列表检索</span>
+				<span class="mode-desc">按主题浏览、搜索与批量复习</span>
+			</a>
+			<a href="mock.html" class="mode-card mode-yellow">
+				<span class="mode-icon">&#9201;</span>
+				<span class="mode-title">模拟面试</span>
+				<span class="mode-desc">计时模拟，先答后看，检验真实水平</span>
+			</a>
 		</div>
 	</section>
 
-	<section class="fc-v" id="fcV" aria-label="卡片学习模式">
-		<div class="stage"><div class="fc" id="fc"><div class="fc-in">
-			<div class="fc-f" id="fcF">
-				<div class="chrome">
-					<div class="chrome-side"><span class="chrome-pill">Question</span></div>
-					<span class="chrome-t" id="chT"></span>
-					<div class="chrome-actions"></div>
-				</div>
-				<div class="fc-body"><div class="bgs" id="bgs"></div><div class="qt" id="qt"></div><div class="qh">click to flip</div></div>
-			</div>
-			<div class="fc-b">
-				<div class="chrome">
-					<div class="chrome-side"><span class="chrome-pill chrome-pill-alt">Answer</span></div>
-					<span class="chrome-t" id="chT2"></span>
-					<div class="chrome-actions"><button type="button" class="chrome-btn" onclick="flip()">&#8592; 翻回</button></div>
-				</div>
-				<div class="fc-ans" id="ans"></div>
-			</div>
-		</div></div></div>
-		<div class="nav"><button type="button" class="nav-b" id="pB" onclick="prev()">&#8592;</button><span class="nav-c" id="nC">0 / 0</span><button type="button" class="nav-b" id="nB" onclick="next()">&#8594;</button></div>
-		<div class="rtg"><button type="button" class="rt rt-f" onclick="rate(1)">&#10007; 不会</button><button type="button" class="rt rt-z" onclick="rate(2)">&#8776; 模糊</button><button type="button" class="rt rt-p" onclick="rate(3)">&#10003; 掌握</button></div>
-		<p class="fc-hint" id="fcHint" aria-live="polite"></p>
-		<div class="keys"><kbd>Space</kbd> 翻转 <kbd>&#8592;</kbd><kbd>&#8594;</kbd> 切换 <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 评分</div>
+	<section class="home-paths">
+		<h2 class="home-section-title">学习路径</h2>
+		<div class="home-grid" id="homePathGrid"></div>
 	</section>
 
-	<section class="ls-v" id="lsV" aria-label="列表检索模式">
-		<div class="ls-shell">
-			<div class="ls-head">
-				<div class="ls-copy">
-					<p class="ls-kicker">List Mode</p>
-					<h2 class="ls-title">按主题浏览、搜索与批量复习</h2>
-				</div>
-				<p class="ls-meta" id="lsMeta">当前筛选 0 题</p>
-			</div>
-			<div class="ls-bar">
-				<input class="ls-s" type="text" placeholder="搜索关键词..." id="sI" autocomplete="off">
-				<button type="button" class="ls-b" id="clrSearchB">清空搜索</button>
-				<button type="button" class="ls-b" onclick="expAll()">展开</button>
-				<button type="button" class="ls-b" onclick="colAll()">收起</button>
-				<button type="button" class="ls-b" onclick="rstP()">重置进度</button>
-			</div>
-			<p class="ls-hint" id="lsHint" aria-live="polite"></p>
-		</div>
-		<div id="lsC"></div>
-	</section>
-
-	<section class="mk-v" id="mkV" aria-label="模拟面试模式">
-		<div class="mk-shell">
-			<div class="mk-head">
-				<div class="mk-copy">
-					<p class="mk-kicker">Mock Mode</p>
-					<h2 class="mk-title">模拟面试</h2>
-					<p class="mk-sub">按当前筛选范围抽题，先口述作答，再看参考答案并重新评分。</p>
-				</div>
-				<p class="mk-meta" id="mkMeta">当前范围 0 题</p>
-			</div>
-
-			<div class="mk-controls">
-				<div class="mk-group" aria-label="题源选择">
-					<span class="mk-label">题源</span>
-					<div class="mk-options">
-						<button type="button" class="mk-opt on" data-mock-pool="mastered">掌握回顾</button>
-						<button type="button" class="mk-opt" data-mock-pool="fuzzy">冲刺提升</button>
-						<button type="button" class="mk-opt" data-mock-pool="mixed">真实混合</button>
-					</div>
-				</div>
-
-				<div class="mk-group" aria-label="题量选择">
-					<span class="mk-label">题量</span>
-					<div class="mk-options">
-						<button type="button" class="mk-opt on" data-mock-size="5">5 题</button>
-						<button type="button" class="mk-opt" data-mock-size="8">8 题</button>
-						<button type="button" class="mk-opt" data-mock-size="12">12 题</button>
-					</div>
-				</div>
-
-				<div class="mk-toolbar">
-					<button type="button" class="mk-btn" id="mkStartB">开始模拟</button>
-					<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkRestartB">按当前设置重开</button>
-					<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkFinishB">提前结束</button>
-				</div>
-			</div>
-
-			<p class="mk-hint" id="mkHint">模拟模式会忽略“未掌握”和“随机”开关，只继承分类、难度和搜索范围。</p>
-
-			<div class="mk-stage">
-				<div class="mk-empty" id="mkEmpty">
-					<h3>先开口答，再对照答案复盘</h3>
-					<p id="mkEmptyText">默认会从已掌握题里抽题，检查你是不是真的能像面试一样讲出来，而不是只会看答案。</p>
-				</div>
-
-				<div class="mk-card hidden" id="mkCard">
-					<div class="mk-status">
-						<span class="mk-chip" id="mkRound">第 1 / 5 题</span>
-						<span class="mk-chip" id="mkSourceChip">掌握回顾</span>
-						<span class="mk-chip" id="mkTotalTimer">总时长 00:00</span>
-						<span class="mk-chip" id="mkQuestionTimer">本题 00:00</span>
-					</div>
-
-					<div class="mk-card-head">
-						<div>
-							<p class="mk-cat" id="mkCat">分类</p>
-							<h3 class="mk-question" id="mkQuestion">题目</h3>
-						</div>
-						<span class="mk-score" id="mkInitialScore">当前状态：已掌握</span>
-					</div>
-
-					<p class="mk-prompt">先用你自己的话完整回答，再决定是否查看参考答案。</p>
-
-					<div class="mk-answer hidden" id="mkAnswerWrap">
-						<div class="mk-answer-head">参考答案</div>
-						<div class="mk-answer-body" id="mkAnswer"></div>
-					</div>
-
-					<div class="mk-card-actions">
-						<button type="button" class="mk-btn" id="mkRevealB">我答完了，查看参考答案</button>
-						<div class="mk-rate hidden" id="mkRateGroup">
-							<span class="mk-rate-label">这题你实际回答得怎么样？</span>
-							<div class="mk-rate-actions">
-								<button type="button" class="rt rt-f" id="mkRate1">&#10007; 答得差</button>
-								<button type="button" class="rt rt-z" id="mkRate2">&#8776; 一般</button>
-								<button type="button" class="rt rt-p" id="mkRate3">&#10003; 顺畅</button>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="mk-summary hidden" id="mkSummary">
-					<div class="mk-summary-head">
-						<div>
-							<p class="mk-kicker">Round Summary</p>
-							<h3 class="mk-summary-title">本轮模拟完成</h3>
-						</div>
-						<div class="mk-summary-actions">
-							<span class="mk-score mk-score-strong" id="mkSummaryDuration">总时长 00:00</span>
-							<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkOpenWeakB">去薄弱专项</button>
-							<button type="button" class="mk-btn hidden" id="mkRetryWeakB">薄弱题再练一轮</button>
-						</div>
-					</div>
-					<div class="mk-summary-grid" id="mkSummaryGrid"></div>
-					<div class="mk-summary-sections">
-						<div class="mk-review">
-							<h4>建议优先复盘</h4>
-							<ul id="mkReviewList"></ul>
-						</div>
-						<div class="mk-review">
-							<h4>薄弱分类分布</h4>
-							<ul id="mkWeakCategoryList"></ul>
-						</div>
-						<div class="mk-review">
-							<h4>下一轮建议</h4>
-							<p class="mk-next-step" id="mkNextStep"></p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<div class="prog"><div class="prog-h"><span class="prog-t" id="pL">已掌握 0 / 0</span><span class="prog-t" id="pP">0%</span></div><div class="prog-bar"><div class="prog-fill" id="pF"></div></div></div>
 	<section class="updates" aria-label="最近更新">
 		<div class="updates-head">
 			<div>
@@ -258,76 +81,62 @@
 		</div>
 		<div class="updates-list">
 			<article class="update-item">
+				<p class="update-date">2026-04-11</p>
+				<h3>全站改为 Neo-Brutalism 主题</h3>
+				<p>糖果饱和色替换深色金属配色，零圆角+粗黑边框+平移阴影构建积木感。</p>
+			</article>
+			<article class="update-item">
 				<p class="update-date">2026-04-09</p>
 				<h3>新增 6 道覆盖电商履约、运维工程和 AI 数据管道的正式题</h3>
 				<p>补入工作流/规则引擎、WMS/TMS、Redis 内部机制、Shell 运维、Code Review、AI 数据清洗管道 6 道题。</p>
 			</article>
 			<article class="update-item">
 				<p class="update-date">2026-04-09</p>
-				<h3>新增 JD 覆盖率巡检与 3 道高频缺口题</h3>
-				<p>把 recurring JD 关键词做成 coverage audit 脚本，并继续正式补齐分布式存储、Go 网络框架选型和性能优化方法论 3 道题。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-09</p>
 				<h3>新增错题 / 薄弱题专项复习入口</h3>
-				<p>支持在当前学习路径里一键切到错题回顾、模糊巩固、薄弱专项和掌握抽查，并在模拟面试结束后直接跳回薄弱专项继续回炉。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-09</p>
-				<h3>新增学习路径专题入口</h3>
-				<p>把现有题库编成跨境交易、平台治理、实时系统、项目深挖和面试冲刺 5 条路径，进入页面后可以一键切到更贴近目标岗位的训练范围。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>新增按标签过滤</h3>
-				<p>支持按“简历项目 / 场景题”快速筛题，让卡片、列表和模拟面试都能按学习目标缩小范围。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>第四批平台建模与容量评估题正式入库</h3>
-				<p>继续并入资源模型、配置分层覆盖、实时社交协议选型和容量评估 4 道题，把平台治理和实时系统设计拉到更完整的层次。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>第三批交易与实时系统题正式入库</h3>
-				<p>继续并入金额分摊与尾差、订单快照、语音房/直播间模块，以及程序化广告实时统计链路 4 道题，把电商和实时系统题组进一步补全。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>第二批高信号题正式入库</h3>
-				<p>继续并入自动化工单系统、时序数据库边界、压测方案与告警到回滚闭环 4 道题，让平台治理和可观测性部分更完整。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>后端 / AI Agent 面试复盘题再并入 5 道</h3>
-				<p>新增 goroutine vs 线程、Agent 框架选型、Agent 失败场景治理、规划方法取舍和企业客服 Agent 架构题，让题库更贴近当前面试趋势。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>第一批高频面试题正式并入题库</h3>
-				<p>补入 WaitGroup、select 调度、协程池、Redis 宕机降级、MQ 选型、gRPC 底层机制等 8 道题，让题库更贴近真实一线面试追问。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>模拟面试结果页支持薄弱题再练一轮</h3>
-				<p>在本轮 summary 中直接基于模糊题、被打回题和未作答题重开一轮，减少“看完报告但不继续练”的断点。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-08</p>
-				<h3>新增模拟面试模式</h3>
-				<p>支持掌握回顾、冲刺提升和真实混合三种题源，按题量抽题，先答后看答案，并将结果重新写回掌握度。</p>
-			</article>
-			<article class="update-item">
-				<p class="update-date">2026-04-07</p>
-				<h3>JD 驱动扩题与仓库质量校验升级</h3>
-				<p>新增基于当前 Go 后端岗位 JD 收敛出的高频题，并补上社交分享元信息、README 统计校验和站点元数据校验。</p>
+				<p>支持在当前学习路径里一键切到错题回顾、模糊巩固、薄弱专项和掌握抽查。</p>
 			</article>
 		</div>
 	</section>
+
 	<p class="ft">进度只保存在当前浏览器。题库升级后会自动迁移旧版进度键。</p>
 </main>
 
 <script src="assets/data.js" defer></script>
-<script src="assets/app.js" defer></script>
+<script defer>
+document.addEventListener('DOMContentLoaded', function() {
+	var DATA = Array.isArray(window.INTERVIEW_DATA) ? window.INTERVIEW_DATA : [];
+	var all = DATA.flatMap(function(c) { return c.items; });
+	var states = {};
+	try { var r = localStorage.getItem('cardStates'); if (r) states = JSON.parse(r); } catch(e) {}
+	var total = all.length, mastered = 0, fuzzy = 0, unknown = 0;
+	all.forEach(function(item) {
+		var s = Number(states[item.id]) || 0;
+		if (s === 3) mastered++; else if (s === 2) fuzzy++; else if (s === 1) unknown++;
+	});
+	var pct = total ? Math.round((mastered / total) * 100) : 0;
+	document.getElementById('hs-total').textContent = total;
+	document.getElementById('hs-mastered').textContent = mastered;
+	document.getElementById('hs-fuzzy').textContent = fuzzy;
+	document.getElementById('hs-unknown').textContent = unknown;
+	document.getElementById('hs-prog-label').textContent = '已掌握 ' + mastered + ' / ' + total;
+	document.getElementById('hs-prog-pct').textContent = pct + '%';
+	document.getElementById('hs-prog-fill').style.width = pct + '%';
+
+	var PATHS = [
+		{ id: 'commerce', label: '跨境交易', summary: '订单、支付、结算、缓存一致性', cats: ['支付与交易系统','MySQL 数据库','Redis 缓存与队列','项目场景深挖'] },
+		{ id: 'platform', label: '平台治理', summary: '资源模型、配置分层、微服务治理', cats: ['设计模式与架构','微服务治理','高并发与高可用','Docker 与部署'] },
+		{ id: 'realtime', label: '实时系统', summary: '长连接、MQ、协议、容量评估', cats: ['WebSocket 与实时通信','Kafka 消息队列','计算机网络','高并发与高可用'] },
+		{ id: 'project', label: '项目深挖', summary: '故事线、设计取舍、复盘表达', cats: ['项目场景深挖','支付与交易系统','设计模式与架构','Go 语言核心'] },
+		{ id: 'sprint', label: '面试冲刺', summary: '高频架构题与模拟训练', cats: ['项目场景深挖','高并发与高可用','微服务治理','设计模式与架构'] },
+	];
+	var catNames = DATA.map(function(c) { return c.cat; });
+	var grid = document.getElementById('homePathGrid');
+	grid.innerHTML = PATHS.map(function(p) {
+		var count = 0;
+		p.cats.forEach(function(cat) { var ci = catNames.indexOf(cat); if (ci >= 0) count += DATA[ci].items.length; });
+		return '<a href="study.html?path=' + p.id + '" class="path-card"><span class="path-card-title">' + p.label + '</span><span class="path-card-meta">' + count + ' 题 · ' + p.summary + '</span></a>';
+	}).join('');
+});
+</script>
 </body>
 </html>

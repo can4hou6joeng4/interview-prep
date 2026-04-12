@@ -606,6 +606,69 @@ button:focus:not(:focus-visible){outline:none}
 
 /* Footer & misc */
 .ft{margin-top:16px;font-size:12px;color:var(--text3);text-align:center;font-weight:700}
+.ft a{color:var(--text);font-weight:800;text-decoration:none;border-bottom:2px solid var(--border)}
+.ft a:hover{background:var(--yellow)}
+
+/* ── Top Navigation Bar ── */
+.top-nav{
+	display:flex;justify-content:space-between;align-items:center;
+	max-width:720px;margin:0 auto;padding:12px 16px;
+}
+.top-nav-link{
+	padding:8px 14px;border:2px solid var(--border);background:var(--bg2);
+	color:var(--text);font-size:12px;font-weight:800;text-decoration:none;
+	text-transform:uppercase;box-shadow:2px 2px 0 var(--border);transition:all .15s;
+}
+.top-nav-link:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--border);background:var(--yellow)}
+.top-nav-link:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--border)}
+.top-nav-title{font-size:14px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Home Page ── */
+.home-stats{
+	display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+	max-width:668px;margin:0 auto 16px;padding:0 4px;
+}
+.stat-card{
+	padding:16px 12px;border:var(--bw) solid var(--border);background:var(--surface);
+	text-align:center;box-shadow:var(--shadow-sm);
+}
+.stat-card.stat-green{background:var(--green)}
+.stat-card.stat-orange{background:var(--orange)}
+.stat-card.stat-red{background:var(--red);color:#fff}
+.stat-value{display:block;font-size:28px;font-weight:900;line-height:1.2}
+.stat-label{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.stat-card.stat-red .stat-label{color:rgba(255,255,255,.85)}
+
+.home-section-title{
+	font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;
+	margin-bottom:12px;padding-left:4px;
+}
+.home-modes,.home-paths{max-width:668px;margin:20px auto;padding:0 4px}
+.home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+
+.mode-card{
+	display:flex;flex-direction:column;gap:8px;padding:20px 16px;
+	border:var(--bw) solid var(--border);background:var(--surface);
+	text-decoration:none;color:var(--text);box-shadow:var(--shadow);transition:all .15s;
+}
+.mode-card:hover{transform:translate(-3px,-3px);box-shadow:7px 7px 0 var(--border)}
+.mode-card:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--border)}
+.mode-card.mode-pink{background:var(--pink);color:#fff}
+.mode-card.mode-blue{background:var(--blue);color:var(--text)}
+.mode-card.mode-yellow{background:var(--yellow);color:var(--text)}
+.mode-icon{font-size:32px;font-weight:900;line-height:1}
+.mode-title{font-size:16px;font-weight:900;text-transform:uppercase}
+.mode-desc{font-size:12px;font-weight:600;opacity:.85;line-height:1.5}
+
+.path-card{
+	display:flex;flex-direction:column;gap:6px;padding:14px 14px;
+	border:var(--bw) solid var(--border);background:var(--surface);
+	text-decoration:none;color:var(--text);box-shadow:var(--shadow-sm);transition:all .15s;
+}
+.path-card:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--border);background:var(--yellow)}
+.path-card:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--border)}
+.path-card-title{font-size:14px;font-weight:900}
+.path-card-meta{font-size:11px;font-weight:600;color:var(--text2);line-height:1.6}
 .ns{
 	margin:16px auto 0;max-width:720px;padding:12px 16px;
 	border:var(--bw) solid var(--border);border-radius:0;
@@ -638,6 +701,12 @@ button:focus:not(:focus-visible){outline:none}
 	.fc{max-width:none;height:352px}
 	.chrome{grid-template-columns:auto 1fr auto;padding:11px 14px}
 	.chrome-pill{padding:4px 8px;font-size:9px;letter-spacing:1.4px}
+	.home-stats{grid-template-columns:repeat(2,1fr)}
+	.home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+	.stat-value{font-size:22px}
+	.top-nav{padding:10px 14px}
+	.top-nav-link{font-size:11px;padding:7px 10px}
+	.top-nav-title{font-size:12px}
 	.fc-body{padding:24px 22px 20px}.fc-body::before{font-size:140px}
 	.qt{font-size:16px}
 	.fc-ans{padding:16px 18px 20px}

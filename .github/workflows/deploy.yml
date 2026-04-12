@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - index.html
+      - study.html
+      - mock.html
       - 404.html
       - assets/**
       - robots.txt
@@ -55,7 +57,7 @@ jobs:
           cp index.html dist/
           cp -R assets dist/
           touch dist/.nojekyll
-          for file in CNAME robots.txt site.webmanifest sitemap.xml 404.html; do
+          for file in CNAME robots.txt site.webmanifest sitemap.xml 404.html study.html mock.html; do
             if [ -f "$file" ]; then
               cp "$file" dist/
             fi

@@ -286,6 +286,19 @@ function loadPrefs() {
 
 let S = migrateState();
 let { mode, presetV, reviewV, catV, difV, tagV, unmV, rndV, searchV, mockPool, mockSize } = loadPrefs();
+if (window.__FORCE_MODE__ && VALID_MODES.has(window.__FORCE_MODE__)) { mode = window.__FORCE_MODE__; }
+try {
+  const __p = new URLSearchParams(window.location.search);
+  if (__p.has('path') && VALID_PRESETS.has(__p.get('path'))) { presetV = __p.get('path'); }
+  if (__p.has('mode') && VALID_MODES.has(__p.get('mode'))) { mode = __p.get('mode'); }
+  if (__p.has('review') && VALID_REVIEW_FILTERS.has(__p.get('review'))) { reviewV = __p.get('review'); }
+  if (__p.has('cat') && (__p.get('cat') === 'all' || DATA[Number(__p.get('cat'))])) { catV = __p.get('cat'); }
+  if (__p.has('diff') && VALID_DIFFS.has(__p.get('diff'))) { difV = __p.get('diff'); }
+} catch {}
+if (window.__FORCE_MODE__ === 'mock') { mode = 'mock'; }
+if (window.__ALLOWED_MODES__ && !window.__ALLOWED_MODES__.has(mode)) {
+  mode = window.__FORCE_MODE__ || [...window.__ALLOWED_MODES__][0];
+}
 let idx = 0;
 let cards = [];
 let flipped = false;
@@ -706,6 +719,11 @@ function restartWeakMockSession() {
 }
 
 function openWeakReview() {
+  if (window.__FORCE_MODE__ === 'mock') {
+    const p = new URLSearchParams({ mode: 'list', review: 'weak' });
+    window.location.href = `study.html?${p}`;
+    return;
+  }
   reviewV = 'weak';
   unmV = false;
   rndV = false;
@@ -1253,6 +1271,8 @@ document.querySelectorAll('[data-d]').forEach((button) => {
 
 document.querySelectorAll('[data-m]').forEach((button) => {
   button.addEventListener('click', () => {
+    const allowed = window.__ALLOWED_MODES__;
+    if (allowed && !allowed.has(button.dataset.m)) return;
     mode = button.dataset.m;
     idx = 0;
     apply();

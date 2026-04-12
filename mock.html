@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<title>模拟面试 · Go 后端面试题库</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script>window.__FORCE_MODE__='mock';window.__ALLOWED_MODES__=new Set(['mock']);</script>
+</head>
+<body class="page-mock">
+<nav class="top-nav">
+	<a href="./" class="top-nav-link">&larr; 首页</a>
+	<span class="top-nav-title">模拟面试</span>
+	<a href="study.html" class="top-nav-link">刷题学习 &rarr;</a>
+</nav>
+
+<main class="app mode-mk" id="app">
+	<section class="nav-band" aria-label="筛选范围">
+		<div class="nav-band-top">
+			<div class="sts">
+				<span class="st" id="s-t">0 题</span>
+				<span class="st st-g" id="s-p">0 掌握</span>
+				<span class="st st-o" id="s-z">0 模糊</span>
+				<span class="st st-r" id="s-f">0 不会</span>
+			</div>
+		</div>
+		<div class="nav-band-main">
+			<div class="cat-tabs" id="catF"></div>
+			<div class="ctrl-row">
+				<button type="button" class="ctrl on" data-d="all">全部</button>
+				<button type="button" class="ctrl de" data-d="easy">基础</button>
+				<button type="button" class="ctrl dm" data-d="medium">进阶</button>
+				<button type="button" class="ctrl dh" data-d="hard">深入</button>
+				<button type="button" class="ctrl" id="unmB" disabled>未掌握</button>
+				<button type="button" class="ctrl" id="rndB" disabled>随机</button>
+				<button type="button" class="ctrl ctrl-search hidden" id="searchTagB" aria-live="polite"></button>
+			</div>
+			<div class="tag-row" id="tagF" aria-label="标签筛选"></div>
+			<div class="path-shell" aria-label="学习路径">
+				<div class="path-head">
+					<p class="path-label">学习路径</p>
+					<button type="button" class="path-reset hidden" id="presetResetB">返回自由筛题</button>
+				</div>
+				<div class="path-row" id="presetF"></div>
+				<p class="path-hint" id="presetHint" aria-live="polite"></p>
+			</div>
+			<div class="review-shell" aria-label="专项复习">
+				<div class="review-head"><p class="review-label">专项复习</p></div>
+				<div class="review-row" id="reviewF"></div>
+				<p class="review-hint" id="reviewHint" aria-live="polite"></p>
+			</div>
+			<p class="ctrl-hint" id="navHint" aria-live="polite"></p>
+		</div>
+	</section>
+
+	<!-- Card/List stubs for app.js compatibility (permanently hidden) -->
+	<section class="fc-v" id="fcV" style="display:none!important">
+		<div class="stage"><div class="fc" id="fc"><div class="fc-in">
+			<div class="fc-f" id="fcF"><div class="chrome"><div class="chrome-side"><span class="chrome-pill">Q</span></div><span class="chrome-t" id="chT"></span><div class="chrome-actions"></div></div><div class="fc-body"><div class="bgs" id="bgs"></div><div class="qt" id="qt"></div><div class="qh"></div></div></div>
+			<div class="fc-b"><div class="chrome"><div class="chrome-side"><span class="chrome-pill chrome-pill-alt">A</span></div><span class="chrome-t" id="chT2"></span><div class="chrome-actions"><button type="button" class="chrome-btn" onclick="flip()">翻回</button></div></div><div class="fc-ans" id="ans"></div></div>
+		</div></div></div>
+		<div class="nav"><button type="button" class="nav-b" id="pB">&#8592;</button><span class="nav-c" id="nC">0/0</span><button type="button" class="nav-b" id="nB">&#8594;</button></div>
+		<div class="rtg"><button type="button" class="rt rt-f" onclick="rate(1)">不会</button><button type="button" class="rt rt-z" onclick="rate(2)">模糊</button><button type="button" class="rt rt-p" onclick="rate(3)">掌握</button></div>
+		<p class="fc-hint" id="fcHint"></p>
+		<div class="keys"></div>
+	</section>
+	<section class="ls-v" id="lsV" style="display:none!important">
+		<div class="ls-shell"><div class="ls-head"><div class="ls-copy"><p class="ls-kicker">List</p><h2 class="ls-title">列表</h2></div><p class="ls-meta" id="lsMeta"></p></div><div class="ls-bar"><input class="ls-s" type="text" id="sI" autocomplete="off"><button type="button" class="ls-b" id="clrSearchB">清空</button></div><p class="ls-hint" id="lsHint"></p></div>
+		<div id="lsC"></div>
+	</section>
+
+	<section class="mk-v" id="mkV" aria-label="模拟面试模式">
+		<div class="mk-shell">
+			<div class="mk-head">
+				<div class="mk-copy">
+					<p class="mk-kicker">Mock Mode</p>
+					<h2 class="mk-title">模拟面试</h2>
+					<p class="mk-sub">按当前筛选范围抽题，先口述作答，再看参考答案并重新评分。</p>
+				</div>
+				<p class="mk-meta" id="mkMeta">当前范围 0 题</p>
+			</div>
+			<div class="mk-controls">
+				<div class="mk-group" aria-label="题源选择">
+					<span class="mk-label">题源</span>
+					<div class="mk-options">
+						<button type="button" class="mk-opt on" data-mock-pool="mastered">掌握回顾</button>
+						<button type="button" class="mk-opt" data-mock-pool="fuzzy">冲刺提升</button>
+						<button type="button" class="mk-opt" data-mock-pool="mixed">真实混合</button>
+					</div>
+				</div>
+				<div class="mk-group" aria-label="题量选择">
+					<span class="mk-label">题量</span>
+					<div class="mk-options">
+						<button type="button" class="mk-opt on" data-mock-size="5">5 题</button>
+						<button type="button" class="mk-opt" data-mock-size="8">8 题</button>
+						<button type="button" class="mk-opt" data-mock-size="12">12 题</button>
+					</div>
+				</div>
+				<div class="mk-toolbar">
+					<button type="button" class="mk-btn" id="mkStartB">开始模拟</button>
+					<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkRestartB">按当前设置重开</button>
+					<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkFinishB">提前结束</button>
+				</div>
+			</div>
+			<p class="mk-hint" id="mkHint">模拟模式会忽略"未掌握"和"随机"开关，只继承分类、难度和搜索范围。</p>
+			<div class="mk-stage">
+				<div class="mk-empty" id="mkEmpty">
+					<h3>先开口答，再对照答案复盘</h3>
+					<p id="mkEmptyText">默认会从已掌握题里抽题，检查你是不是真的能像面试一样讲出来，而不是只会看答案。</p>
+				</div>
+				<div class="mk-card hidden" id="mkCard">
+					<div class="mk-status">
+						<span class="mk-chip" id="mkRound">第 1 / 5 题</span>
+						<span class="mk-chip" id="mkSourceChip">掌握回顾</span>
+						<span class="mk-chip" id="mkTotalTimer">总时长 00:00</span>
+						<span class="mk-chip" id="mkQuestionTimer">本题 00:00</span>
+					</div>
+					<div class="mk-card-head">
+						<div>
+							<p class="mk-cat" id="mkCat">分类</p>
+							<h3 class="mk-question" id="mkQuestion">题目</h3>
+						</div>
+						<span class="mk-score" id="mkInitialScore">当前状态：已掌握</span>
+					</div>
+					<p class="mk-prompt">先用你自己的话完整回答，再决定是否查看参考答案。</p>
+					<div class="mk-answer hidden" id="mkAnswerWrap">
+						<div class="mk-answer-head">参考答案</div>
+						<div class="mk-answer-body" id="mkAnswer"></div>
+					</div>
+					<div class="mk-card-actions">
+						<button type="button" class="mk-btn" id="mkRevealB">我答完了，查看参考答案</button>
+						<div class="mk-rate hidden" id="mkRateGroup">
+							<span class="mk-rate-label">这题你实际回答得怎么样？</span>
+							<div class="mk-rate-actions">
+								<button type="button" class="rt rt-f" id="mkRate1">&#10007; 答得差</button>
+								<button type="button" class="rt rt-z" id="mkRate2">&#8776; 一般</button>
+								<button type="button" class="rt rt-p" id="mkRate3">&#10003; 顺畅</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mk-summary hidden" id="mkSummary">
+					<div class="mk-summary-head">
+						<div>
+							<p class="mk-kicker">Round Summary</p>
+							<h3 class="mk-summary-title">本轮模拟完成</h3>
+						</div>
+						<div class="mk-summary-actions">
+							<span class="mk-score mk-score-strong" id="mkSummaryDuration">总时长 00:00</span>
+							<button type="button" class="mk-btn mk-btn-ghost hidden" id="mkOpenWeakB">去薄弱专项</button>
+							<button type="button" class="mk-btn hidden" id="mkRetryWeakB">薄弱题再练一轮</button>
+						</div>
+					</div>
+					<div class="mk-summary-grid" id="mkSummaryGrid"></div>
+					<div class="mk-summary-sections">
+						<div class="mk-review"><h4>建议优先复盘</h4><ul id="mkReviewList"></ul></div>
+						<div class="mk-review"><h4>薄弱分类分布</h4><ul id="mkWeakCategoryList"></ul></div>
+						<div class="mk-review"><h4>下一轮建议</h4><p class="mk-next-step" id="mkNextStep"></p></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<div class="prog"><div class="prog-h"><span class="prog-t" id="pL">已掌握 0 / 0</span><span class="prog-t" id="pP">0%</span></div><div class="prog-bar"><div class="prog-fill" id="pF"></div></div></div>
+	<p class="ft">进度只保存在当前浏览器。<a href="./">返回首页</a></p>
+</main>
+
+<script src="assets/data.js" defer></script>
+<script src="assets/app.js" defer></script>
+</body>
+</html>
