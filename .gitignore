@@ -3,12 +3,19 @@ Thumbs.db
 
 .idea/
 .vscode/
+*.swp
+*.swo
+
+.env
+.env.*
+node_modules/
 
 dist/
 output/
 .playwright-cli/
 *.log
 .codex/
+.claude/
 
 # Personal content sources (JD analysis, interview notes, project deep dives)
 content-sources/

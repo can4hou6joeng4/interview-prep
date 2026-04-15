@@ -1,5 +1,10 @@
 # Go 后端面试题库
 
+[![Validate](https://img.shields.io/github/actions/workflow/status/can4hou6joeng4/interview-prep/validate.yml?branch=main&label=validate&style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/actions/workflows/validate.yml)
+[![Pages](https://img.shields.io/github/deployments/can4hou6joeng4/interview-prep/github-pages?label=github%20pages&style=flat-square)](https://can4hou6joeng4.github.io/interview-prep/)
+[![License](https://img.shields.io/github/license/can4hou6joeng4/interview-prep?style=flat-square)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/can4hou6joeng4/interview-prep?style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/stargazers)
+
 基于简历项目定制的交互式面试题库，适合用来做 Go 后端岗位面试准备、知识回顾和项目深挖复盘。
 
 [English README](./README.md)
@@ -40,26 +45,29 @@ python3 -m http.server 4173
 │   ├── data.js
 │   ├── favicon.svg
 │   └── styles.css
-├── content-sources/
-│   ├── README.md
-│   ├── interview-experience-map.md
-│   ├── jd-questions.md
-│   └── shoply-deep-dive.md
 ├── scripts/
 │   ├── check-fast.sh
 │   ├── check-full.sh
-│   ├── jd-coverage.mjs
-│   ├── jd-keywords.json
 │   ├── validate-data.mjs
 │   └── validate-site.mjs
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── workflows/
+│   ├── dependabot.yml
+│   └── PULL_REQUEST_TEMPLATE.md
+├── index.html
+├── study.html
+├── mock.html
+├── 404.html
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── CHANGELOG.md
-├── 404.html
 ├── LICENSE
 ├── README.md
 ├── README_zh.md
 ├── robots.txt
+├── sitemap.xml
+├── site.webmanifest
 └── SECURITY.md
 ```
 
@@ -67,9 +75,6 @@ python3 -m http.server 4173
 
 - 题库数据维护在 `assets/data.js`
 - 页面交互维护在 `assets/app.js`
-- 素材源统一维护在 `content-sources/`
-- 其中 `shoply-deep-dive.md` 是高质量项目深挖题源，`jd-questions.md` 是扩题 backlog
-- 当前已并入八批高优题，覆盖 Shoply 项目深挖、gRPC、性能优化、手撕题、可观测性、CI/CD、DDD、K8s Operator、AWS、搜广推基础、AIGC 推理、测试工程、弱网优化、程序化广告、LangChain 基础，以及 RESTful 设计、缓存一致性、队列治理、SSE 流式输出、MongoDB 事务和多批真实面经高频题
 - 发布工作流只上传站点实际需要的文件，避免把非站点素材一起公开
 - 当前静态站点已补齐 `404.html`、`robots.txt`、`site.webmanifest`、`sitemap.xml` 等基础配套文件
 
@@ -114,6 +119,7 @@ node scripts/jd-coverage.mjs --strict
 - [贡献指南](./CONTRIBUTING.md)
 - [行为准则](./CODE_OF_CONDUCT.md)
 - [安全策略](./SECURITY.md)
+- [MIT 开源许可](./LICENSE)
 
 ## 后续可继续扩展的方向
 

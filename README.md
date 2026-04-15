@@ -45,26 +45,29 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   ├── data.js
 │   ├── favicon.svg
 │   └── styles.css
-├── content-sources/
-│   ├── README.md
-│   ├── interview-experience-map.md
-│   ├── jd-questions.md
-│   └── shoply-deep-dive.md
 ├── scripts/
 │   ├── check-fast.sh
 │   ├── check-full.sh
-│   ├── jd-coverage.mjs
-│   ├── jd-keywords.json
 │   ├── validate-data.mjs
 │   └── validate-site.mjs
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── workflows/
+│   ├── dependabot.yml
+│   └── PULL_REQUEST_TEMPLATE.md
+├── index.html
+├── study.html
+├── mock.html
+├── 404.html
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── CHANGELOG.md
-├── 404.html
 ├── LICENSE
 ├── README.md
 ├── README_zh.md
 ├── robots.txt
+├── sitemap.xml
+├── site.webmanifest
 └── SECURITY.md
 ```
 
