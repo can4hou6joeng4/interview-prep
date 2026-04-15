@@ -1,6 +1,8 @@
 {
   "name": "Go Backend Interview Prep",
   "short_name": "Interview Prep",
+  "description": "Go 后端面试交互式题库，支持卡片学习、列表检索和模拟面试",
+  "lang": "zh-CN",
   "start_url": "/interview-prep/",
   "display": "standalone",
   "background_color": "#fffdf7",
