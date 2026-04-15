@@ -120,6 +120,6 @@ These hooks reduce manual validation work locally, but they do not replace pushi
 
 ## Roadmap Ideas
 
-- wrong-answer / weak-topic mode
+- ~~wrong-answer / weak-topic mode~~ — shipped in v2026-04-08
 - exportable question packs
 - scheduled review plans
