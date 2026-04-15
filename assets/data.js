@@ -120,6 +120,33 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>先别把“网络框架”理解成谁 benchmark 更高</h4>\n<p>网络框架选型先看业务边界：你的协议形态、生态依赖、团队维护成本和观测能力，往往比单机 QPS 更重要。</p>\n<h4>三类常见选择</h4>\n<ul>\n<li><b><code>net/http</code></b>：Go 标准库，生态最完整，和中间件、监控、pprof、反向代理配合自然，适合绝大多数 HTTP API 和内部服务</li>\n<li><b><code>fasthttp</code></b>：更激进地减少分配和对象开销，适合对延迟非常敏感、接口模型相对简单的场景，但和标准库 <code>http.Handler</code> 生态不完全兼容</li>\n<li><b><code>gnet</code></b>：事件驱动模型，更贴近底层网络编程，适合自定义协议、长连接网关、代理层、接入层，不是拿来直接替代所有 Web 服务的</li>\n</ul>\n<h4>怎么做选型判断</h4>\n<ul>\n<li><b>普通业务 API</b>：优先 <code>net/http</code>，够稳、够通用、维护成本最低</li>\n<li><b>高吞吐 HTTP 网关</b>：如果确认瓶颈就在 HTTP 栈和对象分配，可以评估 <code>fasthttp</code></li>\n<li><b>连接型或自定义协议服务</b>：如长连接接入层、代理、IM 网关，才更值得看 <code>gnet</code> 一类事件驱动网络框架</li>\n</ul>\n<div class=\"key-point\">面试里高质量回答不是说某个网络框架“最快”，而是你能说明：协议形态、生态兼容、可观测性和团队维护成本，决定了框架选型。</div>",
         "id": "q-sut1qe"
+      },
+      {
+        "q": "GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三种阻塞，三条路径</h4>\n<p>这是 GMP 面试追问的深水区。很多人能说出 G/M/P 的概念，但一追到\"阻塞时调度器怎么处理\"就断了。核心区别在于：阻塞发生在用户态还是内核态，决定了 P 要不要解绑 M。</p>\n<h4>场景一：网络 I/O（conn.Read 等）</h4>\n<ul>\n<li>Go 把所有网络操作封装成<b>非阻塞模式</b>，底层走 <b>netpoller</b>（Linux 用 epoll，macOS 用 kqueue）</li>\n<li>G 发起读操作 → 数据未就绪 → G 被标记为等待，放入 netpoller 的等待队列</li>\n<li>G 与 M、P <b>解绑</b>，P 立即取下一个 G 继续执行</li>\n<li>当数据到达，netpoller 唤醒 G，放回某个 P 的本地队列</li>\n<li><b>结果</b>：没有系统调用阻塞，没有线程切换，最高效</li>\n</ul>\n<h4>场景二：阻塞系统调用（文件 I/O、CGO 等）</h4>\n<ul>\n<li>无法用非阻塞模式，G 会真正阻塞在内核态</li>\n<li>当前 M（设为 M1）带着 G 进入内核等待，G 状态变为 <code>_Gsyscall</code></li>\n<li>P 与 M1 <b>解绑</b>，P 去找另一个空闲 M（M2）；没有空闲 M 则新建一个</li>\n<li>P 绑定 M2 继续调度其他 G</li>\n<li>系统调用完成后，G 被唤醒，尝试重新获取一个 P：有空闲 P 则绑定继续；没有则放入全局队列</li>\n<li>这就是 <b>hand off 机制</b>：P 不等慢系统调用，立即转移给其他 M</li>\n</ul>\n<h4>场景三：用户态阻塞（mutex.Lock 竞争失败、channel 阻塞）</h4>\n<ul>\n<li>不涉及内核，G 被挂到锁或 channel 的等待队列，状态变为 <code>_Gwaiting</code></li>\n<li>G 与 M、P 解绑，P 取下一个 G 执行</li>\n<li>当锁释放或 channel 可读写，G 被唤醒，放回 P 的本地队列</li>\n</ul>\n<div class=\"key-point\">面试话术：网络 I/O 走 netpoller 不阻塞线程；系统调用走 hand off，P 立即换 M；mutex/channel 是用户态挂起。三种场景 P 都不会闲着，这就是 Go 高并发的底层逻辑。</div>",
+        "id": "q-wfdrom"
+      },
+      {
+        "q": "Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么要关心逃逸分析</h4>\n<p>Go 编译器会自动决定变量分配在栈还是堆。栈分配随函数返回自动释放，不需要 GC；堆分配需要 GC 回收，开销更大。逃逸分析就是编译器判断\"这个变量的生命周期是否超出当前函数\"的过程。</p>\n<h4>常见逃逸场景</h4>\n<ul>\n<li><b>返回局部变量的指针</b>：<code>func f() *int { x := 1; return &x }</code>，x 必须逃逸到堆</li>\n<li><b>闭包引用外部变量</b>：闭包捕获的变量生命周期被延长</li>\n<li><b>interface{} 参数</b>：<code>fmt.Println(x)</code> 中 x 会被装箱逃逸</li>\n<li><b>动态大小的 slice/map</b>：<code>make([]int, n)</code>，n 是变量时编译期无法确定大小</li>\n<li><b>大对象</b>：超出栈帧大小限制的对象</li>\n<li><b>发送指针到 channel</b>：编译器无法确定接收方的生命周期</li>\n</ul>\n<h4>怎么检查</h4>\n<pre><code>go build -gcflags=\"-m\" main.go\n# 输出哪些变量 \"escapes to heap\"</code></pre>\n<h4>工程意义</h4>\n<ul>\n<li>减少逃逸 → 减少堆分配 → 减少 GC 压力 → 降低延迟</li>\n<li>高频调用的函数里，尽量避免返回指针、减少 interface{} 传参、预分配 slice</li>\n<li>配合 <code>sync.Pool</code> 复用对象，进一步降低分配开销</li>\n</ul>\n<div class=\"key-point\">面试加分：能说出\"用 <code>-gcflags='-m'</code> 检查逃逸\"并举一个实际优化案例（如把返回指针改为值返回），就比只背概念强很多。</div>",
+        "id": "q-u7zuhe"
+      },
+      {
+        "q": "Goroutine 泄漏的常见场景有哪些？怎么排查和预防？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>什么是 Goroutine 泄漏</h4>\n<p>goroutine 启动后因为某种原因永远无法退出，持续占用内存和调度资源。累积下去会导致内存持续增长，最终 OOM。</p>\n<h4>五种典型泄漏场景</h4>\n<ul>\n<li><b>无缓冲 channel 读写未配对</b>：发送端没有接收者，或接收端没有发送者，goroutine 永久阻塞</li>\n<li><b>锁未释放</b>：<code>mu.Lock()</code> 后没有 <code>Unlock()</code>（panic 导致跳过 defer），等待该锁的所有 goroutine 永久阻塞</li>\n<li><b>WaitGroup 计数错误</b>：<code>Add(1)</code> 但 <code>Done()</code> 少调一次，<code>Wait()</code> 永远不返回</li>\n<li><b>网络 I/O 无超时</b>：<code>conn.Read</code> 对方不响应，goroutine 永久阻塞在 netpoller</li>\n<li><b>for-select 无退出条件</b>：循环里没有监听 <code>ctx.Done()</code>，goroutine 无法被通知停止</li>\n</ul>\n<h4>排查方法</h4>\n<ul>\n<li><code>runtime.NumGoroutine()</code> 暴露为监控指标，观察是否持续增长</li>\n<li><code>pprof goroutine</code> profile：<code>go tool pprof http://localhost:6060/debug/pprof/goroutine</code></li>\n<li>查看阻塞位置的栈信息，定位到具体代码行</li>\n</ul>\n<h4>预防套路</h4>\n<ul>\n<li>所有阻塞操作加超时：<code>context.WithTimeout</code>、<code>time.After</code></li>\n<li>用 <code>defer</code> 保证 Unlock / Done / Close</li>\n<li>for-select 循环里必须有 <code>case <-ctx.Done(): return</code></li>\n<li>启动 goroutine 时想清楚\"它什么时候退出\"</li>\n</ul>\n<div class=\"key-point\">面试时最好补一句：线上监控 goroutine 数量是发现泄漏的第一道防线，pprof 是定位具体代码的工具。</div>",
+        "id": "q-ha99tv"
       }
     ]
   },
@@ -176,6 +203,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>核心差异</h4>\n<ul>\n<li><b>MyISAM</b> 会维护整张表的精确行数，所以在没有过滤条件时执行 <code>count(*)</code>，通常可以直接返回元数据里的结果</li>\n<li><b>InnoDB</b> 因为要支持事务和 MVCC，表的“当前可见行数”会因事务视图而不同，没法像 MyISAM 一样只靠一个全局行数回答</li>\n</ul>\n<h4>为什么 InnoDB 不能偷懒</h4>\n<ul>\n<li>不同事务看到的数据版本可能不同</li>\n<li>未提交数据、回滚数据、快照读都会影响“你现在能看到多少行”</li>\n<li>所以 InnoDB 往往需要扫描索引来统计，而不是直接读一个全局计数器</li>\n</ul>\n<h4>工程上怎么优化</h4>\n<ul>\n<li>如果只是后台统计展示，不要每次都现查 <code>count(*)</code>，可以做异步聚合或缓存</li>\n<li>有过滤条件时尽量让查询走覆盖索引，降低扫描成本</li>\n<li>超大表分页和计数拆开做，别把列表查询和总数统计绑死在同一条 SQL 上</li>\n</ul>\n<div class=\"key-point\">这题别只背“一个快一个慢”。真正的关键是：InnoDB 为了事务一致性，放弃了 MyISAM 那种简单粗暴的全局行数统计。</div>",
         "id": "q-qa08h2"
+      },
+      {
+        "q": "InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>先区分两个概念</h4>\n<ul>\n<li><b>不可重复读</b>：同一行数据被其他事务 UPDATE，两次读结果不同</li>\n<li><b>幻读</b>：同一条件查询，第二次多出或少了几行（其他事务 INSERT/DELETE）</li>\n</ul>\n<h4>快照读 vs 当前读</h4>\n<ul>\n<li><b>快照读</b>（普通 SELECT）：通过 <b>MVCC</b>（ReadView + undo log 版本链）读取事务开始时的快照。其他事务新插入的行对当前事务不可见，天然避免幻读</li>\n<li><b>当前读</b>（SELECT ... FOR UPDATE / INSERT / UPDATE / DELETE）：读取最新已提交数据，通过 <b>Next-Key Lock</b>（记录锁 + 间隙锁）锁住查询范围，阻止其他事务在范围内插入新行</li>\n</ul>\n<h4>Next-Key Lock 怎么防幻读</h4>\n<pre><code>-- 事务 A\nSELECT * FROM orders WHERE amount > 100 FOR UPDATE;\n-- 锁住 amount > 100 的所有已有记录（Record Lock）\n-- 同时锁住 (100, +∞) 的间隙（Gap Lock）\n-- 事务 B 想 INSERT amount=150 → 被间隙锁阻塞</code></pre>\n<h4>一个常见误区</h4>\n<p>\"可重复读不能防幻读，只有串行化才行\"——这在 SQL 标准里是对的，但 <b>InnoDB 的可重复读通过 MVCC + Next-Key Lock 在绝大多数场景下已经解决了幻读</b>。只有极少数边界场景（如同一事务内先快照读再当前读）可能看到不一致。</p>\n<div class=\"key-point\">面试时最好说清：快照读靠 MVCC 天然防幻读，当前读靠 Next-Key Lock 锁范围防幻读。两种机制配合，而不是只有一种。</div>",
+        "id": "q-usbl7u"
       }
     ]
   },
@@ -241,6 +277,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>先分清 Redis 在系统里的角色</h4>\n<ul>\n<li><b>纯缓存</b>：目标是保护数据库和降低延迟，挂了之后系统应该降级而不是整体崩掉</li>\n<li><b>状态 / 锁 / 队列</b>：它已经不只是缓存，一旦挂掉会影响登录态、分布式锁、延时任务等能力</li>\n</ul>\n<h4>可能丢什么</h4>\n<ul>\n<li><b>缓存数据</b>：理论上可接受，应该能从数据库或其他源重建</li>\n<li><b>AOF / RDB 窗口内的数据</b>：如果 Redis 故障且持久化策略不够强，最近一段写入可能丢失</li>\n<li><b>依赖 Redis 承载业务语义的数据</b>：例如队列、会话、锁状态，一旦没兜底就会放大事故影响</li>\n</ul>\n<h4>常见降级手段</h4>\n<ul>\n<li><b>本地缓存兜底</b>：给热点数据一层进程内缓存，避免所有流量直冲数据库</li>\n<li><b>限流和熔断</b>：防止 Redis 故障后 DB 被瞬时流量打穿</li>\n<li><b>读写分级</b>：优先保证下单、查询等核心链路，非核心推荐、统计、排行榜先降级</li>\n<li><b>高可用架构</b>：主从、Sentinel、Cluster 降低单点故障概率</li>\n</ul>\n<h4>工程原则</h4>\n<ul>\n<li>不要把“能重建的缓存”设计成唯一数据源</li>\n<li>真正重要的数据必须先落库，再考虑缓存</li>\n<li>如果 Redis 同时承担缓存和 MQ/锁，面试里要主动指出：这会显著放大故障半径</li>\n</ul>\n<div class=\"key-point\">这题想听的不是“等 Redis 恢复”，而是你有没有降级思维：先保住核心链路，再逐步恢复性能层能力。</div>",
         "id": "q-sheogy"
+      },
+      {
+        "q": "秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么需要 Lua 脚本</h4>\n<p>应用代码里\"先 GET 库存再 DECR 扣减\"不是原子操作，高并发下两个请求同时读到库存为 1，都去扣减，库存变成 -1。Lua 脚本在 Redis 内部单线程执行，保证\"查\"和\"扣\"连续完成，不会被其他命令插入。</p>\n<h4>防超卖脚本示例</h4>\n<pre><code>-- KEYS[1] = stock:1001, ARGV[1] = 购买数量\nlocal stock = tonumber(redis.call('GET', KEYS[1]) or \"0\")\nif stock >= tonumber(ARGV[1]) then\n    return redis.call('DECRBY', KEYS[1], ARGV[1])\nelse\n    return -1  -- 库存不足\nend</code></pre>\n<h4>四个必须注意的点</h4>\n<ul>\n<li><b>redis.call vs redis.pcall</b>：<code>redis.call</code> 遇到错误直接抛异常并停止脚本；<code>redis.pcall</code> 会捕获错误继续执行。防超卖必须用 <code>redis.call</code>——如果 GET 就出错了，后面 DECR 不能继续，否则数据就乱了</li>\n<li><b>阻塞风险</b>：Lua 脚本执行期间独占 Redis 主线程，其他客户端请求全部排队。脚本里不能有复杂循环或操作大 Key，执行时间必须控制在毫秒级</li>\n<li><b>Cluster Hash Tag</b>：Redis Cluster 模式下，Lua 脚本操作的所有 Key 必须在同一个哈希槽。跨槽操作直接报错。用 <code>{product}:stock</code> 和 <code>{product}:info</code> 这种 Hash Tag 强制落同一节点</li>\n<li><b>EVAL vs EVALSHA</b>：每次 <code>EVAL</code> 传完整脚本浪费带宽。线上先用 <code>SCRIPT LOAD</code> 缓存脚本拿到 SHA1，后续用 <code>EVALSHA</code> 执行。Redis 重启后缓存丢失，客户端要处理 <code>NOSCRIPT</code> 错误并 fallback 到 <code>EVAL</code></li>\n</ul>\n<h4>扣减成功后的流程</h4>\n<p>Lua 返回剩余库存（成功）或 -1（失败）。业务拿到成功后才发 MQ 消息异步创建订单，而不是先写 DB 再扣 Redis。</p>\n<div class=\"key-point\">面试追问\"Lua 脚本有什么坑\"时，答出阻塞风险 + Cluster Hash Tag + EVALSHA 缓存这三点，就和只说\"保证原子性\"的候选人拉开差距了。</div>",
+        "id": "q-dwhlc8"
+      },
+      {
+        "q": "Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>问题</h4>\n<p>PubSub 订阅是<b>长驻 goroutine</b>，进程直接退出会丢消息。</p>\n<h4>优雅关机机制</h4>\n<ol>\n<li>启动时注册 <code>context.Context</code> + <code>cancel</code> 函数</li>\n<li>每个订阅 goroutine 启动时 <code>PubSubAdd()</code>（WaitGroup.Add）</li>\n<li>退出信号 → <code>cancel()</code> → goroutine 通过 <code>select { case <-ctx.Done() }</code> 退出</li>\n<li>主进程 <code>PubSubWait()</code> 等待所有 goroutine，超时保护兜底</li>\n</ol>\n<pre><code>go func() {\n    defer PubSubDone()\n    pubsub := client.Subscribe(ctx, chanNames...)\n    defer pubsub.Close()\n    for {\n        select {\n        case <-ctx.Done(): return\n        case msg := <-ch: handle(msg)\n        }\n    }\n}()</code></pre>\n<div class=\"key-point\">经典组合：Context（生命周期） + WaitGroup（等待退出） + 超时保护（兜底）</div>",
+        "id": "q-redis-pubsub-shutdown"
       }
     ]
   },
@@ -346,6 +400,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>先把“资源”和“流程”拆开</h4>\n<ul>\n<li><b>资源实体</b>：机房、集群、节点、实例、网络、磁盘、账号等真实对象</li>\n<li><b>流程实体</b>：工单、审批记录、执行记录、审计日志</li>\n<li>不要把资源本体和流程状态硬塞到一张表里，否则后续会越改越乱</li>\n</ul>\n<h4>一个常见关系模型</h4>\n<pre><code>Region / IDC\n  └─ Node\n      └─ ResourceInstance (VM / Pod / DB / Cache ...)\n\nResourceInstance\n  ├─ Tags\n  ├─ Owner\n  ├─ QuotaBinding\n  └─ ChangeTickets</code></pre>\n<h4>对象职责</h4>\n<ul>\n<li><b>机房 / 区域</b>：表达物理或逻辑归属，支撑容灾和拓扑管理</li>\n<li><b>节点</b>：承载计算资源，记录 CPU、内存、磁盘、状态和所属集群</li>\n<li><b>资源实例</b>：真正对外服务的对象，带类型、规格、状态、负责人</li>\n<li><b>标签</b>：表达环境、业务线、风险级别、租户、用途等横切维度</li>\n<li><b>配额</b>：限制团队、租户或业务线的资源上限</li>\n<li><b>工单</b>：针对资源发起变更申请，不等于资源本体本身</li>\n</ul>\n<div class=\"key-point\">这题的高分点在于：你能说清平台系统本质上在管理元数据、关系和流程，而不是往一张表里不断堆字段。</div>",
         "id": "q-5ortqw"
+      },
+      {
+        "q": "Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>双模式运行机制</h4>\n<p>通过 Go <b>build tags</b> 编译期切换：</p>\n<pre><code>//go:build plugin  → plugin_mode.go\n// 无 build tag      → static_mode.go</code></pre>\n<h4>plugin_mode（开发期）</h4>\n<ul>\n<li>Go 原生 Plugin（.so 文件）动态加载模板引擎、ORM、验证码等模块</li>\n<li>修改插件无需重编译主进程，热加载提升开发效率</li>\n</ul>\n<h4>static_mode（生产期）</h4>\n<ul>\n<li>所有模块编译到单一二进制，部署简单、性能更好</li>\n<li>避免 .so 版本兼容和跨平台限制</li>\n</ul>\n<h4>RPC 桥接</h4>\n<p>25+ 个 RPC 服务通过 <code>net/rpc</code> 注册，PHP 端 TCP 调用。选 net/rpc 而非 gRPC：内部通信不跨网络，更轻量。</p>\n<div class=\"key-point\">架构核心：Go 扛流量（HTTP/WS/调度），PHP 扛灵活性（20+ 插件），各取所长</div>",
+        "id": "q-arch-dual-engine"
+      },
+      {
+        "q": "Checkout/Payment 的 Before/After 事件钩子怎么设计的？为什么用 Mutex 而不是 RWMutex？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>CRUD 生命周期事件</h4>\n<pre><code>type CheckoutService struct {\n    CreateBeforeEvents []event.CheckoutCreateBefore\n    CreateAfterEvents  []event.CheckoutCreateAfter\n    UpdateBeforeEvents / DeleteBeforeEvents ...\n}</code></pre>\n<ul>\n<li>通过 <code>AddCreateBeforeEvents()</code> 注册（sync.Mutex 保护）</li>\n<li>Create 前遍历所有 BeforeEvents，Create 后遍历 AfterEvents</li>\n</ul>\n<h4>插件扩展</h4>\n<ul>\n<li>分销插件在 CheckoutCreateAfter 记录佣金</li>\n<li>营销插件在 OrderCreateAfter 触发召回</li>\n<li>邮件插件在 PaymentUpdateAfter 发送通知</li>\n</ul>\n<h4>为什么 Mutex 而非 RWMutex？</h4>\n<p>注册只在启动时发生一次，运行时遍历是只读操作无需加锁。RWMutex 对极低频写操作没有意义。</p>\n<div class=\"key-point\">本质：观察者模式 + 生命周期钩子，插件扩展核心逻辑零侵入</div>",
+        "id": "q-arch-event-hooks"
       }
     ]
   },
@@ -436,6 +508,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>WMS（仓储管理）核心问题</h4>\n<ul>\n<li><b>库存模型</b>：可售库存、在途库存、冻结库存、预扣库存要分开记账，不能只靠一个字段</li>\n<li><b>入库流程</b>：采购到货 → 质检 → 上架 → 库位分配，每一步都要有状态和审计</li>\n<li><b>出库流程</b>：订单锁库 → 拣货 → 打包 → 交接物流，库存扣减时机要明确</li>\n<li><b>库位管理</b>：SKU 和库位的映射关系，支持多仓、多区域</li>\n</ul>\n<h4>TMS（运输管理）核心问题</h4>\n<ul>\n<li><b>物流商对接</b>：不同物流商 API 差异大，需要统一抽象层（类似支付网关抽象）</li>\n<li><b>运单生命周期</b>：下单 → 揽收 → 转运 → 清关 → 派送 → 签收，每个节点都靠回调或轮询更新</li>\n<li><b>物流轨迹</b>：多来源轨迹合并、时区统一、异常状态检测（长时间无更新告警）</li>\n</ul>\n<h4>跨境特有挑战</h4>\n<ul>\n<li>海外仓 + 国内仓的库存同步和调拨</li>\n<li>清关环节的不确定性（状态长时间卡住）</li>\n<li>退货逆向物流链路复杂度远高于国内电商</li>\n</ul>\n<div class=\"key-point\">这题和你的项目直接相关：你做过订单和支付链路，面试时可以顺着说「订单确认后进入履约环节」，展示你对全链路的理解。</div>",
         "id": "q-tms1wm"
+      },
+      {
+        "q": "Stripe 自动退款是怎么接入统一退款网关的？如何保证多渠道退款的可扩展性？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>统一退款网关设计（RefundGateway）</h4>\n<ul>\n<li>退款网关按<b>支付方式自动路由</b>：通过 <code>isStripeRefund()</code> / <code>isPaypalRefund()</code> 判断退款通道</li>\n<li>判断优先级：Application.UniqueName → Order.PayMethod → Payment.PayMethod</li>\n<li>退款请求通过 RPC 调用对应支付插件执行实际退款</li>\n</ul>\n<h4>Stripe 退款响应校验</h4>\n<pre><code>func validateStripeRefundResponse(res []byte) error {\n    var payload struct {\n        Status string `json:\"status\"`\n        ID     string `json:\"id\"`\n    }\n    json.Unmarshal(res, &payload)\n    // status 必须为 SUCCEEDED，refund_id 不能为空\n}</code></pre>\n<h4>扩展性设计</h4>\n<p>新增支付渠道退款只需加一个 <code>isXxxRefund()</code> + <code>validateXxxRefundResponse()</code>，不改动主流程，符合<b>开闭原则</b>。</p>\n<div class=\"project-link\">简历关联：Stripe 自动退款链路，统一退款网关按支付方式自动路由</div>",
+        "id": "q-sp-stripe-refund"
+      },
+      {
+        "q": "Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>Apple Pay 域名验证流程</h4>\n<ol>\n<li><b>域名注册 API</b>：后台调用 PayPal Apple Pay 域名注册接口，传入商户域名</li>\n<li><b>校验文件托管</b>：Apple 访问 <code>https://{domain}/.well-known/apple-developer-merchantid-domain-association</code> 验证域名所有权</li>\n<li><b>动态路由代理</b>：Go 层通过动态路由将 .well-known 路径映射到文件解析服务</li>\n<li><b>状态管理</b>：注册状态存入 Payment 配置的 <code>paymentMethods.PayPal_APPLEPAY</code> 字段</li>\n</ol>\n<h4>SaaS 多租户兼容</h4>\n<ul>\n<li>每个店铺可绑定不同的自定义域名，每个域名需要<b>独立注册</b></li>\n<li>域名标准化处理：去协议头、去端口、去路径、转小写</li>\n<li>实现涉及 go-fast（路由代理）+ go-shoply（注册 API + 配置管理）+ Shoply-admin（前端配置页）三层协作</li>\n</ul>\n<div class=\"project-link\">简历关联：Apple Pay 域名注册与校验文件托管全链路</div>",
+        "id": "q-sp-applepay-domain"
       }
     ]
   },
@@ -529,6 +619,24 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>为什么不直接用 RSA</h4>\n<ul>\n<li>RSA 加密数据长度受限（2048 位密钥最多加密 245 字节）</li>\n<li>RSA 加密速度极慢（比 AES 慢约 1000 倍）</li>\n</ul>\n<h4>混合加密流程</h4>\n<pre><code>// 加密\n1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes)\n2. 用 AES-CBC 加密明文数据（对称，快速，无长度限制）\n3. 用 RSA 公钥加密 AES 密钥（非对称，只加密 32 bytes）\n4. 发送：RSA(AES_Key) + IV + AES_CBC(Data)\n\n// 解密\n1. 用 RSA 私钥解密出 AES 密钥\n2. 用 AES 密钥 + IV 解密数据</code></pre>\n<h4>CBC 模式注意事项</h4>\n<ul>\n<li>需要 PKCS7 Padding（明文长度对齐到块大小 16 字节）</li>\n<li>IV 必须每次随机生成，不能复用（否则相同明文产生相同密文）</li>\n<li>生产中建议用 AES-GCM（自带认证，防篡改）替代 AES-CBC</li>\n</ul>",
         "id": "q-1fg3w7k"
+      },
+      {
+        "q": "WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>累加评分制</h4>\n<p>初始 Score = 0，各检测模块独立加/减分：</p>\n<ul>\n<li>Score < 50：正常放行</li>\n<li>50 ≤ Score < 80：弹出验证码（CAPTCHA）</li>\n<li>Score ≥ 80：直接拉黑</li>\n<li>Score ≥ 100：短路返回（跳过后续检测节省资源）</li>\n</ul>\n<h4>加分项</h4>\n<ul>\n<li>代理头检测（Via / X-Forwarded-For 多层跳板 / 隐蔽代理头）：+20~+40</li>\n<li>ASN 识别（DigitalOcean/Vultr/OVH/Hetzner）：高危 ASN 高分</li>\n<li>频率限制（10s 超阈值）：softLimit +60，hardLimit 直接 200</li>\n<li>无 Cookie 连续访问（阶梯式：3次+15，5次+50，10次+80）</li>\n<li>HTTP/1.0 协议降级：+20</li>\n</ul>\n<h4>减分项（信用加分）</h4>\n<ul>\n<li>来源是搜索引擎（Google/Bing/Baidu 等）：直接放行</li>\n<li>有本站 Referer + Cookie：-40</li>\n</ul>\n<div class=\"key-point\">灰度拦截哲学：不是非黑即白，可疑流量弹验证码给自证机会，只有高度确认的恶意流量才封禁</div>",
+        "id": "q-sec-waf-score"
+      },
+      {
+        "q": "频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>动态阈值频率限制</h4>\n<p>Redis INCR + EXPIRE 滑动窗口，关键是<b>动态阈值</b>：</p>\n<ul>\n<li>正常请求：softLimit = 60/10s，hardLimit = 120/10s</li>\n<li>前序 Score ≥ 30（已有嫌疑）：收紧到 10/10s 和 30/10s</li>\n</ul>\n<p>visitor hash = MD5(IP + UA + Accept-Language)，同设备同浏览器一个计数器。</p>\n<h4>无 Cookie 检测设计</h4>\n<ul>\n<li><b>只检测主文档请求</b>（Sec-Fetch-Dest: document），过滤图片/CSS</li>\n<li><b>带 Cookie 立即重置</b>（Redis DEL），给真人自证机会</li>\n<li><b>阶梯式加分</b>：3次(+15) → 5次(+50) → 10次(+80)</li>\n<li><b>30 分钟过期</b>：应对慢速爬虫</li>\n</ul>\n<div class=\"key-point\">核心：只对 HTML 文档请求计数，不对 API 或静态资源计数，避免误杀</div>",
+        "id": "q-sec-ratelimit-cookie"
       }
     ]
   },
@@ -842,6 +950,79 @@ window.INTERVIEW_DATA = [
         "tags": [],
         "a": "<h4>渐进式 Rehash</h4>\n<ul>\n<li>Redis 的 dict 使用两个哈希表（ht[0] 和 ht[1]），扩容时不会一次性迁移所有 key</li>\n<li>每次读写操作顺带迁移一部分（分摊到每次命令），避免长时间阻塞</li>\n<li>rehash 期间，查询先查 ht[0]，miss 再查 ht[1]；写入直接写 ht[1]</li>\n</ul>\n<h4>过期策略</h4>\n<ul>\n<li><b>惰性删除</b>：访问 key 时检查是否过期，过期才删——省 CPU 但可能有内存浪费</li>\n<li><b>定期删除</b>：每 100ms 随机抽查一批 key，删除已过期的——平衡 CPU 和内存</li>\n<li>两种策略配合使用，既不会漏删太多，也不会占太多 CPU</li>\n</ul>\n<h4>内存淘汰策略</h4>\n<ul>\n<li><code>noeviction</code>：内存满了直接报错（默认）</li>\n<li><code>allkeys-lru</code>：在所有 key 中淘汰最近最少使用的</li>\n<li><code>volatile-lru</code>：只在有过期时间的 key 中做 LRU 淘汰</li>\n<li><code>allkeys-lfu</code>：基于访问频率淘汰（Redis 4.0+），比 LRU 更准确</li>\n<li><code>volatile-ttl</code>：优先淘汰 TTL 最短的 key</li>\n</ul>\n<h4>其他值得了解的内部机制</h4>\n<ul>\n<li><b>SDS（Simple Dynamic String）</b>：预分配 + 惰性释放，避免频繁内存分配</li>\n<li><b>ziplist → listpack</b>：小数据量时的紧凑编码，省内存</li>\n<li><b>IO 多路复用</b>：单线程 + epoll 事件循环处理所有连接</li>\n</ul>\n<div class=\"key-point\">这题在外企面试中很常见——不是问你会不会用 SET/GET，而是看你理不理解 Redis 为什么快、内存怎么管、扩容怎么做到不阻塞。</div>",
         "id": "q-rd1int"
+      },
+      {
+        "q": "为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>为什么选 Go 做 SSR</h4>\n<ul>\n<li><b>性能</b>：Go 的并发模型天然适合高并发 SSR，不需要 Node.js 的 cluster 管理</li>\n<li><b>部署简单</b>：单一 Go 二进制包含所有能力，不需要额外维护 Node.js 进程</li>\n<li><b>资源消耗低</b>：SaaS 场景下多个租户共享进程，Go 的内存占用远低于 Node.js</li>\n</ul>\n<h4>主题系统核心模块</h4>\n<ul>\n<li><b>Theme（主题管理）</b>：主题 CRUD、文件扫描、截图缓存</li>\n<li><b>Components（组件注册）</b>：可视化编辑器的组件库，注册渲染函数</li>\n<li><b>Nodes（节点树）</b>：页面由组件节点树构成，支持拖拽编辑</li>\n<li><b>DIY（自定义页面）</b>：商家自由搭建的页面，独立于主题模板</li>\n<li><b>Cache（渲染缓存）</b>：主题渲染结果缓存，避免重复编译模板</li>\n</ul>\n<h4>智能渲染切换</h4>\n<p>SSR 中间件根据主题的 <code>Runtime</code> 配置智能切换：<code>ThemeRuntimeStatic</code> 走静态文件直出（纯 HTML），<code>ThemeRuntimeDynamic</code> 走 Go 模板引擎实时渲染。静态模式性能更好，动态模式支持个性化内容。</p>\n<div class=\"project-link\">简历关联：go-fast 框架主题系统支持组件注册渲染、节点树管理、DIY 自定义页面、主题缓存，Go 层直接实现 SSR 服务端渲染</div>\n<div class=\"key-point\">面试追问\"为什么不用 Next.js / Nuxt.js\"：SaaS 多租户场景下几千个店铺共享进程，Go 单二进制 + 低内存占用的运维优势远大于前端框架的生态优势。</div>",
+        "id": "q-5gq8ts"
+      },
+      {
+        "q": "积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>为什么用 Builder 模式</h4>\n<p>积分变更涉及多个参数组合（credits/points/ruleCode/ruleId/userId/remark），不同业务场景需要传入的参数不同。Builder 模式的好处：</p>\n<pre><code>NewCredit(db).\n    WithCredits(10).\n    WithPoints(50).\n    WithRuleCode(\"order_complete\").\n    WithUserId(uid).\n    Do()</code></pre>\n<ul>\n<li><b>可读性</b>：链式调用语义清晰，一眼看出这次操作做了什么</li>\n<li><b>灵活性</b>：只传需要的参数，不用构造一个大 struct 填一堆零值</li>\n<li><b>校验内聚</b>：<code>Do()</code> 内部统一校验必填参数，外部无需关心校验逻辑</li>\n</ul>\n<h4>事务内行锁保证一致性</h4>\n<pre><code>func (b *CreditBuilder) Do() error {\n    return b.db.Transaction(func(tx *gorm.DB) error {\n        // 1. SELECT FOR UPDATE 锁定用户行\n        var user User\n        tx.Clauses(clause.Locking{Strength: \"UPDATE\"}).\n            First(&user, b.userId)\n        // 2. 幂等校验：sourceId 防重复发放\n        if exists(tx, b.sourceId) { return nil }\n        // 3. 计算新余额，校验不能透支\n        newBalance := user.Credits + b.credits\n        if newBalance < 0 { return ErrInsufficientCredits }\n        // 4. 更新余额 + 写流水日志\n        tx.Model(&user).Update(\"credits\", newBalance)\n        tx.Create(&CreditLog{...})\n        return nil\n    })\n}</code></pre>\n<h4>关键设计点</h4>\n<ul>\n<li><b>行锁</b>：<code>SELECT FOR UPDATE</code> 锁住当前用户行，防止并发修改余额不一致</li>\n<li><b>幂等</b>：<code>sourceId</code> 唯一校验，同一笔订单不会重复发放积分</li>\n<li><b>事务包裹</b>：余额更新和流水日志在同一事务中，失败自动回滚</li>\n</ul>\n<div class=\"project-link\">简历关联：Shoply 用户积分系统，Builder 模式封装积分变更操作，事务内行锁保证余额一致性，sourceId 幂等校验防止重复发放</div>",
+        "id": "q-a0qyy2"
+      },
+      {
+        "q": "企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？",
+        "diff": "hard",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么需要统一管理</h4>\n<p>企业接入多个 AI 模型（OpenAI/Claude/国产大模型），如果每个业务自己对接，会出现：Key 散落各处无法审计、成本无法管控、模型切换需要改代码、缺乏统一的限流和监控。</p>\n<h4>核心能力</h4>\n<ul>\n<li><b>统一接入层</b>：对外暴露标准化 API（通常兼容 OpenAI 格式），内部转发到不同模型提供商。业务方不需要关心底层用的是哪个模型</li>\n<li><b>Key 集中管控</b>：所有 API Key 集中存储和轮转，业务方通过内部 token 认证，不直接持有外部 Key</li>\n<li><b>多模型路由</b>：按场景（翻译/生成/摘要）、成本（便宜模型优先 + 复杂任务用强模型）、可用性（某个模型超时自动 fallback）动态路由</li>\n<li><b>成本控制</b>：按团队/项目设置 token 配额和预算告警，统计每次调用的 token 消耗</li>\n<li><b>可观测性</b>：记录每次调用的模型、耗时、token 数、错误率，接入监控和告警</li>\n</ul>\n<h4>两种架构模式</h4>\n<ul>\n<li><b>项目内嵌式</b>：在业务服务中直接封装模型调用模块，适合单一项目</li>\n<li><b>平台网关式</b>：独立部署 AI 网关服务，所有业务统一接入，适合多团队多项目</li>\n</ul>\n<div class=\"project-link\">简历关联：你有 AI Agent 后端落地经验，理解模型调用链路。面试时可以结合你的 WebSocket 实时状态推送 + 异步任务编排来说明 AI 模块怎么和后端系统集成</div>\n<div class=\"key-point\">面试新趋势：企业不是要你训练模型，而是看你能不能管理模型调用。这个角度比\"会用 LangChain\"更贴近实际岗位需求。</div>",
+        "id": "q-5c8mut"
+      },
+      {
+        "q": "你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>这三个问题几乎每场面试都会问</h4>\n<p>它们考察的不是标准答案，而是你对自己项目的理解深度和反思能力。</p>\n<h4>QPS 怎么答</h4>\n<ul>\n<li>如果有监控数据，直接说：日常 QPS XX，峰值 QPS XX，P99 延迟 XXms</li>\n<li>如果没有精确数据，按合理估算：日活用户 × 平均请求数 ÷ 活跃时长秒数</li>\n<li>关键是能说清<b>瓶颈在哪</b>：是数据库、缓存、还是下游依赖</li>\n<li>不要凭空编大数字，面试官一追问就会穿帮</li>\n</ul>\n<h4>最大技术挑战怎么答（STAR 结构）</h4>\n<ul>\n<li><b>Situation</b>：什么背景下遇到了什么问题</li>\n<li><b>Task</b>：你需要解决什么</li>\n<li><b>Action</b>：你具体做了什么（技术方案 + 为什么选这个方案）</li>\n<li><b>Result</b>：结果如何（最好有量化数据）</li>\n</ul>\n<p>比如：多币种精度问题 → 从 float 迁移到 decimal → 配合残差补偿算法 → 财务对账零差异</p>\n<h4>重新设计会改什么（反思能力）</h4>\n<p>这题答得好会非常加分。可以从以下角度思考：</p>\n<ul>\n<li>当初因为赶工妥协了什么？现在会怎么做？</li>\n<li>哪些模块耦合度太高？会怎么拆？</li>\n<li>哪些技术选型现在看来不是最优？</li>\n<li>监控和可观测性当初做得够不够？</li>\n</ul>\n<div class=\"key-point\">切忌说\"我觉得现在设计已经很好了不需要改\"——面试官要的是你的反思和成长能力，而不是自满。</div>",
+        "id": "q-tdwoih"
+      },
+      {
+        "q": "冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>问题</h4>\n<p>原方案每日一次性迁移所有冷数据，数据量大时长事务导致 DB IO 冲击。</p>\n<h4>两阶段优化</h4>\n<ol>\n<li><b>每日播种（Seed）</b>：只标记新进入冷区的 1 天数据为待迁移</li>\n<li><b>分钟级微批续跑（Tick）</b>：每分钟执行，每次最多 2 批 × 100 条，单 tick ≤ 3 秒</li>\n</ol>\n<h4>关键参数</h4>\n<pre><code>BatchSize       = 100    // 每批 100 条\nMaxBatchPerTick = 2      // 每 tick 最多 2 批\nMaxTickDuration = 3s     // 单 tick 时长上限\nMinuteLockTTL   = 20s    // Tick 分布式锁\nSeedLockTTL     = 30s    // Seed 分布式锁</code></pre>\n<h4>断点续跑</h4>\n<p>进度存 Redis，进程异常退出 → 锁自动过期 → 下一分钟从断点续跑。</p>\n<div class=\"key-point\">核心思想：大 IO 打散成涓流，\"尖峰\"变\"均匀\"</div>",
+        "id": "q-proj-coldhot-optimize"
+      },
+      {
+        "q": "SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>逻辑隔离 vs 物理隔离</h4>\n<p>物理隔离（每租户一个库）的问题：连接池爆炸、schema 变更逐库执行、成本高。</p>\n<p>逻辑隔离通过 <code>store_id</code> + GORM 中间件自动注入 <code>WHERE store_id = ?</code>。</p>\n<h4>自定义 Sharding</h4>\n<p>替代 <code>gorm.io/sharding</code> 的原因：</p>\n<ul>\n<li>官方插件 AutoMigrate 时 Schema 注册导致<b>空指针</b></li>\n<li>对 <code>store_id = 0</code> 全局表异常</li>\n</ul>\n<p>自定义版本：分片基于 store_id、兼容 AutoMigrate、全局表白名单跳过。</p>\n<div class=\"key-point\">推荐：基础逻辑隔离 + 高流量表 Sharding + 大客户可选物理隔离</div>",
+        "id": "q-proj-saas-tenant"
+      },
+      {
+        "q": "营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>三条召回链路（Asynq + Redis）</h4>\n<ul>\n<li><b>购物车召回</b>：加购未结账 → 10min 后邮件提醒</li>\n<li><b>结账页召回</b>：进入结账未支付 → 分步提醒（10min → 1h → 24h）</li>\n<li><b>订单召回</b>：下单未支付 → 支付提醒</li>\n</ul>\n<h4>执行机制</h4>\n<ul>\n<li>定时任务每 10 分钟扫描符合条件的记录</li>\n<li>创建 Asynq 任务 → Redis 队列 → Worker 消费 → 发送邮件</li>\n<li>发送前检查用户是否已完成操作（避免误发）</li>\n</ul>\n<h4>套餐联动</h4>\n<p>召回功能受 Capability 系统管控：Free 版不开放，Pro/Enterprise 开放。触发前调用 <code>AssertRecoveryEnabled()</code> 校验。</p>\n<div class=\"project-link\">简历关联：营销召回 + SaaS 能力控制闭环</div>",
+        "id": "q-proj-recovery"
+      },
+      {
+        "q": "行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）",
+        "diff": "medium",
+        "tags": [
+          "behavior"
+        ],
+        "a": "<h4>推荐用 UUFind 项目（STAR 法）</h4>\n<ul>\n<li><b>S</b>：UUFind 需要聚合 1688/淘宝多渠道商品，各平台 ID 和数据结构不同</li>\n<li><b>T</b>：独立负责设计整个平台的数据模型和后端业务（210+ commits）</li>\n<li><b>A</b>：设计 UufindProduct 统一商品标识 + AgentLink 跨渠道关联；构建 ExternalGoodsService 实现 URL 实时解析落库 + 原站优先查询；引入请求级汇率缓存</li>\n<li><b>R</b>：平台上线稳定运行，商品列表响应时间显著下降</li>\n</ul>\n<h4>备选：支付串单问题</h4>\n<ul>\n<li><b>S</b>：游客在公用设备下单后，下一个游客购物车出现前人商品</li>\n<li><b>A</b>：排查发现 visitorId Cookie 未在登录时清除 → 重构归户逻辑：只归户当前 session 的 visitorId 并清除旧绑定</li>\n<li><b>R</b>：线上串单问题归零</li>\n</ul>\n<div class=\"key-point\">STAR 法：Situation 简短、Task 说清职责、Action 要具体、Result 要量化</div>",
+        "id": "q-proj-star-behavior"
       }
     ]
   },
@@ -900,6 +1081,13 @@ window.INTERVIEW_DATA = [
         "tags": [],
         "a": "<h4>核心结构</h4>\n<p>跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。</p>\n<pre><code>type Node struct {\n    score float64\n    value string\n    next  []*Node\n}\n\nfunc search(head *Node, score float64) *Node {\n    cur := head\n    for level := len(head.next) - 1; level >= 0; level-- {\n        for cur.next[level] != nil && cur.next[level].score < score {\n            cur = cur.next[level]\n        }\n    }\n    return cur.next[0]\n}</code></pre>\n<h4>为什么适合有序集合</h4>\n<ul>\n<li>查询、插入、删除的平均复杂度都是 <code>O(log n)</code></li>\n<li>比平衡树更容易实现区间遍历和顺序扫描</li>\n<li>Redis 的 ZSet 在一定规模下就采用了 skiplist + hash 的组合</li>\n</ul>",
         "id": "q-blkq5"
+      },
+      {
+        "q": "用 Go 实现环形链表入口检测（快慢指针）",
+        "diff": "medium",
+        "tags": [],
+        "a": "<h4>题目</h4>\n<p>给定一个链表，判断是否有环，如果有环则返回环的入口节点。</p>\n<h4>思路：快慢指针两步走</h4>\n<ol>\n<li><b>判断是否有环</b>：快指针每次走 2 步，慢指针每次走 1 步。如果有环，快慢指针一定会在环内相遇；如果无环，快指针会先遇到 nil</li>\n<li><b>找环入口</b>：相遇后，把一个指针移回头节点，两个指针都改为每次走 1 步，再次相遇的节点就是环入口</li>\n</ol>\n<h4>数学证明</h4>\n<p>设头到入口距离为 a，入口到相遇点距离为 b，环长为 c。相遇时慢指针走了 a+b，快指针走了 a+b+nc。因为快指针速度是慢指针 2 倍：2(a+b) = a+b+nc → a = nc-b。所以从头走 a 步 = 从相遇点走 nc-b 步，都到达入口。</p>\n<h4>Go 实现</h4>\n<pre><code>type ListNode struct {\n    Val  int\n    Next *ListNode\n}\n\nfunc detectCycle(head *ListNode) *ListNode {\n    slow, fast := head, head\n    for fast != nil && fast.Next != nil {\n        slow = slow.Next\n        fast = fast.Next.Next\n        if slow == fast { // 有环，找入口\n            p := head\n            for p != slow {\n                p = p.Next\n                slow = slow.Next\n            }\n            return p\n        }\n    }\n    return nil // 无环\n}</code></pre>\n<p>时间 O(n)，空间 O(1)。</p>\n<div class=\"key-point\">这是 LeetCode 142 原题，Go 后端面试手撕高频题。能说清数学推导是加分项。</div>",
+        "id": "q-71dk9x"
       }
     ]
   },
@@ -1448,6 +1636,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>配置中心最怕的不是“没有配置”，而是“优先级说不清”</h4>\n<p>一个配置既可能来自默认层、环境层、租户层、主题层，也可能被运行时临时覆盖。核心问题不是有没有值，而是谁覆盖谁。</p>\n<h4>一个常见覆盖顺序</h4>\n<pre><code>default\n  &lt; environment\n  &lt; region\n  &lt; tenant\n  &lt; theme\n  &lt; runtime override</code></pre>\n<ul>\n<li><b>default</b>：全局默认值</li>\n<li><b>environment</b>：dev / test / prod 等环境维度</li>\n<li><b>tenant</b>：租户个性化配置</li>\n<li><b>theme</b>：业务主题或场景化覆盖</li>\n<li><b>runtime override</b>：热修、灰度、紧急开关，优先级最高</li>\n</ul>\n<h4>工程上还要补什么</h4>\n<ul>\n<li><b>来源可追踪</b>：要能回答“最终值来自哪一层”</li>\n<li><b>Schema 校验</b>：配置不是随便存字符串，类型和取值范围要校验</li>\n<li><b>灰度发布</b>：配置变更也可能是生产事故，需要小流量验证</li>\n<li><b>快速回滚</b>：运行时覆盖必须能立即撤销</li>\n</ul>\n<div class=\"key-point\">这题真正考的是配置治理，不是 key-value 存储本身。高质量回答要体现“分层、审计、灰度、回滚”四件事。</div>",
         "id": "q-1anj48l"
+      },
+      {
+        "q": "etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三者核心对比</h4>\n<ul>\n<li><b>etcd</b>：Go 编写，Raft 共识算法，强一致性，Watch API + Lease 租约。单二进制部署简单，K8s 内置使用</li>\n<li><b>ZooKeeper</b>：Java 编写，ZAB 协议，强一致性。功能成熟但部署重（依赖 JVM），临时节点 + Watcher 做服务发现</li>\n<li><b>Consul</b>：Go 编写，Raft 共识，内置服务发现 + 健康检查 + KV + Service Mesh。功能最全但概念多</li>\n</ul>\n<h4>选型依据</h4>\n<ul>\n<li><b>已有 K8s 生态</b>：优先 etcd，天然集成</li>\n<li><b>需要全套服务网格</b>：考虑 Consul</li>\n<li><b>Java 技术栈 / 已有 ZK 运维经验</b>：继续用 ZooKeeper</li>\n<li><b>只需配置中心 + 服务发现</b>：etcd 最轻量</li>\n</ul>\n<h4>etcd Watch + Lease 服务注册流程</h4>\n<ol>\n<li>服务启动时，创建一个 Lease（设 TTL=10s），拿到 LeaseID</li>\n<li>将服务信息写入 etcd，Key 绑定 LeaseID：<code>PUT /services/user/instance-1 --lease=xxx</code></li>\n<li>服务持续发送 KeepAlive 续约，保持 Lease 不过期</li>\n<li>服务挂了 → 停止续约 → Lease 到期 → etcd 自动删除 Key</li>\n<li>消费端通过 <code>Watch /services/user/</code> 前缀，实时感知实例上下线</li>\n</ol>\n<div class=\"key-point\">面试追问\"为什么不用 Redis 做服务发现\"：Redis 不保证强一致性，网络分区时可能出现脑裂。etcd/ZK 基于共识算法，在一致性上有协议级保证。</div>",
+        "id": "q-9kpxmf"
       }
     ]
   },
