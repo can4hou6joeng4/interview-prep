@@ -297,9 +297,11 @@ button:focus:not(:focus-visible){outline:none}
 .chrome-btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--border)}
 
 .fc-body{
-	flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
-	text-align:center;padding:30px 30px 26px;position:relative;overflow:hidden;
+	flex:1;display:flex;flex-direction:column;align-items:center;
+	text-align:center;padding:30px 30px 26px;position:relative;overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
+.fc-body::-webkit-scrollbar{width:4px}.fc-body::-webkit-scrollbar-track{background:0}.fc-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:0}
+.fc-body>.bgs{margin-top:auto}.fc-body>.qh{margin-bottom:auto}
 .fc-body::before{
 	content:'Q';position:absolute;bottom:-24px;right:-8px;font-size:180px;font-weight:900;
 	line-height:1;color:rgba(0,0,0,.04);pointer-events:none;font-family:'Inter',sans-serif;

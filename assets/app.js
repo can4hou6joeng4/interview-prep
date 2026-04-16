@@ -978,6 +978,8 @@ function renderFC() {
         ? '已经到最后一题，可以评分后调整筛选继续复习。'
         : '点击卡片或按空格翻面，使用左右方向键切题，按 1 / 2 / 3 快速评分。';
   unflip();
+  $('ans').scrollTop = 0;
+  document.querySelector('.fc-body').scrollTop = 0;
 }
 
 function renderLS() {
