@@ -14,6 +14,8 @@ if (!Array.isArray(data) || data.length === 0) {
 const validDiffs = new Set(['easy', 'medium', 'hard']);
 const identitySet = new Set();
 const idSet = new Set();
+const SLUG_PATTERN = /^[a-z0-9-]+$/;
+const categorySlugSet = new Set();
 let totalQuestions = 0;
 
 data.forEach((category, categoryIndex) => {
@@ -23,6 +25,18 @@ data.forEach((category, categoryIndex) => {
   if (!category.cat || !category.icon || !category.color) {
     throw new Error(`分类 ${categoryIndex + 1} 缺少 cat/icon/color`);
   }
+  if (!category.slug || typeof category.slug !== 'string') {
+    throw new Error(`分类 ${categoryIndex + 1} (${category.cat}) 缺少 slug 字段`);
+  }
+  if (!SLUG_PATTERN.test(category.slug)) {
+    throw new Error(
+      `分类 "${category.cat}" 的 slug 不合法（仅允许 a-z 0-9 -）：${category.slug}`
+    );
+  }
+  if (categorySlugSet.has(category.slug)) {
+    throw new Error(`分类 slug 重复：${category.slug}`);
+  }
+  categorySlugSet.add(category.slug);
   if (!Array.isArray(category.items) || category.items.length === 0) {
     throw new Error(`分类 "${category.cat}" 没有题目`);
   }
