@@ -1377,6 +1377,7 @@ document.addEventListener('keydown', (event) => {
 
 let touchStartX = 0;
 let touchStartY = 0;
+let touchStartedInScrollable = false;
 const flashcard = $('fc');
 
 flashcard.addEventListener(
@@ -1384,11 +1385,21 @@ flashcard.addEventListener(
   (event) => {
     touchStartX = event.changedTouches[0].screenX;
     touchStartY = event.changedTouches[0].screenY;
+    let el = event.target;
+    touchStartedInScrollable = false;
+    while (el && el !== flashcard) {
+      if (el.scrollWidth > el.clientWidth + 1) {
+        touchStartedInScrollable = true;
+        break;
+      }
+      el = el.parentElement;
+    }
   },
   { passive: true }
 );
 
 flashcard.addEventListener('touchend', (event) => {
+  if (touchStartedInScrollable) return;
   const deltaX = event.changedTouches[0].screenX - touchStartX;
   const deltaY = event.changedTouches[0].screenY - touchStartY;
   if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
