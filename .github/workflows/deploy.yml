@@ -9,6 +9,8 @@ on:
       - mock.html
       - 404.html
       - assets/**
+      - q/**
+      - c/**
       - robots.txt
       - sitemap.xml
       - site.webmanifest
@@ -57,6 +59,11 @@ jobs:
           cp index.html dist/
           cp -R assets dist/
           touch dist/.nojekyll
+          for dir in q c; do
+            if [ -d "$dir" ]; then
+              cp -R "$dir" dist/
+            fi
+          done
           for file in CNAME robots.txt site.webmanifest sitemap.xml 404.html study.html mock.html; do
             if [ -f "$file" ]; then
               cp "$file" dist/
