@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="双模式运行机制 通过 Go build tags 编译期切换： //go:build plugin → plugin_mode.go // 无 build tag → static_mode.go plugin_mode（开发期） Go 原生 Plugin（.so 文件）动态加载模板引擎、ORM、验证码等模块 修改插件…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-php-plugin-mode-static-mode-q-arch-dual-engine.html">
+<meta property="og:title" content="Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？ - Go 后端面试题库">
+<meta property="og:description" content="双模式运行机制 通过 Go build tags 编译期切换： //go:build plugin → plugin_mode.go // 无 build tag → static_mode.go plugin_mode（开发期） Go 原生 Plugin（.so 文件）动态加载模板引擎、ORM、验证码等模块 修改插件…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-php-plugin-mode-static-mode-q-arch-dual-engine.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？ - Go 后端面试题库">
+<meta name="twitter:description" content="双模式运行机制 通过 Go build tags 编译期切换： //go:build plugin → plugin_mode.go // 无 build tag → static_mode.go plugin_mode（开发期） Go 原生 Plugin（.so 文件）动态加载模板引擎、ORM、验证码等模块 修改插件…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>双模式运行机制</h4>
+<p>通过 Go <b>build tags</b> 编译期切换：</p>
+<pre><code>//go:build plugin  → plugin_mode.go
+// 无 build tag      → static_mode.go</code></pre>
+<h4>plugin_mode（开发期）</h4>
+<ul>
+<li>Go 原生 Plugin（.so 文件）动态加载模板引擎、ORM、验证码等模块</li>
+<li>修改插件无需重编译主进程，热加载提升开发效率</li>
+</ul>
+<h4>static_mode（生产期）</h4>
+<ul>
+<li>所有模块编译到单一二进制，部署简单、性能更好</li>
+<li>避免 .so 版本兼容和跨平台限制</li>
+</ul>
+<h4>RPC 桥接</h4>
+<p>25+ 个 RPC 服务通过 <code>net/rpc</code> 注册，PHP 端 TCP 调用。选 net/rpc 而非 gRPC：内部通信不跨网络，更轻量。</p>
+<div class="key-point">架构核心：Go 扛流量（HTTP/WS/调度），PHP 扛灵活性（20+ 插件），各取所长</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./checkout-payment-before-after-mutex-rw-q-arch-event-hooks.html">Checkout/Payment 的 Before/After 事件钩子怎么设计的？为什么用 Mutex 而不是 RWMutex？</a></li>
+      <li><a href="./go-q-dp1bas.html">常见的设计模式有哪几大类？Go 里最常用的是哪些？</a></li>
+      <li><a href="./q-159zveo.html">你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？</a></li>
+      <li><a href="./before-after-q-1yd5y53.html">你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？</a></li>
+      <li><a href="./json-rpc-g-rpc-json-rpc-q-1ad9nas.html">微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么需要 Lua 脚本 应用代码里&quot;先 GET 库存再 DECR 扣减&quot;不是原子操作，高并发下两个请求同时读到库存为 1，都去扣减，库存变成 -1。Lua 脚本在 Redis 内部单线程执行，保证&quot;查&quot;和&quot;扣&quot;连续完成，不会被其他命令插入。 防超卖脚本示例 -- KEYS[1] = stock:1001, ARGV[…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">
+<meta property="og:title" content="秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？ - Go 后端面试题库">
+<meta property="og:description" content="为什么需要 Lua 脚本 应用代码里&quot;先 GET 库存再 DECR 扣减&quot;不是原子操作，高并发下两个请求同时读到库存为 1，都去扣减，库存变成 -1。Lua 脚本在 Redis 内部单线程执行，保证&quot;查&quot;和&quot;扣&quot;连续完成，不会被其他命令插入。 防超卖脚本示例 -- KEYS[1] = stock:1001, ARGV[…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么需要 Lua 脚本 应用代码里&quot;先 GET 库存再 DECR 扣减&quot;不是原子操作，高并发下两个请求同时读到库存为 1，都去扣减，库存变成 -1。Lua 脚本在 Redis 内部单线程执行，保证&quot;查&quot;和&quot;扣&quot;连续完成，不会被其他命令插入。 防超卖脚本示例 -- KEYS[1] = stock:1001, ARGV[…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么需要 Lua 脚本</h4>
+<p>应用代码里"先 GET 库存再 DECR 扣减"不是原子操作，高并发下两个请求同时读到库存为 1，都去扣减，库存变成 -1。Lua 脚本在 Redis 内部单线程执行，保证"查"和"扣"连续完成，不会被其他命令插入。</p>
+<h4>防超卖脚本示例</h4>
+<pre><code>-- KEYS[1] = stock:1001, ARGV[1] = 购买数量
+local stock = tonumber(redis.call('GET', KEYS[1]) or "0")
+if stock >= tonumber(ARGV[1]) then
+    return redis.call('DECRBY', KEYS[1], ARGV[1])
+else
+    return -1  -- 库存不足
+end</code></pre>
+<h4>四个必须注意的点</h4>
+<ul>
+<li><b>redis.call vs redis.pcall</b>：<code>redis.call</code> 遇到错误直接抛异常并停止脚本；<code>redis.pcall</code> 会捕获错误继续执行。防超卖必须用 <code>redis.call</code>——如果 GET 就出错了，后面 DECR 不能继续，否则数据就乱了</li>
+<li><b>阻塞风险</b>：Lua 脚本执行期间独占 Redis 主线程，其他客户端请求全部排队。脚本里不能有复杂循环或操作大 Key，执行时间必须控制在毫秒级</li>
+<li><b>Cluster Hash Tag</b>：Redis Cluster 模式下，Lua 脚本操作的所有 Key 必须在同一个哈希槽。跨槽操作直接报错。用 <code>{product}:stock</code> 和 <code>{product}:info</code> 这种 Hash Tag 强制落同一节点</li>
+<li><b>EVAL vs EVALSHA</b>：每次 <code>EVAL</code> 传完整脚本浪费带宽。线上先用 <code>SCRIPT LOAD</code> 缓存脚本拿到 SHA1，后续用 <code>EVALSHA</code> 执行。Redis 重启后缓存丢失，客户端要处理 <code>NOSCRIPT</code> 错误并 fallback 到 <code>EVAL</code></li>
+</ul>
+<h4>扣减成功后的流程</h4>
+<p>Lua 返回剩余库存（成功）或 -1（失败）。业务拿到成功后才发 MQ 消息异步创建订单，而不是先写 DB 再扣 Redis。</p>
+<div class="key-point">面试追问"Lua 脚本有什么坑"时，答出阻塞风险 + Cluster Hash Tag + EVALSHA 缓存这三点，就和只说"保证原子性"的候选人拉开差距了。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</a></li>
+      <li><a href="./redis-q-1d6l2fz.html">Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</a></li>
+      <li><a href="./redis-rdb-aof-q-1glhos9.html">Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？</a></li>
+      <li><a href="./q-6ie2jz.html">缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？</a></li>
+      <li><a href="./asynq-q-18vz82y.html">Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

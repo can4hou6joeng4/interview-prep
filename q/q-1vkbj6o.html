@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三个队列各管什么 延迟队列 ：消息不是立刻消费，而是在未来某个时间点再处理，适合订单超时关闭、优惠券到期提醒、定时补偿 重试队列 ：业务失败后稍后再试，适合下游临时不可用、网络抖动、第三方接口超时 死信队列 (DLQ) ：消息多次重试仍失败，或明确判定为毒消息时，转入死信队列等待人工排查和补偿 主队列 --消费失败--…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1vkbj6o.html">
+<meta property="og:title" content="延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？ - Go 后端面试题库">
+<meta property="og:description" content="三个队列各管什么 延迟队列 ：消息不是立刻消费，而是在未来某个时间点再处理，适合订单超时关闭、优惠券到期提醒、定时补偿 重试队列 ：业务失败后稍后再试，适合下游临时不可用、网络抖动、第三方接口超时 死信队列 (DLQ) ：消息多次重试仍失败，或明确判定为毒消息时，转入死信队列等待人工排查和补偿 主队列 --消费失败--…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1vkbj6o.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？ - Go 后端面试题库">
+<meta name="twitter:description" content="三个队列各管什么 延迟队列 ：消息不是立刻消费，而是在未来某个时间点再处理，适合订单超时关闭、优惠券到期提醒、定时补偿 重试队列 ：业务失败后稍后再试，适合下游临时不可用、网络抖动、第三方接口超时 死信队列 (DLQ) ：消息多次重试仍失败，或明确判定为毒消息时，转入死信队列等待人工排查和补偿 主队列 --消费失败--…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kafka.html">Kafka 消息队列</a> ›
+    <span>延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？</span>
+  </nav>
+
+  <article class="question">
+    <h1>延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三个队列各管什么</h4>
+<ul>
+<li><b>延迟队列</b>：消息不是立刻消费，而是在未来某个时间点再处理，适合订单超时关闭、优惠券到期提醒、定时补偿</li>
+<li><b>重试队列</b>：业务失败后稍后再试，适合下游临时不可用、网络抖动、第三方接口超时</li>
+<li><b>死信队列 (DLQ)</b>：消息多次重试仍失败，或明确判定为毒消息时，转入死信队列等待人工排查和补偿</li>
+</ul>
+<pre><code>主队列 --消费失败--> 重试队列(指数退避)
+重试超过阈值 -------> 死信队列
+未来执行任务 -------> 延迟队列</code></pre>
+<h4>为什么会出现重试风暴</h4>
+<ul>
+<li>所有失败消息立刻重试，把本来就不稳定的下游进一步压垮</li>
+<li>多个消费者同时失败并同步重试，形成流量脉冲</li>
+</ul>
+<h4>治理手段</h4>
+<ul>
+<li><b>指数退避 + jitter</b>：第 1 次 1s，第 2 次 5s，第 3 次 30s，避免同一时刻集体重试</li>
+<li><b>限制最大重试次数</b>：超过阈值直接进 DLQ，不要无限打同一个毒消息</li>
+<li><b>错误分类</b>：参数错误、数据脏消息直接进 DLQ；网络抖动、下游 5xx 才进入重试队列</li>
+<li><b>幂等性</b>：消息重试前提是消费逻辑可重复执行，否则越重试越乱</li>
+<li><b>熔断与限流</b>：下游明显异常时先暂停消费或降速，避免雪崩</li>
+</ul>
+<div class="key-point">现在很多 Go 后端岗虽然只写“消息队列”，但真正想听的是：你不仅会发消息，还知道怎么治理失败、重试和毒消息。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-partition-q-w5vcxz.html">Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-q-13n8aa.html">Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？</a></li>
+      <li><a href="./kafka-consumer-q-rmp1qo.html">Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？</a></li>
+      <li><a href="./kafka-q-1h9bs4f.html">Kafka 如何保证消息顺序性？全局有序和分区有序的区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kafka.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=12">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

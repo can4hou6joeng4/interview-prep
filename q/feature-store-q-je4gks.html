@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三者区别 离线特征 ：按小时或天批量产出，如用户长期兴趣、商品历史 CTR，计算成本低但不够实时 实时特征 ：基于最新行为流实时更新，如最近 5 分钟点击、实时曝光数，时效性强但系统复杂度更高 Feature Store ：统一管理特征定义、生成、存储和在线/离线一致性的系统 为什么需要 Feature Store 避…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/feature-store-q-je4gks.html">
+<meta property="og:title" content="实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？ - Go 后端面试题库">
+<meta property="og:description" content="三者区别 离线特征 ：按小时或天批量产出，如用户长期兴趣、商品历史 CTR，计算成本低但不够实时 实时特征 ：基于最新行为流实时更新，如最近 5 分钟点击、实时曝光数，时效性强但系统复杂度更高 Feature Store ：统一管理特征定义、生成、存储和在线/离线一致性的系统 为什么需要 Feature Store 避…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/feature-store-q-je4gks.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？ - Go 后端面试题库">
+<meta name="twitter:description" content="三者区别 离线特征 ：按小时或天批量产出，如用户长期兴趣、商品历史 CTR，计算成本低但不够实时 实时特征 ：基于最新行为流实时更新，如最近 5 分钟点击、实时曝光数，时效性强但系统复杂度更高 Feature Store ：统一管理特征定义、生成、存储和在线/离线一致性的系统 为什么需要 Feature Store 避…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/search.html">搜索引擎</a> ›
+    <span>实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？</span>
+  </nav>
+
+  <article class="question">
+    <h1>实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三者区别</h4>
+<ul>
+<li><b>离线特征</b>：按小时或天批量产出，如用户长期兴趣、商品历史 CTR，计算成本低但不够实时</li>
+<li><b>实时特征</b>：基于最新行为流实时更新，如最近 5 分钟点击、实时曝光数，时效性强但系统复杂度更高</li>
+<li><b>Feature Store</b>：统一管理特征定义、生成、存储和在线/离线一致性的系统</li>
+</ul>
+<h4>为什么需要 Feature Store</h4>
+<ul>
+<li>避免训练和推理用到的特征口径不一致</li>
+<li>让离线训练特征和在线服务特征共用同一份定义</li>
+<li>便于复用、回溯和权限管理</li>
+</ul>
+<div class="key-point">面试里如果能补一句“推荐系统最怕 feature skew”，会很加分，说明你知道训练和线上不一致会直接把模型效果打废。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./rtb-dsp-ssp-adx-q-wunp6.html">程序化广告的 RTB（实时竞价）流程是什么？DSP、SSP、ADX 各自扮演什么角色？</a></li>
+      <li><a href="./qps-q-1049m5x.html">高并发广告系统的技术挑战有哪些？QPS 和延迟要求通常是什么级别？</a></li>
+      <li><a href="./go-es-elasticsearch-query-dsl-q-1eytra5.html">倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？</a></li>
+      <li><a href="./wal-write-ahead-logging-q-1xdj11h.html">WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？</a></li>
+      <li><a href="./q-1ietist.html">搜索/推荐/广告系统的核心架构是什么？召回、粗排、精排、重排分别做什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/search.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=5">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="标准流程 开启 slow_query_log ，先确认慢 SQL 真实样本 用 pt-query-digest 或日志聚合工具找最耗时、最频繁的 SQL 执行 EXPLAIN ，重点看 type 、 rows 、 Extra 判断问题属于索引缺失、回表过多、排序临时表、SQL 写法不佳还是数据量过大 执行优化：补索引、…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/my-sql-q-1sde06e.html">
+<meta property="og:title" content="MySQL 慢查询定位和优化的完整流程？ - Go 后端面试题库">
+<meta property="og:description" content="标准流程 开启 slow_query_log ，先确认慢 SQL 真实样本 用 pt-query-digest 或日志聚合工具找最耗时、最频繁的 SQL 执行 EXPLAIN ，重点看 type 、 rows 、 Extra 判断问题属于索引缺失、回表过多、排序临时表、SQL 写法不佳还是数据量过大 执行优化：补索引、…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/my-sql-q-1sde06e.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MySQL 慢查询定位和优化的完整流程？ - Go 后端面试题库">
+<meta name="twitter:description" content="标准流程 开启 slow_query_log ，先确认慢 SQL 真实样本 用 pt-query-digest 或日志聚合工具找最耗时、最频繁的 SQL 执行 EXPLAIN ，重点看 type 、 rows 、 Extra 判断问题属于索引缺失、回表过多、排序临时表、SQL 写法不佳还是数据量过大 执行优化：补索引、…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>MySQL 慢查询定位和优化的完整流程？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>MySQL 慢查询定位和优化的完整流程？</span>
+  </nav>
+
+  <article class="question">
+    <h1>MySQL 慢查询定位和优化的完整流程？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>标准流程</h4>
+<ol>
+<li>开启 <code>slow_query_log</code>，先确认慢 SQL 真实样本</li>
+<li>用 <code>pt-query-digest</code> 或日志聚合工具找最耗时、最频繁的 SQL</li>
+<li>执行 <code>EXPLAIN</code>，重点看 <code>type</code>、<code>rows</code>、<code>Extra</code></li>
+<li>判断问题属于索引缺失、回表过多、排序临时表、SQL 写法不佳还是数据量过大</li>
+<li>执行优化：补索引、改写查询、拆分页方式、分表或冷热分离</li>
+<li>回到压测或线上观察，确认优化后延迟、扫描行数和 QPS 是否真正改善</li>
+</ol>
+<h4>常见信号</h4>
+<ul>
+<li><code>Using filesort</code>：排序可能没走到合适索引</li>
+<li><code>Using temporary</code>：说明中间结果需要临时表</li>
+<li><code>type=ALL</code>：接近全表扫描，需要重点关注</li>
+</ul>
+<div class="key-point">这题不是背索引口诀，重点是展示你有完整排查闭环：日志采样 → 执行计划 → 改法 → 验证。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-vszs02.html">线上接口响应变慢，系统化排查思路是什么？</a></li>
+      <li><a href="./go-q-lpgq5z.html">Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？</a></li>
+      <li><a href="./goroutine-q-lf7hbg.html">协程池怎么设计？为什么 goroutine 不能无上限地开？</a></li>
+      <li><a href="./q-1m8jgdz.html">程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？</a></li>
+      <li><a href="./q-25fyg1.html">“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三大分类 创建型 ：关注对象的创建方式，如工厂模式、单例模式、建造者模式 结构型 ：关注类和对象的组合，如适配器模式、装饰器模式、代理模式、门面模式 行为型 ：关注对象之间的通信，如策略模式、观察者模式、责任链模式 Go 里最常见的几个 工厂模式 ：用 NewXxx() 函数代替构造函数，Go 的标准做法 策略模式 ：…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-q-dp1bas.html">
+<meta property="og:title" content="常见的设计模式有哪几大类？Go 里最常用的是哪些？ - Go 后端面试题库">
+<meta property="og:description" content="三大分类 创建型 ：关注对象的创建方式，如工厂模式、单例模式、建造者模式 结构型 ：关注类和对象的组合，如适配器模式、装饰器模式、代理模式、门面模式 行为型 ：关注对象之间的通信，如策略模式、观察者模式、责任链模式 Go 里最常见的几个 工厂模式 ：用 NewXxx() 函数代替构造函数，Go 的标准做法 策略模式 ：…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-q-dp1bas.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="常见的设计模式有哪几大类？Go 里最常用的是哪些？ - Go 后端面试题库">
+<meta name="twitter:description" content="三大分类 创建型 ：关注对象的创建方式，如工厂模式、单例模式、建造者模式 结构型 ：关注类和对象的组合，如适配器模式、装饰器模式、代理模式、门面模式 行为型 ：关注对象之间的通信，如策略模式、观察者模式、责任链模式 Go 里最常见的几个 工厂模式 ：用 NewXxx() 函数代替构造函数，Go 的标准做法 策略模式 ：…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>常见的设计模式有哪几大类？Go 里最常用的是哪些？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>常见的设计模式有哪几大类？Go 里最常用的是哪些？</span>
+  </nav>
+
+  <article class="question">
+    <h1>常见的设计模式有哪几大类？Go 里最常用的是哪些？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>三大分类</h4>
+<ul>
+<li><b>创建型</b>：关注对象的创建方式，如工厂模式、单例模式、建造者模式</li>
+<li><b>结构型</b>：关注类和对象的组合，如适配器模式、装饰器模式、代理模式、门面模式</li>
+<li><b>行为型</b>：关注对象之间的通信，如策略模式、观察者模式、责任链模式</li>
+</ul>
+<h4>Go 里最常见的几个</h4>
+<ul>
+<li><b>工厂模式</b>：用 <code>NewXxx()</code> 函数代替构造函数，Go 的标准做法</li>
+<li><b>策略模式</b>：定义 interface，不同实现可以运行时替换</li>
+<li><b>适配器模式</b>：把不兼容的接口转成统一接口，常见于对接多个第三方</li>
+<li><b>观察者/发布订阅</b>：事件驱动架构中常用</li>
+</ul>
+<div class="key-point">Go 没有继承和泛型重载，所以设计模式的实现通常比 Java 简洁得多——interface + struct 组合就能覆盖大部分场景。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-159zveo.html">你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？</a></li>
+      <li><a href="./before-after-q-1yd5y53.html">你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？</a></li>
+      <li><a href="./json-rpc-g-rpc-json-rpc-q-1ad9nas.html">微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？</a></li>
+      <li><a href="./graceful-shutdown-q-1ensob8.html">如何设计一个优雅关机 (Graceful Shutdown) 方案？</a></li>
+      <li><a href="./ddd-q-fi8niu.html">DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

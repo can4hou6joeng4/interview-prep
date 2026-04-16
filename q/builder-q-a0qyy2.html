@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么用 Builder 模式 积分变更涉及多个参数组合（credits/points/ruleCode/ruleId/userId/remark），不同业务场景需要传入的参数不同。Builder 模式的好处： NewCredit(db). WithCredits(10). WithPoints(50). WithRu…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/builder-q-a0qyy2.html">
+<meta property="og:title" content="积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？ - Go 后端面试题库">
+<meta property="og:description" content="为什么用 Builder 模式 积分变更涉及多个参数组合（credits/points/ruleCode/ruleId/userId/remark），不同业务场景需要传入的参数不同。Builder 模式的好处： NewCredit(db). WithCredits(10). WithPoints(50). WithRu…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/builder-q-a0qyy2.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么用 Builder 模式 积分变更涉及多个参数组合（credits/points/ruleCode/ruleId/userId/remark），不同业务场景需要传入的参数不同。Builder 模式的好处： NewCredit(db). WithCredits(10). WithPoints(50). WithRu…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？</span>
+  </nav>
+
+  <article class="question">
+    <h1>积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>为什么用 Builder 模式</h4>
+<p>积分变更涉及多个参数组合（credits/points/ruleCode/ruleId/userId/remark），不同业务场景需要传入的参数不同。Builder 模式的好处：</p>
+<pre><code>NewCredit(db).
+    WithCredits(10).
+    WithPoints(50).
+    WithRuleCode("order_complete").
+    WithUserId(uid).
+    Do()</code></pre>
+<ul>
+<li><b>可读性</b>：链式调用语义清晰，一眼看出这次操作做了什么</li>
+<li><b>灵活性</b>：只传需要的参数，不用构造一个大 struct 填一堆零值</li>
+<li><b>校验内聚</b>：<code>Do()</code> 内部统一校验必填参数，外部无需关心校验逻辑</li>
+</ul>
+<h4>事务内行锁保证一致性</h4>
+<pre><code>func (b *CreditBuilder) Do() error {
+    return b.db.Transaction(func(tx *gorm.DB) error {
+        // 1. SELECT FOR UPDATE 锁定用户行
+        var user User
+        tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+            First(&user, b.userId)
+        // 2. 幂等校验：sourceId 防重复发放
+        if exists(tx, b.sourceId) { return nil }
+        // 3. 计算新余额，校验不能透支
+        newBalance := user.Credits + b.credits
+        if newBalance < 0 { return ErrInsufficientCredits }
+        // 4. 更新余额 + 写流水日志
+        tx.Model(&user).Update("credits", newBalance)
+        tx.Create(&CreditLog{...})
+        return nil
+    })
+}</code></pre>
+<h4>关键设计点</h4>
+<ul>
+<li><b>行锁</b>：<code>SELECT FOR UPDATE</code> 锁住当前用户行，防止并发修改余额不一致</li>
+<li><b>幂等</b>：<code>sourceId</code> 唯一校验，同一笔订单不会重复发放积分</li>
+<li><b>事务包裹</b>：余额更新和流水日志在同一事务中，失败自动回滚</li>
+</ul>
+<div class="project-link">简历关联：Shoply 用户积分系统，Builder 模式封装积分变更操作，事务内行锁保证余额一致性，sourceId 幂等校验防止重复发放</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-key-q-5c8mut.html">企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？</a></li>
+      <li><a href="./qps-q-tdwoih.html">你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</a></li>
+      <li><a href="./q-proj-coldhot-optimize.html">冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</a></li>
+      <li><a href="./saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</a></li>
+      <li><a href="./saa-s-q-proj-recovery.html">营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

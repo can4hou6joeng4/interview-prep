@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="一个常见误区 sync.Map 只保证“Map 本身的读写操作”并发安全，比如 Load 、 Store 、 Delete 。如果里面存的是指针、slice、map 这类引用类型，你把值取出来再改内部字段，已经绕过了 sync.Map 的保护范围。 type User struct { Name string Scor…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/sync-map-q-1arld6w.html">
+<meta property="og:title" content="sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？ - Go 后端面试题库">
+<meta property="og:description" content="一个常见误区 sync.Map 只保证“Map 本身的读写操作”并发安全，比如 Load 、 Store 、 Delete 。如果里面存的是指针、slice、map 这类引用类型，你把值取出来再改内部字段，已经绕过了 sync.Map 的保护范围。 type User struct { Name string Scor…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/sync-map-q-1arld6w.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？ - Go 后端面试题库">
+<meta name="twitter:description" content="一个常见误区 sync.Map 只保证“Map 本身的读写操作”并发安全，比如 Load 、 Store 、 Delete 。如果里面存的是指针、slice、map 这类引用类型，你把值取出来再改内部字段，已经绕过了 sync.Map 的保护范围。 type User struct { Name string Scor…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</span>
+  </nav>
+
+  <article class="question">
+    <h1>sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>一个常见误区</h4>
+<p><code>sync.Map</code> 只保证“Map 本身的读写操作”并发安全，比如 <code>Load</code>、<code>Store</code>、<code>Delete</code>。如果里面存的是指针、slice、map 这类引用类型，你把值取出来再改内部字段，已经绕过了 <code>sync.Map</code> 的保护范围。</p>
+<pre><code>type User struct {
+    Name  string
+    Score int
+}
+
+var m sync.Map
+m.Store("u1", &User{Name: "A", Score: 1})
+
+// 两个 goroutine 同时做这个操作，Score++ 仍然可能有竞态
+u, _ := m.Load("u1")
+u.(*User).Score++</code></pre>
+<h4>为什么不安全</h4>
+<ul>
+<li><code>sync.Map</code> 只保护 key 到 value 的引用关系</li>
+<li>value 内部字段怎么改，它并不会自动加锁</li>
+<li>像 <code>Score++</code> 这种复合操作，本身就不是原子操作</li>
+</ul>
+<h4>怎么做更稳妥</h4>
+<ul>
+<li><b>值对象不可变</b>：修改时构造新副本，再用 <code>Store</code> 原子替换</li>
+<li><b>value 内部自己加锁</b>：例如结构体里放 <code>sync.Mutex</code></li>
+<li><b>简单字段用 atomic</b>：计数器、状态位可以用原子操作</li>
+<li><b>单 goroutine 拥有状态</b>：通过 channel 串行修改</li>
+</ul>
+<div class="key-point">这题特别能区分层次：知道 <code>sync.Map</code> 只是起点，真正加分的是你能说清“Map 并发安全”不等于“值对象并发安全”。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-goroutine-q-1cuk3uh.html">为什么 Go 里要用 goroutine，而不是线程？</a></li>
+      <li><a href="./go-net-http-fasthttp-gnet-q-sut1qe.html">Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</a></li>
+      <li><a href="./gmp-i-o-netpoller-hand-off-q-wfdrom.html">GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</a></li>
+      <li><a href="./go-q-u7zuhe.html">Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</a></li>
+      <li><a href="./goroutine-q-ha99tv.html">Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

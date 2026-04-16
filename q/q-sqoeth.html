@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="索引优化方法论 EXPLAIN 分析 ：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化） 覆盖索引 ：让查询所需字段全在索引中，避免回表。如 INDEX(store_id, status, created_a…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-sqoeth.html">
+<meta property="og:title" content="你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？ - Go 后端面试题库">
+<meta property="og:description" content="索引优化方法论 EXPLAIN 分析 ：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化） 覆盖索引 ：让查询所需字段全在索引中，避免回表。如 INDEX(store_id, status, created_a…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-sqoeth.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？ - Go 后端面试题库">
+<meta name="twitter:description" content="索引优化方法论 EXPLAIN 分析 ：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化） 覆盖索引 ：让查询所需字段全在索引中，避免回表。如 INDEX(store_id, status, created_a…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</span>
+  </nav>
+
+  <article class="question">
+    <h1>你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>索引优化方法论</h4>
+<ol>
+<li><b>EXPLAIN 分析</b>：看 type（ALL→index→range→ref→const）、rows、Extra（Using filesort/Using temporary 需优化）</li>
+<li><b>覆盖索引</b>：让查询所需字段全在索引中，避免回表。如 <code>INDEX(store_id, status, created_at)</code> 覆盖 <code>SELECT status, created_at WHERE store_id = ?</code></li>
+<li><b>最左前缀</b>：联合索引 <code>(a, b, c)</code> 能命中 <code>a</code>、<code>a,b</code>、<code>a,b,c</code> 的查询</li>
+<li><b>索引下推 (ICP)</b>：MySQL 5.6+ 在存储引擎层过滤索引条件，减少回表次数</li>
+</ol>
+<h4>UUFind 商品列表的实际优化</h4>
+<pre><code>-- 优化前：全表扫描
+SELECT * FROM products WHERE store_id = 123 ORDER BY created_at DESC;
+
+-- 优化后：联合索引
+ALTER TABLE products ADD INDEX idx_store_created (store_id, created_at DESC);
+
+-- 统计查询拆分：避免 COUNT 与业务查询混合
+-- 原：SELECT *, (SELECT COUNT(*) ...) FROM products ...
+-- 改：独立统计查询 + 请求级汇率缓存避免重复计算</code></pre>
+<div class="project-link">简历关联：UUFind 平台 — 新增数据库索引、重构统计查询逻辑、引入请求级汇率缓存，显著降低高频接口响应时间</div>
+<div class="key-point">高分回答不是背索引类型，而是说清你在哪张表、哪个查询上加了什么索引、查询时间从多少降到多少。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./my-sql-acid-redo-log-undo-q-m41whe.html">MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？</a></li>
+      <li><a href="./saa-s-gorm-q-fe9pel.html">多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？</a></li>
+      <li><a href="./my-sql-q-1gxiy1s.html">MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？</a></li>
+      <li><a href="./inno-db-my-isam-count-q-qa08h2.html">InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？</a></li>
+      <li><a href="./inno-db-mvcc-next-key-lock-q-usbl7u.html">InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="客户端策略 超时 + 指数退避 ：失败后不要立刻重试风暴，要带 jitter 做退避 断线重连 ：WebSocket 或长连接断开后按退避策略重连，并做会话恢复 本地缓冲 ：弱网时先写本地队列，网络恢复后批量上送 幂等设计 ：重试必须可安全重复执行，避免重复下单或重复扣费 服务端策略 背压 ：当下游处理不过来时，明确限…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1chyr79.html">
+<meta property="og:title" content="弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？ - Go 后端面试题库">
+<meta property="og:description" content="客户端策略 超时 + 指数退避 ：失败后不要立刻重试风暴，要带 jitter 做退避 断线重连 ：WebSocket 或长连接断开后按退避策略重连，并做会话恢复 本地缓冲 ：弱网时先写本地队列，网络恢复后批量上送 幂等设计 ：重试必须可安全重复执行，避免重复下单或重复扣费 服务端策略 背压 ：当下游处理不过来时，明确限…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1chyr79.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？ - Go 后端面试题库">
+<meta name="twitter:description" content="客户端策略 超时 + 指数退避 ：失败后不要立刻重试风暴，要带 jitter 做退避 断线重连 ：WebSocket 或长连接断开后按退避策略重连，并做会话恢复 本地缓冲 ：弱网时先写本地队列，网络恢复后批量上送 幂等设计 ：重试必须可安全重复执行，避免重复下单或重复扣费 服务端策略 背压 ：当下游处理不过来时，明确限…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/network.html">计算机网络</a> ›
+    <span>弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？</span>
+  </nav>
+
+  <article class="question">
+    <h1>弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>客户端策略</h4>
+<ul>
+<li><b>超时 + 指数退避</b>：失败后不要立刻重试风暴，要带 jitter 做退避</li>
+<li><b>断线重连</b>：WebSocket 或长连接断开后按退避策略重连，并做会话恢复</li>
+<li><b>本地缓冲</b>：弱网时先写本地队列，网络恢复后批量上送</li>
+<li><b>幂等设计</b>：重试必须可安全重复执行，避免重复下单或重复扣费</li>
+</ul>
+<h4>服务端策略</h4>
+<ul>
+<li><b>背压</b>：当下游处理不过来时，明确限流、排队或丢弃，而不是无限堆积</li>
+<li><b>请求降级</b>：先保核心链路，弱网下关掉高成本的附加能力</li>
+<li><b>心跳探活</b>：及时发现连接假死，避免资源一直被占着</li>
+</ul>
+<div class="key-point">弱网优化不是“多重试几次”，而是重试、会话恢复、幂等和背压一起设计。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./http-stream-g-rpc-q-uka9s5.html">HTTP/2 的 Stream 多路复用在 gRPC 中是怎么体现的？</a></li>
+      <li><a href="./tcp-q-1a3g4ml.html">TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？</a></li>
+      <li><a href="./http-http-http-q-10s0hae.html">HTTP/1.1、HTTP/2、HTTP/3 的区别？</a></li>
+      <li><a href="./https-tls-q-1cu35pj.html">HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？</a></li>
+      <li><a href="./tcp-q-1k8jhph.html">TCP 粘包/拆包是什么？怎么解决？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/network.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=13">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="标准执行顺序 prepareBaseItems ：预校验商品、库存和原价 applyPromotions ：计算活动满减 applyCoupons ：计算优惠券 applyExternalDiscounts ：计算联盟或外部折扣 applyShipping ：基于折后金额判断运费和免邮门槛 applyTax ：基于配置…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/checkout-q-1mw1c5q.html">
+<meta property="og:title" content="Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？ - Go 后端面试题库">
+<meta property="og:description" content="标准执行顺序 prepareBaseItems ：预校验商品、库存和原价 applyPromotions ：计算活动满减 applyCoupons ：计算优惠券 applyExternalDiscounts ：计算联盟或外部折扣 applyShipping ：基于折后金额判断运费和免邮门槛 applyTax ：基于配置…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/checkout-q-1mw1c5q.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？ - Go 后端面试题库">
+<meta name="twitter:description" content="标准执行顺序 prepareBaseItems ：预校验商品、库存和原价 applyPromotions ：计算活动满减 applyCoupons ：计算优惠券 applyExternalDiscounts ：计算联盟或外部折扣 applyShipping ：基于折后金额判断运费和免邮门槛 applyTax ：基于配置…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>标准执行顺序</h4>
+<ol>
+<li><code>prepareBaseItems</code>：预校验商品、库存和原价</li>
+<li><code>applyPromotions</code>：计算活动满减</li>
+<li><code>applyCoupons</code>：计算优惠券</li>
+<li><code>applyExternalDiscounts</code>：计算联盟或外部折扣</li>
+<li><code>applyShipping</code>：基于折后金额判断运费和免邮门槛</li>
+<li><code>applyTax</code>：基于配置和折后金额计算税费</li>
+<li><code>summarize</code>：汇总金额、处理精度补偿和改价容错</li>
+<li><code>applyCurrency</code>：最后统一做多币种换算</li>
+</ol>
+<h4>为什么顺序不能乱</h4>
+<ul>
+<li>优惠必须先算，否则运费免邮门槛会基于错误的金额判断</li>
+<li>税费通常依赖折后金额，且某些场景运费也要参与计税</li>
+<li>汇率转换必须最后做，否则每一步都换算会放大精度误差</li>
+</ul>
+<div class="key-point">面试加分：这个题本质在考你能不能把复杂结算逻辑拆成可测试、可组合、可解释的 Pipeline。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./capability-assert-q-123b1zo.html">Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</a></li>
+      <li><a href="./uu-find-q-esz930.html">UUFind 的跨平台商品统一标识是怎么设计的？</a></li>
+      <li><a href="./prompt-engineering-few-shot-chain-of-q-10vccg3.html">Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</a></li>
+      <li><a href="./llm-rag-q-gebpar.html">LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？</a></li>
+      <li><a href="./ai-v-llm-tgi-triton-q-1xgzadm.html">AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么必须做快照 商品标题、价格、规格、库存策略都会变化，如果订单只引用实时商品表，后续对账和售后会失真 地址会变，税区和运费命中结果也会跟着变 汇率波动会直接影响退款、结算和财务解释口径 通常要冻结哪些字段 商品快照 ：SKU、标题、规格、单价、折扣前后金额、税类目 地址快照 ：国家、省份、城市、邮编、关键收货信息…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1bwu8at.html">
+<meta property="og:title" content="为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？ - Go 后端面试题库">
+<meta property="og:description" content="为什么必须做快照 商品标题、价格、规格、库存策略都会变化，如果订单只引用实时商品表，后续对账和售后会失真 地址会变，税区和运费命中结果也会跟着变 汇率波动会直接影响退款、结算和财务解释口径 通常要冻结哪些字段 商品快照 ：SKU、标题、规格、单价、折扣前后金额、税类目 地址快照 ：国家、省份、城市、邮编、关键收货信息…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1bwu8at.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么必须做快照 商品标题、价格、规格、库存策略都会变化，如果订单只引用实时商品表，后续对账和售后会失真 地址会变，税区和运费命中结果也会跟着变 汇率波动会直接影响退款、结算和财务解释口径 通常要冻结哪些字段 商品快照 ：SKU、标题、规格、单价、折扣前后金额、税类目 地址快照 ：国家、省份、城市、邮编、关键收货信息…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？</span>
+  </nav>
+
+  <article class="question">
+    <h1>为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么必须做快照</h4>
+<ul>
+<li>商品标题、价格、规格、库存策略都会变化，如果订单只引用实时商品表，后续对账和售后会失真</li>
+<li>地址会变，税区和运费命中结果也会跟着变</li>
+<li>汇率波动会直接影响退款、结算和财务解释口径</li>
+</ul>
+<h4>通常要冻结哪些字段</h4>
+<ul>
+<li><b>商品快照</b>：SKU、标题、规格、单价、折扣前后金额、税类目</li>
+<li><b>地址快照</b>：国家、省份、城市、邮编、关键收货信息</li>
+<li><b>汇率快照</b>：基础币种、结算币种、换算汇率、生效时间</li>
+<li><b>规则命中快照</b>：运费规则、税费规则、优惠规则的命中结果</li>
+</ul>
+<h4>工程价值</h4>
+<ul>
+<li>保证支付、退款、售后、审计时使用的是“下单当时的事实”</li>
+<li>避免商品改价、地址修改、汇率波动影响已成交订单</li>
+<li>能清晰解释一笔订单当时为什么是这个金额</li>
+</ul>
+<div class="key-point">这题别答成“为了方便查历史”。更完整的说法是：快照是订单事实层，后续支付、退款、税费解释和财务对账都依赖它。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-wf1rul.html">工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？</a></li>
+      <li><a href="./wms-tms-q-tms1wm.html">跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</a></li>
+      <li><a href="./stripe-q-sp-stripe-refund.html">Stripe 自动退款是怎么接入统一退款网关的？如何保证多渠道退款的可扩展性？</a></li>
+      <li><a href="./apple-pay-saa-s-q-sp-applepay-domain.html">Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？</a></li>
+      <li><a href="./q-pay1bas.html">支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

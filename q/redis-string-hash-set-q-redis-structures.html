@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="项目中的实际使用 数据结构 使用场景 为什么选它 String + INCR WAF 频率限制计数器、UV 计数 原子自增、可设过期时间，天然滑动窗口 String + SetNX 分布式锁（冷热迁移、定时任务） 原子操作、自带 TTL 防死锁 String（JSON） 套餐配置缓存、汇率缓存 整体读写、数据量小、结构…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-string-hash-set-q-redis-structures.html">
+<meta property="og:title" content="项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？ - Go 后端面试题库">
+<meta property="og:description" content="项目中的实际使用 数据结构 使用场景 为什么选它 String + INCR WAF 频率限制计数器、UV 计数 原子自增、可设过期时间，天然滑动窗口 String + SetNX 分布式锁（冷热迁移、定时任务） 原子操作、自带 TTL 防死锁 String（JSON） 套餐配置缓存、汇率缓存 整体读写、数据量小、结构…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-string-hash-set-q-redis-structures.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？ - Go 后端面试题库">
+<meta name="twitter:description" content="项目中的实际使用 数据结构 使用场景 为什么选它 String + INCR WAF 频率限制计数器、UV 计数 原子自增、可设过期时间，天然滑动窗口 String + SetNX 分布式锁（冷热迁移、定时任务） 原子操作、自带 TTL 防死锁 String（JSON） 套餐配置缓存、汇率缓存 整体读写、数据量小、结构…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</span>
+  </nav>
+
+  <article class="question">
+    <h1>项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>项目中的实际使用</h4>
+<table>
+<tr><th>数据结构</th><th>使用场景</th><th>为什么选它</th></tr>
+<tr><td>String + INCR</td><td>WAF 频率限制计数器、UV 计数</td><td>原子自增、可设过期时间，天然滑动窗口</td></tr>
+<tr><td>String + SetNX</td><td>分布式锁（冷热迁移、定时任务）</td><td>原子操作、自带 TTL 防死锁</td></tr>
+<tr><td>String（JSON）</td><td>套餐配置缓存、汇率缓存</td><td>整体读写、数据量小、结构简单</td></tr>
+<tr><td>Hash</td><td>用户 session 扩展信息、购物车勾选状态</td><td>需要读写单个字段而非整体，减少序列化开销</td></tr>
+<tr><td>Set + SMembers</td><td>购物车勾选列表、Webhook 去重</td><td>无序集合、自动去重、支持交集并集</td></tr>
+<tr><td>Sorted Set</td><td>Asynq 延迟任务队列（底层实现）</td><td>按时间戳排序、高效范围查询</td></tr>
+<tr><td>HyperLogLog</td><td>UV 去重统计</td><td>内存极小（12KB），亿级去重误差 &lt; 1%</td></tr>
+<tr><td>本地内存缓存</td><td>请求级汇率缓存、主题截图缓存（sync.Map）</td><td>同一请求内多次读取，避免重复查 Redis</td></tr>
+</table>
+<h4>为什么不统一用 String+JSON</h4>
+<ul>
+<li><b>性能</b>：购物车勾选状态如果用 String+JSON，每次修改一个商品的勾选都要读取→反序列化→修改→序列化→写回。用 Set 只需 SADD/SREM 一条命令</li>
+<li><b>原子性</b>：频率限制用 String+INCR 是原子操作，用 JSON 读写则需要加锁</li>
+<li><b>内存效率</b>：UV 去重如果用 Set 存所有 visitor_hash，百万用户占几十 MB。HyperLogLog 只要 12KB</li>
+</ul>
+<div class="key-point">面试核心：不是"我会用 Redis"，而是能说清楚每个场景为什么选这个数据结构、换一个会有什么问题。这体现的是对 Redis 数据模型的工程理解。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1x4gxxf.html">「游客订单归户」是什么？购物车串单问题怎么解决的？</a></li>
+      <li><a href="./q-2mq2hq.html">第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</a></li>
+      <li><a href="./go-storage-io-read-seeker-q-1dqlfpk.html">请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</a></li>
+      <li><a href="./ai-agent-q-teeahw.html">你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</a></li>
+      <li><a href="./go-php-go-q-1logdyo.html">为什么选择 Go + PHP 混合架构而不是纯 Go？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先说结论 gRPC 通常建立在 HTTP/2 + Protobuf 之上：HTTP/2 负责连接复用和流控，Protobuf 负责结构化二进制编码。 底层关键点 HTTP/2 Stream ：一个 TCP 连接里可并行承载多个 RPC 调用，每个调用对应一个 Stream Frame 分帧 ：请求和响应最终会拆成 HE…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/g-rpc-q-108dns7.html">
+<meta property="og:title" content="gRPC 的底层实现依赖哪些协议和机制？ - Go 后端面试题库">
+<meta property="og:description" content="先说结论 gRPC 通常建立在 HTTP/2 + Protobuf 之上：HTTP/2 负责连接复用和流控，Protobuf 负责结构化二进制编码。 底层关键点 HTTP/2 Stream ：一个 TCP 连接里可并行承载多个 RPC 调用，每个调用对应一个 Stream Frame 分帧 ：请求和响应最终会拆成 HE…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/g-rpc-q-108dns7.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="gRPC 的底层实现依赖哪些协议和机制？ - Go 后端面试题库">
+<meta name="twitter:description" content="先说结论 gRPC 通常建立在 HTTP/2 + Protobuf 之上：HTTP/2 负责连接复用和流控，Protobuf 负责结构化二进制编码。 底层关键点 HTTP/2 Stream ：一个 TCP 连接里可并行承载多个 RPC 调用，每个调用对应一个 Stream Frame 分帧 ：请求和响应最终会拆成 HE…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>gRPC 的底层实现依赖哪些协议和机制？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>gRPC 的底层实现依赖哪些协议和机制？</span>
+  </nav>
+
+  <article class="question">
+    <h1>gRPC 的底层实现依赖哪些协议和机制？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先说结论</h4>
+<p>gRPC 通常建立在 <b>HTTP/2 + Protobuf</b> 之上：HTTP/2 负责连接复用和流控，Protobuf 负责结构化二进制编码。</p>
+<h4>底层关键点</h4>
+<ul>
+<li><b>HTTP/2 Stream</b>：一个 TCP 连接里可并行承载多个 RPC 调用，每个调用对应一个 Stream</li>
+<li><b>Frame 分帧</b>：请求和响应最终会拆成 HEADER / DATA 等帧在连接里传输</li>
+<li><b>HPACK</b>：HTTP/2 的头部压缩机制，减少重复 Header 的传输成本</li>
+<li><b>Flow Control</b>：连接级和 Stream 级流控，避免接收方被流量压垮</li>
+<li><b>Protobuf</b>：把消息编码成紧凑的二进制结构，比 JSON 更省带宽</li>
+<li><b>TLS / ALPN</b>：生产环境里通常配合 TLS 使用，通过 ALPN 协商到 HTTP/2</li>
+</ul>
+<h4>为什么它适合内部服务通信</h4>
+<ul>
+<li>连接复用，减少频繁建连成本</li>
+<li>天然支持流式调用</li>
+<li>IDL 驱动，跨语言接口更规范</li>
+<li>配合 deadline、metadata、拦截器，更容易做统一治理</li>
+</ul>
+<div class="key-point">这题别只答“gRPC 基于 HTTP/2”。真正拉开差距的是你能继续往下讲：Stream、多路复用、分帧、流控、Protobuf、TLS 这些机制是怎么一起工作的。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./metrics-trace-q-ixcscv.html">从告警触发到回滚止损，如何把 Metrics、日志、Trace、灰度发布串成一个排障闭环？</a></li>
+      <li><a href="./q-1anj48l.html">配置中心的分层覆盖怎么设计？环境、租户、主题、运行时配置冲突时谁优先？</a></li>
+      <li><a href="./etcd-zoo-keeper-consul-etcd-watch-q-9kpxmf.html">etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？</a></li>
+      <li><a href="./q-1drhjo5.html">微服务的服务发现有哪些方式？注册中心的作用？</a></li>
+      <li><a href="./open-telemetry-q-agdyxq.html">分布式链路追踪是什么？OpenTelemetry 怎么用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

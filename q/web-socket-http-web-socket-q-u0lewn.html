@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="对比 HTTP 长轮询 ：客户端发请求 → 服务端 hold 住 → 有数据时响应 → 客户端再次请求。每次都有完整 HTTP 头，单向通信 WebSocket ：一次握手（HTTP Upgrade）后保持 全双工 长连接，双向实时通信，头部开销极小（2-14 bytes） 你项目中的 3 个 WebSocket 场景…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/web-socket-http-web-socket-q-u0lewn.html">
+<meta property="og:title" content="WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？ - Go 后端面试题库">
+<meta property="og:description" content="对比 HTTP 长轮询 ：客户端发请求 → 服务端 hold 住 → 有数据时响应 → 客户端再次请求。每次都有完整 HTTP 头，单向通信 WebSocket ：一次握手（HTTP Upgrade）后保持 全双工 长连接，双向实时通信，头部开销极小（2-14 bytes） 你项目中的 3 个 WebSocket 场景…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/web-socket-http-web-socket-q-u0lewn.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？ - Go 后端面试题库">
+<meta name="twitter:description" content="对比 HTTP 长轮询 ：客户端发请求 → 服务端 hold 住 → 有数据时响应 → 客户端再次请求。每次都有完整 HTTP 头，单向通信 WebSocket ：一次握手（HTTP Upgrade）后保持 全双工 长连接，双向实时通信，头部开销极小（2-14 bytes） 你项目中的 3 个 WebSocket 场景…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/websocket.html">WebSocket 与实时通信</a> ›
+    <span>WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？</span>
+  </nav>
+
+  <article class="question">
+    <h1>WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>对比</h4>
+<ul>
+<li><b>HTTP 长轮询</b>：客户端发请求 → 服务端 hold 住 → 有数据时响应 → 客户端再次请求。每次都有完整 HTTP 头，单向通信</li>
+<li><b>WebSocket</b>：一次握手（HTTP Upgrade）后保持<b>全双工</b>长连接，双向实时通信，头部开销极小（2-14 bytes）</li>
+</ul>
+<h4>你项目中的 3 个 WebSocket 场景</h4>
+<ul>
+<li><b>AI 任务状态推送</b>：AI 文章生成/SEO 优化是异步任务，通过 WebSocket 实时推送进度和结果（生成中→完成→错误映射）</li>
+<li><b>商品导入进度</b>：从 Shopify/微店批量导入商品时，实时通知前端当前进度（已导入/总数/失败数）</li>
+<li><b>任务编排状态</b>：Asynq 异步任务的执行状态变更实时推送到管理后台</li>
+</ul>
+<div class="key-point">Fiber 中 WebSocket 基于 gorilla/websocket 或 fasthttp/websocket 封装，每个连接一个 goroutine 读 + 一个 goroutine 写</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./web-socket-q-10vreb4.html">WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？</a></li>
+      <li><a href="./sse-web-socket-ai-q-1g7gty9.html">SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？</a></li>
+      <li><a href="./q-1s009sz.html">语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？</a></li>
+      <li><a href="./tcp-udp-web-socket-http-q-szt6bc.html">TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/websocket.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=7">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

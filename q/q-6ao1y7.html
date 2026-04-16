@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="性能优化方法论的核心不是“调一把参数” 真正有用的性能优化方法论，应该是一条可复用闭环：先定义性能目标，再找瓶颈、做实验、验证收益、沉淀回放，而不是碰到慢就盲目上缓存。 一个常见闭环 定义指标 ：先确定你要守的是吞吐、P95/P99、错误率、资源成本还是队列积压 建立基线 ：没有优化前的真实数据，就无法判断改动是不是有…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-6ao1y7.html">
+<meta property="og:title" content="性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？ - Go 后端面试题库">
+<meta property="og:description" content="性能优化方法论的核心不是“调一把参数” 真正有用的性能优化方法论，应该是一条可复用闭环：先定义性能目标，再找瓶颈、做实验、验证收益、沉淀回放，而不是碰到慢就盲目上缓存。 一个常见闭环 定义指标 ：先确定你要守的是吞吐、P95/P99、错误率、资源成本还是队列积压 建立基线 ：没有优化前的真实数据，就无法判断改动是不是有…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-6ao1y7.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？ - Go 后端面试题库">
+<meta name="twitter:description" content="性能优化方法论的核心不是“调一把参数” 真正有用的性能优化方法论，应该是一条可复用闭环：先定义性能目标，再找瓶颈、做实验、验证收益、沉淀回放，而不是碰到慢就盲目上缓存。 一个常见闭环 定义指标 ：先确定你要守的是吞吐、P95/P99、错误率、资源成本还是队列积压 建立基线 ：没有优化前的真实数据，就无法判断改动是不是有…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</span>
+  </nav>
+
+  <article class="question">
+    <h1>性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>性能优化方法论的核心不是“调一把参数”</h4>
+<p>真正有用的性能优化方法论，应该是一条可复用闭环：先定义性能目标，再找瓶颈、做实验、验证收益、沉淀回放，而不是碰到慢就盲目上缓存。</p>
+<h4>一个常见闭环</h4>
+<ol>
+<li><b>定义指标</b>：先确定你要守的是吞吐、P95/P99、错误率、资源成本还是队列积压</li>
+<li><b>建立基线</b>：没有优化前的真实数据，就无法判断改动是不是有效</li>
+<li><b>定位瓶颈</b>：用 metrics、日志、pprof、trace、慢查询把问题收敛到某一层</li>
+<li><b>提出假设并做实验</b>：一次只改一个关键因素，避免多变量一起动导致结论失真</li>
+<li><b>回归验证</b>：看改完后指标有没有稳定改善，而不是只看某次压测截图</li>
+<li><b>沉淀 SOP</b>：把有效动作、阈值和回滚条件写下来，下一次才能复用</li>
+</ol>
+<h4>为什么这叫方法论</h4>
+<ul>
+<li>它能解释“为什么慢”而不是只会“我试过调大连接池”</li>
+<li>它能区分瓶颈是在 CPU、锁、网络、缓存、数据库还是下游依赖</li>
+<li>它能把一次性能事故变成后续可以复用的工程经验</li>
+</ul>
+<div class="key-point">这题真正拉开差距的地方在于：你能把性能优化讲成“指标 → 定位 → 实验 → 回归 → 沉淀”的工程闭环，这才是岗位里常写的“性能优化方法论”。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-key-key-q-es6a6z.html">Redis 热点 Key 和大 Key 怎么治理？</a></li>
+      <li><a href="./my-sql-q-1sde06e.html">MySQL 慢查询定位和优化的完整流程？</a></li>
+      <li><a href="./q-vszs02.html">线上接口响应变慢，系统化排查思路是什么？</a></li>
+      <li><a href="./go-q-lpgq5z.html">Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？</a></li>
+      <li><a href="./goroutine-q-lf7hbg.html">协程池怎么设计？为什么 goroutine 不能无上限地开？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

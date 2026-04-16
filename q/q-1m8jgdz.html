@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先把链路拆开看 入口 ：曝光、点击、转化等事件先统一写入 MQ / Kafka 去重 ：依赖 requestId、impressionId、traceId 或业务指纹做幂等去重 实时聚合 ：按事件时间做窗口聚合，输出近实时统计值 明细留存 ：原始日志异步落明细库或 OLAP，供离线对账和校准 为什么不能只做“实时加一”…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1m8jgdz.html">
+<meta property="og:title" content="程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？ - Go 后端面试题库">
+<meta property="og:description" content="先把链路拆开看 入口 ：曝光、点击、转化等事件先统一写入 MQ / Kafka 去重 ：依赖 requestId、impressionId、traceId 或业务指纹做幂等去重 实时聚合 ：按事件时间做窗口聚合，输出近实时统计值 明细留存 ：原始日志异步落明细库或 OLAP，供离线对账和校准 为什么不能只做“实时加一”…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1m8jgdz.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？ - Go 后端面试题库">
+<meta name="twitter:description" content="先把链路拆开看 入口 ：曝光、点击、转化等事件先统一写入 MQ / Kafka 去重 ：依赖 requestId、impressionId、traceId 或业务指纹做幂等去重 实时聚合 ：按事件时间做窗口聚合，输出近实时统计值 明细留存 ：原始日志异步落明细库或 OLAP，供离线对账和校准 为什么不能只做“实时加一”…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？</span>
+  </nav>
+
+  <article class="question">
+    <h1>程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先把链路拆开看</h4>
+<ul>
+<li><b>入口</b>：曝光、点击、转化等事件先统一写入 MQ / Kafka</li>
+<li><b>去重</b>：依赖 requestId、impressionId、traceId 或业务指纹做幂等去重</li>
+<li><b>实时聚合</b>：按事件时间做窗口聚合，输出近实时统计值</li>
+<li><b>明细留存</b>：原始日志异步落明细库或 OLAP，供离线对账和校准</li>
+</ul>
+<h4>为什么不能只做“实时加一”</h4>
+<ul>
+<li>会遇到重复上报、乱序到达、延迟上报、补发重放</li>
+<li>如果口径不清，实时面板和离线报表很容易打架</li>
+<li>高峰时如果同步落库，主链路延迟会被直接拖垮</li>
+</ul>
+<h4>常见工程做法</h4>
+<ul>
+<li><b>Redis / 本地缓存</b>：承接热点计数，先给近实时看板用</li>
+<li><b>流式处理</b>：按窗口聚合，控制延迟和迟到事件策略</li>
+<li><b>离线校准</b>：把实时近似值和离线精确值分层表达，别混成一个数字</li>
+<li><b>背压与降级</b>：高峰时优先保主链路，统计链路允许近似和延迟</li>
+</ul>
+<div class="key-point">这题真正的核心不是“会不会统计”，而是你知不知道实时统计系统要同时处理去重、口径、一致性和高峰延迟这四个矛盾。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-25fyg1.html">“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？</a></li>
+      <li><a href="./qps-tps-rt-p99-q-hc1bas.html">什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？</a></li>
+      <li><a href="./q-1sk5mxj.html">高并发系统设计的常见手段有哪些？</a></li>
+      <li><a href="./q-1n761t2.html">限流算法有哪些？令牌桶和漏桶的区别？</a></li>
+      <li><a href="./cap-base-q-1rup8vt.html">分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

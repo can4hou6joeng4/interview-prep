@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三种常见技巧 Few-shot ：给模型几个输入输出示例，适合让输出格式更稳定 Chain-of-Thought ：引导模型分步推理，适合复杂推导、规划和解释型任务 ReAct ：让模型在“思考”和“调用工具”之间交替进行，适合 Agent 场景 工程上怎么用 结构化输出任务优先用 Few-shot + JSON 约束…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/prompt-engineering-few-shot-chain-of-q-10vccg3.html">
+<meta property="og:title" content="Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？ - Go 后端面试题库">
+<meta property="og:description" content="三种常见技巧 Few-shot ：给模型几个输入输出示例，适合让输出格式更稳定 Chain-of-Thought ：引导模型分步推理，适合复杂推导、规划和解释型任务 ReAct ：让模型在“思考”和“调用工具”之间交替进行，适合 Agent 场景 工程上怎么用 结构化输出任务优先用 Few-shot + JSON 约束…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/prompt-engineering-few-shot-chain-of-q-10vccg3.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？ - Go 后端面试题库">
+<meta name="twitter:description" content="三种常见技巧 Few-shot ：给模型几个输入输出示例，适合让输出格式更稳定 Chain-of-Thought ：引导模型分步推理，适合复杂推导、规划和解释型任务 ReAct ：让模型在“思考”和“调用工具”之间交替进行，适合 Agent 场景 工程上怎么用 结构化输出任务优先用 Few-shot + JSON 约束…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三种常见技巧</h4>
+<ul>
+<li><b>Few-shot</b>：给模型几个输入输出示例，适合让输出格式更稳定</li>
+<li><b>Chain-of-Thought</b>：引导模型分步推理，适合复杂推导、规划和解释型任务</li>
+<li><b>ReAct</b>：让模型在“思考”和“调用工具”之间交替进行，适合 Agent 场景</li>
+</ul>
+<h4>工程上怎么用</h4>
+<ul>
+<li>结构化输出任务优先用 Few-shot + JSON 约束</li>
+<li>复杂任务拆解优先用分步提示和中间状态</li>
+<li>需要查资料、算结果、调接口时，用 ReAct 或工具调用链</li>
+</ul>
+<div class="project-link">简历关联：你的 AI Agent 模块如果要稳定生成文章或 SEO 建议，核心不是“提示词越长越好”，而是提示策略和工具编排要匹配任务。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./llm-rag-q-gebpar.html">LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？</a></li>
+      <li><a href="./ai-v-llm-tgi-triton-q-1xgzadm.html">AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？</a></li>
+      <li><a href="./dify-lang-chain-ai-q-ewu3mp.html">Dify 和 LangChain 这类 AI 应用开发框架有什么区别？怎么选？</a></li>
+      <li><a href="./lang-chain-chain-agent-tool-memory-q-o9wizi.html">LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？</a></li>
+      <li><a href="./q-leyruw.html">跨境电商独立站的核心技术挑战有哪些？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

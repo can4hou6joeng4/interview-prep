@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="底层结构 (runtime.hchan) type hchan struct { qcount uint // 当前队列中的元素数量 dataqsiz uint // 环形缓冲区大小（即 cap） buf unsafe.Pointer // 环形缓冲区指针 elemsize uint16 // 元素大小 closed…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-channel-channel-q-1uwipet.html">
+<meta property="og:title" content="Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？ - Go 后端面试题库">
+<meta property="og:description" content="底层结构 (runtime.hchan) type hchan struct { qcount uint // 当前队列中的元素数量 dataqsiz uint // 环形缓冲区大小（即 cap） buf unsafe.Pointer // 环形缓冲区指针 elemsize uint16 // 元素大小 closed…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-channel-channel-q-1uwipet.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？ - Go 后端面试题库">
+<meta name="twitter:description" content="底层结构 (runtime.hchan) type hchan struct { qcount uint // 当前队列中的元素数量 dataqsiz uint // 环形缓冲区大小（即 cap） buf unsafe.Pointer // 环形缓冲区指针 elemsize uint16 // 元素大小 closed…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>底层结构 (runtime.hchan)</h4>
+<pre><code>type hchan struct {
+    qcount   uint      // 当前队列中的元素数量
+    dataqsiz uint      // 环形缓冲区大小（即 cap）
+    buf      unsafe.Pointer // 环形缓冲区指针
+    elemsize uint16    // 元素大小
+    closed   uint32    // 是否关闭
+    sendx    uint      // 发送索引
+    recvx    uint      // 接收索引
+    recvq    waitq     // 等待接收的 goroutine 队列
+    sendq    waitq     // 等待发送的 goroutine 队列
+    lock     mutex     // 互斥锁
+}</code></pre>
+<h4>无缓冲 vs 有缓冲</h4>
+<ul>
+<li><b>无缓冲</b> (<code>make(chan T)</code>)：发送和接收必须同时就绪，否则阻塞。本质是同步通信</li>
+<li><b>有缓冲</b> (<code>make(chan T, n)</code>)：缓冲区未满时发送不阻塞，缓冲区为空时接收阻塞。本质是异步通信</li>
+</ul>
+<h4>关键行为</h4>
+<ul>
+<li>向 nil channel 发送/接收会永久阻塞</li>
+<li>向已关闭的 channel 发送会 panic</li>
+<li>从已关闭的 channel 接收会返回零值（可通过 <code>v, ok := <-ch</code> 判断）</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-interface-q-1v8drm9.html">Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</a></li>
+      <li><a href="./go-reflect-go-cache-reflect-redis-q-1dumk95.html">Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</a></li>
+      <li><a href="./go-defer-defer-panic-recover-q-yws6gn.html">Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</a></li>
+      <li><a href="./go-gc-stw-q-11rk16a.html">Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</a></li>
+      <li><a href="./go-sync-map-map-mutex-q-1cw0vwp.html">Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

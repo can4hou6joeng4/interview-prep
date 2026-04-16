@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先分清 Redis 在系统里的角色 纯缓存 ：目标是保护数据库和降低延迟，挂了之后系统应该降级而不是整体崩掉 状态 / 锁 / 队列 ：它已经不只是缓存，一旦挂掉会影响登录态、分布式锁、延时任务等能力 可能丢什么 缓存数据 ：理论上可接受，应该能从数据库或其他源重建 AOF / RDB 窗口内的数据 ：如果 Redis…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-q-sheogy.html">
+<meta property="og:title" content="Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？ - Go 后端面试题库">
+<meta property="og:description" content="先分清 Redis 在系统里的角色 纯缓存 ：目标是保护数据库和降低延迟，挂了之后系统应该降级而不是整体崩掉 状态 / 锁 / 队列 ：它已经不只是缓存，一旦挂掉会影响登录态、分布式锁、延时任务等能力 可能丢什么 缓存数据 ：理论上可接受，应该能从数据库或其他源重建 AOF / RDB 窗口内的数据 ：如果 Redis…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-q-sheogy.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？ - Go 后端面试题库">
+<meta name="twitter:description" content="先分清 Redis 在系统里的角色 纯缓存 ：目标是保护数据库和降低延迟，挂了之后系统应该降级而不是整体崩掉 状态 / 锁 / 队列 ：它已经不只是缓存，一旦挂掉会影响登录态、分布式锁、延时任务等能力 可能丢什么 缓存数据 ：理论上可接受，应该能从数据库或其他源重建 AOF / RDB 窗口内的数据 ：如果 Redis…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先分清 Redis 在系统里的角色</h4>
+<ul>
+<li><b>纯缓存</b>：目标是保护数据库和降低延迟，挂了之后系统应该降级而不是整体崩掉</li>
+<li><b>状态 / 锁 / 队列</b>：它已经不只是缓存，一旦挂掉会影响登录态、分布式锁、延时任务等能力</li>
+</ul>
+<h4>可能丢什么</h4>
+<ul>
+<li><b>缓存数据</b>：理论上可接受，应该能从数据库或其他源重建</li>
+<li><b>AOF / RDB 窗口内的数据</b>：如果 Redis 故障且持久化策略不够强，最近一段写入可能丢失</li>
+<li><b>依赖 Redis 承载业务语义的数据</b>：例如队列、会话、锁状态，一旦没兜底就会放大事故影响</li>
+</ul>
+<h4>常见降级手段</h4>
+<ul>
+<li><b>本地缓存兜底</b>：给热点数据一层进程内缓存，避免所有流量直冲数据库</li>
+<li><b>限流和熔断</b>：防止 Redis 故障后 DB 被瞬时流量打穿</li>
+<li><b>读写分级</b>：优先保证下单、查询等核心链路，非核心推荐、统计、排行榜先降级</li>
+<li><b>高可用架构</b>：主从、Sentinel、Cluster 降低单点故障概率</li>
+</ul>
+<h4>工程原则</h4>
+<ul>
+<li>不要把“能重建的缓存”设计成唯一数据源</li>
+<li>真正重要的数据必须先落库，再考虑缓存</li>
+<li>如果 Redis 同时承担缓存和 MQ/锁，面试里要主动指出：这会显著放大故障半径</li>
+</ul>
+<div class="key-point">这题想听的不是“等 Redis 恢复”，而是你有没有降级思维：先保住核心链路，再逐步恢复性能层能力。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</a></li>
+      <li><a href="./redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</a></li>
+      <li><a href="./redis-q-1d6l2fz.html">Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</a></li>
+      <li><a href="./redis-rdb-aof-q-1glhos9.html">Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？</a></li>
+      <li><a href="./q-6ie2jz.html">缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

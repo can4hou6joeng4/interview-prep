@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Pod 生命周期 Pending → Running → Succeeded / Failed ↑ Init Containers → App Containers Init 容器 在 App 容器启动 之前 按顺序运行，全部成功后才启动 App 容器 用途：等待依赖服务就绪、初始化配置文件、数据库 migration…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/pod-init-q-dlfiam.html">
+<meta property="og:title" content="Pod 的生命周期？init 容器、就绪探针、存活探针的作用？ - Go 后端面试题库">
+<meta property="og:description" content="Pod 生命周期 Pending → Running → Succeeded / Failed ↑ Init Containers → App Containers Init 容器 在 App 容器启动 之前 按顺序运行，全部成功后才启动 App 容器 用途：等待依赖服务就绪、初始化配置文件、数据库 migration…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/pod-init-q-dlfiam.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pod 的生命周期？init 容器、就绪探针、存活探针的作用？ - Go 后端面试题库">
+<meta name="twitter:description" content="Pod 生命周期 Pending → Running → Succeeded / Failed ↑ Init Containers → App Containers Init 容器 在 App 容器启动 之前 按顺序运行，全部成功后才启动 App 容器 用途：等待依赖服务就绪、初始化配置文件、数据库 migration…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Pod 的生命周期？init 容器、就绪探针、存活探针的作用？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kubernetes.html">Kubernetes 深入</a> ›
+    <span>Pod 的生命周期？init 容器、就绪探针、存活探针的作用？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Pod 的生命周期？init 容器、就绪探针、存活探针的作用？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>Pod 生命周期</h4>
+<pre><code>Pending → Running → Succeeded / Failed
+           ↑
+    Init Containers → App Containers</code></pre>
+<h4>Init 容器</h4>
+<ul>
+<li>在 App 容器启动<b>之前</b>按顺序运行，全部成功后才启动 App 容器</li>
+<li>用途：等待依赖服务就绪、初始化配置文件、数据库 migration</li>
+</ul>
+<pre><code>initContainers:
+- name: wait-for-db
+  image: busybox
+  command: ['sh', '-c', 'until nc -z mysql 3306; do sleep 2; done']</code></pre>
+<h4>探针对比</h4>
+<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">探针</th><th style="text-align:left;padding:6px">失败后果</th><th style="text-align:left;padding:6px">典型用途</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">startupProbe</td><td style="padding:6px">重启容器</td><td style="padding:6px">慢启动应用（Java等）</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">livenessProbe</td><td style="padding:6px">重启容器</td><td style="padding:6px">检测死锁/卡死</td></tr>
+<tr><td style="padding:6px">readinessProbe</td><td style="padding:6px">从 Service 摘除</td><td style="padding:6px">是否准备好接流量</td></tr>
+</table>
+<div class="key-point">readiness 失败不会重启 Pod，只是从 Endpoints 移除（不接受新请求）。你的优雅关机方案就是先让 readiness 失败</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./k8s-service-cluster-ip-node-port-q-ssyycj.html">K8s 中 Service 的负载均衡原理？ClusterIP / NodePort / LoadBalancer 区别？</a></li>
+      <li><a href="./k8s-q-fzaiml.html">K8s 滚动更新的策略？如何实现零停机部署？</a></li>
+      <li><a href="./k8s-crd-operator-kubebuilder-q-1khb0gx.html">什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？</a></li>
+      <li><a href="./operator-reconcile-q-wpeuxb.html">Operator 的 Reconcile 循环是什么？为什么它必须保证幂等？</a></li>
+      <li><a href="./gpu-k8s-q-e20dxe.html">GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kubernetes.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=14">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

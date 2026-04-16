@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="四种限流算法 固定窗口计数器 ：时间窗口内计数，超过阈值拒绝。缺点：窗口边界突发（两个窗口交界可能 2 倍流量） 滑动窗口计数器 ：将窗口分成多个小格子，平滑统计。你的 WAF 用的就是滑动窗口思路 漏桶 (Leaky Bucket) ：请求进入桶中，以固定速率流出。流出速率恒定，能平滑突发流量 令牌桶 (Token…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1n761t2.html">
+<meta property="og:title" content="限流算法有哪些？令牌桶和漏桶的区别？ - Go 后端面试题库">
+<meta property="og:description" content="四种限流算法 固定窗口计数器 ：时间窗口内计数，超过阈值拒绝。缺点：窗口边界突发（两个窗口交界可能 2 倍流量） 滑动窗口计数器 ：将窗口分成多个小格子，平滑统计。你的 WAF 用的就是滑动窗口思路 漏桶 (Leaky Bucket) ：请求进入桶中，以固定速率流出。流出速率恒定，能平滑突发流量 令牌桶 (Token…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1n761t2.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="限流算法有哪些？令牌桶和漏桶的区别？ - Go 后端面试题库">
+<meta name="twitter:description" content="四种限流算法 固定窗口计数器 ：时间窗口内计数，超过阈值拒绝。缺点：窗口边界突发（两个窗口交界可能 2 倍流量） 滑动窗口计数器 ：将窗口分成多个小格子，平滑统计。你的 WAF 用的就是滑动窗口思路 漏桶 (Leaky Bucket) ：请求进入桶中，以固定速率流出。流出速率恒定，能平滑突发流量 令牌桶 (Token…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>限流算法有哪些？令牌桶和漏桶的区别？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>限流算法有哪些？令牌桶和漏桶的区别？</span>
+  </nav>
+
+  <article class="question">
+    <h1>限流算法有哪些？令牌桶和漏桶的区别？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>四种限流算法</h4>
+<ul>
+<li><b>固定窗口计数器</b>：时间窗口内计数，超过阈值拒绝。缺点：窗口边界突发（两个窗口交界可能 2 倍流量）</li>
+<li><b>滑动窗口计数器</b>：将窗口分成多个小格子，平滑统计。你的 WAF 用的就是滑动窗口思路</li>
+<li><b>漏桶 (Leaky Bucket)</b>：请求进入桶中，以固定速率流出。流出速率恒定，能平滑突发流量</li>
+<li><b>令牌桶 (Token Bucket)</b>：以固定速率向桶中放令牌，请求需要取令牌才能通过。允许一定程度突发</li>
+</ul>
+<h4>漏桶 vs 令牌桶</h4>
+<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">漏桶</th><th style="text-align:left;padding:6px">令牌桶</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">流出速率</td><td style="padding:6px">恒定</td><td style="padding:6px">可突发</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">突发流量</td><td style="padding:6px">排队等待</td><td style="padding:6px">允许（消耗积累的令牌）</td></tr>
+<tr><td style="padding:6px">适用场景</td><td style="padding:6px">严格平滑（如短信发送）</td><td style="padding:6px">允许突发（如 API 限流）</td></tr>
+</table>
+<pre><code>// Go 标准库令牌桶
+import "golang.org/x/time/rate"
+limiter := rate.NewLimiter(rate.Every(100*time.Millisecond), 10) // 每秒10个，突发10个
+if !limiter.Allow() {
+    return fiber.ErrTooManyRequests
+}</code></pre>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./cap-base-q-1rup8vt.html">分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</a></li>
+      <li><a href="./q-1lta6ds.html">服务雪崩是什么？熔断、降级、限流怎么配合？</a></li>
+      <li><a href="./go-pprof-trace-benchmark-q-94lt8t.html">Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</a></li>
+      <li><a href="./q-6ao1y7.html">性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</a></li>
+      <li><a href="./redis-key-key-q-es6a6z.html">Redis 热点 Key 和大 Key 怎么治理？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

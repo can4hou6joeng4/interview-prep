@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Producer 端 // acks 配置 acks=0 // 不等确认，最快但可能丢消息 acks=1 // Leader 写入即确认（Leader 挂了可能丢） acks=all // 所有 ISR 副本写入才确认（最安全） // 重试 + 幂等 retries=3 enable.idempotence=true…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/kafka-producer-broker-consumer-q-13n8aa.html">
+<meta property="og:title" content="Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="Producer 端 // acks 配置 acks=0 // 不等确认，最快但可能丢消息 acks=1 // Leader 写入即确认（Leader 挂了可能丢） acks=all // 所有 ISR 副本写入才确认（最安全） // 重试 + 幂等 retries=3 enable.idempotence=true…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/kafka-producer-broker-consumer-q-13n8aa.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="Producer 端 // acks 配置 acks=0 // 不等确认，最快但可能丢消息 acks=1 // Leader 写入即确认（Leader 挂了可能丢） acks=all // 所有 ISR 副本写入才确认（最安全） // 重试 + 幂等 retries=3 enable.idempotence=true…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kafka.html">Kafka 消息队列</a> ›
+    <span>Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>Producer 端</h4>
+<pre><code>// acks 配置
+acks=0   // 不等确认，最快但可能丢消息
+acks=1   // Leader 写入即确认（Leader 挂了可能丢）
+acks=all // 所有 ISR 副本写入才确认（最安全）
+
+// 重试 + 幂等
+retries=3
+enable.idempotence=true  // Producer 幂等，防止重试导致重复</code></pre>
+<h4>Broker 端</h4>
+<pre><code>// 副本机制
+replication.factor=3          // 每个 Partition 3 个副本
+min.insync.replicas=2         // 至少 2 个副本同步才允许写入
+unclean.leader.election=false // 禁止非 ISR 副本成为 Leader</code></pre>
+<h4>Consumer 端</h4>
+<pre><code>// 手动提交 Offset（处理完再提交）
+enable.auto.commit=false
+
+for msg := range consumer.Messages() {
+    process(msg)                    // 先处理
+    consumer.CommitMessage(msg)     // 再提交 offset
+}
+// 如果 process 失败不提交，下次消费会重试（at-least-once）</code></pre>
+<div class="key-point">三端配合：acks=all + min.insync.replicas=2 + 手动提交 offset = 消息不丢失（at-least-once 语义）</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./kafka-consumer-q-rmp1qo.html">Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？</a></li>
+      <li><a href="./kafka-q-1h9bs4f.html">Kafka 如何保证消息顺序性？全局有序和分区有序的区别？</a></li>
+      <li><a href="./kafka-redis-asynq-q-1e0b4eb.html">Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？</a></li>
+      <li><a href="./q-1vkbj6o.html">延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？</a></li>
+      <li><a href="./redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kafka.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=12">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

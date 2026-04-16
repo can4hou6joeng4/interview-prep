@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="CAP 定理 C (Consistency) ：所有节点同一时间看到的数据一致 A (Availability) ：每个请求都能收到非错误响应 P (Partition tolerance) ：网络分区时系统仍能工作 三者最多满足两个。分布式系统中 P 必选 → 实际选择是 CP 或 AP BASE 理论（AP 系统的…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/cap-base-q-1rup8vt.html">
+<meta property="og:title" content="分布式系统中如何保证数据一致性？CAP 和 BASE 理论？ - Go 后端面试题库">
+<meta property="og:description" content="CAP 定理 C (Consistency) ：所有节点同一时间看到的数据一致 A (Availability) ：每个请求都能收到非错误响应 P (Partition tolerance) ：网络分区时系统仍能工作 三者最多满足两个。分布式系统中 P 必选 → 实际选择是 CP 或 AP BASE 理论（AP 系统的…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/cap-base-q-1rup8vt.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="分布式系统中如何保证数据一致性？CAP 和 BASE 理论？ - Go 后端面试题库">
+<meta name="twitter:description" content="CAP 定理 C (Consistency) ：所有节点同一时间看到的数据一致 A (Availability) ：每个请求都能收到非错误响应 P (Partition tolerance) ：网络分区时系统仍能工作 三者最多满足两个。分布式系统中 P 必选 → 实际选择是 CP 或 AP BASE 理论（AP 系统的…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>分布式系统中如何保证数据一致性？CAP 和 BASE 理论？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</span>
+  </nav>
+
+  <article class="question">
+    <h1>分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>CAP 定理</h4>
+<ul>
+<li><b>C (Consistency)</b>：所有节点同一时间看到的数据一致</li>
+<li><b>A (Availability)</b>：每个请求都能收到非错误响应</li>
+<li><b>P (Partition tolerance)</b>：网络分区时系统仍能工作</li>
+<li>三者最多满足两个。分布式系统中 P 必选 → 实际选择是 CP 或 AP</li>
+</ul>
+<h4>BASE 理论（AP 系统的妥协）</h4>
+<ul>
+<li><b>BA (Basically Available)</b>：基本可用（允许部分功能降级）</li>
+<li><b>S (Soft state)</b>：软状态（中间状态，数据可能暂时不一致）</li>
+<li><b>E (Eventually consistent)</b>：最终一致性</li>
+</ul>
+<h4>常见一致性方案</h4>
+<ul>
+<li><b>强一致性</b>：分布式事务（2PC / 3PC）— 性能差，适合金融核心</li>
+<li><b>最终一致性</b>：消息队列 + 本地消息表 / TCC / Saga — 性能好，适合电商</li>
+</ul>
+<div class="key-point">你的支付系统用 Webhook 异步回调 + 幂等处理，本质就是 BASE 的最终一致性方案</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1lta6ds.html">服务雪崩是什么？熔断、降级、限流怎么配合？</a></li>
+      <li><a href="./go-pprof-trace-benchmark-q-94lt8t.html">Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</a></li>
+      <li><a href="./q-6ao1y7.html">性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</a></li>
+      <li><a href="./redis-key-key-q-es6a6z.html">Redis 热点 Key 和大 Key 怎么治理？</a></li>
+      <li><a href="./my-sql-q-1sde06e.html">MySQL 慢查询定位和优化的完整流程？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

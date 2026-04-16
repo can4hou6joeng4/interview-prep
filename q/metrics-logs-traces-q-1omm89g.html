@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三支柱 Metrics ：数值型指标，适合看整体趋势和告警，如 QPS、错误率、P99、CPU 使用率 Logs ：事件明细，适合定位具体报错和业务上下文 Traces ：跨服务调用链，适合分析请求在哪一跳慢了、哪一层出错 各自擅长什么 先用 Metrics 发现问题 再用 Logs 看具体异常 最后用 Traces…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/metrics-logs-traces-q-1omm89g.html">
+<meta property="og:title" content="可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？ - Go 后端面试题库">
+<meta property="og:description" content="三支柱 Metrics ：数值型指标，适合看整体趋势和告警，如 QPS、错误率、P99、CPU 使用率 Logs ：事件明细，适合定位具体报错和业务上下文 Traces ：跨服务调用链，适合分析请求在哪一跳慢了、哪一层出错 各自擅长什么 先用 Metrics 发现问题 再用 Logs 看具体异常 最后用 Traces…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/metrics-logs-traces-q-1omm89g.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？ - Go 后端面试题库">
+<meta name="twitter:description" content="三支柱 Metrics ：数值型指标，适合看整体趋势和告警，如 QPS、错误率、P99、CPU 使用率 Logs ：事件明细，适合定位具体报错和业务上下文 Traces ：跨服务调用链，适合分析请求在哪一跳慢了、哪一层出错 各自擅长什么 先用 Metrics 发现问题 再用 Logs 看具体异常 最后用 Traces…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？</span>
+  </nav>
+
+  <article class="question">
+    <h1>可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三支柱</h4>
+<ul>
+<li><b>Metrics</b>：数值型指标，适合看整体趋势和告警，如 QPS、错误率、P99、CPU 使用率</li>
+<li><b>Logs</b>：事件明细，适合定位具体报错和业务上下文</li>
+<li><b>Traces</b>：跨服务调用链，适合分析请求在哪一跳慢了、哪一层出错</li>
+</ul>
+<h4>各自擅长什么</h4>
+<ul>
+<li>先用 Metrics 发现问题</li>
+<li>再用 Logs 看具体异常</li>
+<li>最后用 Traces 把跨服务链路串起来</li>
+</ul>
+<div class="key-point">真正的可观测性不是三套工具堆在一起，而是你能用它们快速回答：哪里有问题、为什么有问题、影响到谁。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./slo-sli-sla-q-oa37fy.html">SLO、SLI、SLA 分别是什么？如何在系统里落地？</a></li>
+      <li><a href="./prometheus-grafana-go-q-dmidpx.html">Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？</a></li>
+      <li><a href="./g-rpc-q-108dns7.html">gRPC 的底层实现依赖哪些协议和机制？</a></li>
+      <li><a href="./metrics-trace-q-ixcscv.html">从告警触发到回滚止损，如何把 Metrics、日志、Trace、灰度发布串成一个排障闭环？</a></li>
+      <li><a href="./q-1anj48l.html">配置中心的分层覆盖怎么设计？环境、租户、主题、运行时配置冲突时谁优先？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

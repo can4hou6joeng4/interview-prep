@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么这题很容易出事故 优惠、运费、税费往往不是天然属于某一行商品，而是订单级费用，需要再拆回到商品行 如果直接用 float ，金额会有精度误差 分摊后的尾差如果不收敛，最终“行金额之和”就会和订单总额对不上 退款时如果重新按当前规则计算，而不是按下单时的分摊快照回放，金额就会失真 常见处理方式 统一使用 decim…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-ro9kaq.html">
+<meta property="og:title" content="优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？ - Go 后端面试题库">
+<meta property="og:description" content="为什么这题很容易出事故 优惠、运费、税费往往不是天然属于某一行商品，而是订单级费用，需要再拆回到商品行 如果直接用 float ，金额会有精度误差 分摊后的尾差如果不收敛，最终“行金额之和”就会和订单总额对不上 退款时如果重新按当前规则计算，而不是按下单时的分摊快照回放，金额就会失真 常见处理方式 统一使用 decim…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-ro9kaq.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么这题很容易出事故 优惠、运费、税费往往不是天然属于某一行商品，而是订单级费用，需要再拆回到商品行 如果直接用 float ，金额会有精度误差 分摊后的尾差如果不收敛，最终“行金额之和”就会和订单总额对不上 退款时如果重新按当前规则计算，而不是按下单时的分摊快照回放，金额就会失真 常见处理方式 统一使用 decim…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？</span>
+  </nav>
+
+  <article class="question">
+    <h1>优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么这题很容易出事故</h4>
+<ul>
+<li>优惠、运费、税费往往不是天然属于某一行商品，而是订单级费用，需要再拆回到商品行</li>
+<li>如果直接用 <code>float</code>，金额会有精度误差</li>
+<li>分摊后的尾差如果不收敛，最终“行金额之和”就会和订单总额对不上</li>
+<li>退款时如果重新按当前规则计算，而不是按下单时的分摊快照回放，金额就会失真</li>
+</ul>
+<h4>常见处理方式</h4>
+<ul>
+<li>统一使用 <code>decimal</code> 做金额计算</li>
+<li>先确定分摊权重：按金额、数量、重量或混合规则来分</li>
+<li>尾差通过“最大项补差”或“最后一项补差”收敛，确保合计严格等于订单级金额</li>
+<li>把每一行的分摊结果落快照，退款和售后按原始分摊回放，而不是重算</li>
+</ul>
+<pre><code>type LineAllocation struct {
+    OrderLineID   uint
+    DiscountShare decimal.Decimal
+    ShippingShare decimal.Decimal
+    TaxShare      decimal.Decimal
+}</code></pre>
+<div class="key-point">这题真正想听的是：你知道分摊不是“算一下比例”这么简单，而是必须同时满足精度正确、合计闭合、可审计、可退款回放。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1bwu8at.html">为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？</a></li>
+      <li><a href="./q-wf1rul.html">工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？</a></li>
+      <li><a href="./wms-tms-q-tms1wm.html">跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</a></li>
+      <li><a href="./stripe-q-sp-stripe-refund.html">Stripe 自动退款是怎么接入统一退款网关的？如何保证多渠道退款的可扩展性？</a></li>
+      <li><a href="./apple-pay-saa-s-q-sp-applepay-domain.html">Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

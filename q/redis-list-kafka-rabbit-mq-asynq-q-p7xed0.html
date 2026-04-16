@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Redis List 能做队列，但它不是完整 MQ 产品 用 LPUSH/RPOP 或 BRPOP 能很快搭一个简单队列 但一旦涉及确认、重试、消费组、积压治理、死信处理，Redis List 就需要你自己补很多逻辑 为什么很多业务不会直接选它 确认语义弱 ：消息处理失败后如何重新投递、如何避免丢失，要自己设计 消费模…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">
+<meta property="og:title" content="为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？ - Go 后端面试题库">
+<meta property="og:description" content="Redis List 能做队列，但它不是完整 MQ 产品 用 LPUSH/RPOP 或 BRPOP 能很快搭一个简单队列 但一旦涉及确认、重试、消费组、积压治理、死信处理，Redis List 就需要你自己补很多逻辑 为什么很多业务不会直接选它 确认语义弱 ：消息处理失败后如何重新投递、如何避免丢失，要自己设计 消费模…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？ - Go 后端面试题库">
+<meta name="twitter:description" content="Redis List 能做队列，但它不是完整 MQ 产品 用 LPUSH/RPOP 或 BRPOP 能很快搭一个简单队列 但一旦涉及确认、重试、消费组、积压治理、死信处理，Redis List 就需要你自己补很多逻辑 为什么很多业务不会直接选它 确认语义弱 ：消息处理失败后如何重新投递、如何避免丢失，要自己设计 消费模…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kafka.html">Kafka 消息队列</a> ›
+    <span>为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</span>
+  </nav>
+
+  <article class="question">
+    <h1>为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>Redis List 能做队列，但它不是完整 MQ 产品</h4>
+<ul>
+<li>用 <code>LPUSH/RPOP</code> 或 <code>BRPOP</code> 能很快搭一个简单队列</li>
+<li>但一旦涉及确认、重试、消费组、积压治理、死信处理，Redis List 就需要你自己补很多逻辑</li>
+</ul>
+<h4>为什么很多业务不会直接选它</h4>
+<ul>
+<li><b>确认语义弱</b>：消息处理失败后如何重新投递、如何避免丢失，要自己设计</li>
+<li><b>消费模型单一</b>：不像 Kafka 有 Consumer Group，不像 RabbitMQ 有成熟的 ack 和路由体系</li>
+<li><b>回溯能力弱</b>：普通 List 更偏“取走即删”，不适合事件流和回放场景</li>
+<li><b>角色不纯</b>：Redis 更擅长缓存、计数器、轻量任务，不适合无限堆叠复杂 MQ 语义</li>
+</ul>
+<h4>怎么选更合理</h4>
+<ul>
+<li><b>Kafka</b>：高吞吐事件流、日志、回溯消费、多消费组</li>
+<li><b>RabbitMQ</b>：复杂路由、ack、死信、延迟消息</li>
+<li><b>Asynq</b>：Go 业务里的后台任务、延时任务、轻中量异步作业</li>
+<li><b>Redis List</b>：只适合极轻量、容忍简单语义的小队列</li>
+</ul>
+<div class="key-point">这题的高质量回答不是“Redis 不行”，而是你能讲清：不是不能做，而是随着可靠性要求上升，自己补语义的成本会越来越高。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./kafka-producer-broker-consumer-partition-q-w5vcxz.html">Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-q-13n8aa.html">Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？</a></li>
+      <li><a href="./kafka-consumer-q-rmp1qo.html">Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？</a></li>
+      <li><a href="./kafka-q-1h9bs4f.html">Kafka 如何保证消息顺序性？全局有序和分区有序的区别？</a></li>
+      <li><a href="./kafka-redis-asynq-q-1e0b4eb.html">Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kafka.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=12">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心差异 MyISAM 会维护整张表的精确行数，所以在没有过滤条件时执行 count(*) ，通常可以直接返回元数据里的结果 InnoDB 因为要支持事务和 MVCC，表的“当前可见行数”会因事务视图而不同，没法像 MyISAM 一样只靠一个全局行数回答 为什么 InnoDB 不能偷懒 不同事务看到的数据版本可能不同…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/inno-db-my-isam-count-q-qa08h2.html">
+<meta property="og:title" content="InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？ - Go 后端面试题库">
+<meta property="og:description" content="核心差异 MyISAM 会维护整张表的精确行数，所以在没有过滤条件时执行 count(*) ，通常可以直接返回元数据里的结果 InnoDB 因为要支持事务和 MVCC，表的“当前可见行数”会因事务视图而不同，没法像 MyISAM 一样只靠一个全局行数回答 为什么 InnoDB 不能偷懒 不同事务看到的数据版本可能不同…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/inno-db-my-isam-count-q-qa08h2.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心差异 MyISAM 会维护整张表的精确行数，所以在没有过滤条件时执行 count(*) ，通常可以直接返回元数据里的结果 InnoDB 因为要支持事务和 MVCC，表的“当前可见行数”会因事务视图而不同，没法像 MyISAM 一样只靠一个全局行数回答 为什么 InnoDB 不能偷懒 不同事务看到的数据版本可能不同…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？</span>
+  </nav>
+
+  <article class="question">
+    <h1>InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>核心差异</h4>
+<ul>
+<li><b>MyISAM</b> 会维护整张表的精确行数，所以在没有过滤条件时执行 <code>count(*)</code>，通常可以直接返回元数据里的结果</li>
+<li><b>InnoDB</b> 因为要支持事务和 MVCC，表的“当前可见行数”会因事务视图而不同，没法像 MyISAM 一样只靠一个全局行数回答</li>
+</ul>
+<h4>为什么 InnoDB 不能偷懒</h4>
+<ul>
+<li>不同事务看到的数据版本可能不同</li>
+<li>未提交数据、回滚数据、快照读都会影响“你现在能看到多少行”</li>
+<li>所以 InnoDB 往往需要扫描索引来统计，而不是直接读一个全局计数器</li>
+</ul>
+<h4>工程上怎么优化</h4>
+<ul>
+<li>如果只是后台统计展示，不要每次都现查 <code>count(*)</code>，可以做异步聚合或缓存</li>
+<li>有过滤条件时尽量让查询走覆盖索引，降低扫描成本</li>
+<li>超大表分页和计数拆开做，别把列表查询和总数统计绑死在同一条 SQL 上</li>
+</ul>
+<div class="key-point">这题别只背“一个快一个慢”。真正的关键是：InnoDB 为了事务一致性，放弃了 MyISAM 那种简单粗暴的全局行数统计。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./inno-db-mvcc-next-key-lock-q-usbl7u.html">InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？</a></li>
+      <li><a href="./q-yq4cwq.html">分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？</a></li>
+      <li><a href="./inno-db-b-b-q-wxlgi4.html">InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</a></li>
+      <li><a href="./q-sqoeth.html">你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</a></li>
+      <li><a href="./my-sql-acid-redo-log-undo-q-m41whe.html">MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

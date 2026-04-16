@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="多层风险分析 func WAFMiddleware(c *fiber.Ctx) error { risk := &amp;RiskScore{} // 1. ASN 识别（云服务商 IP 段） asn := lookupASN(c.IP()) if isCloudProvider(asn) { // AWS/GCP/Azure…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/waf-q-2zizcr.html">
+<meta property="og:title" content="你的自研 WAF 中间件是怎么做访客风险分析的？ - Go 后端面试题库">
+<meta property="og:description" content="多层风险分析 func WAFMiddleware(c *fiber.Ctx) error { risk := &amp;RiskScore{} // 1. ASN 识别（云服务商 IP 段） asn := lookupASN(c.IP()) if isCloudProvider(asn) { // AWS/GCP/Azure…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/waf-q-2zizcr.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="你的自研 WAF 中间件是怎么做访客风险分析的？ - Go 后端面试题库">
+<meta name="twitter:description" content="多层风险分析 func WAFMiddleware(c *fiber.Ctx) error { risk := &amp;RiskScore{} // 1. ASN 识别（云服务商 IP 段） asn := lookupASN(c.IP()) if isCloudProvider(asn) { // AWS/GCP/Azure…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>你的自研 WAF 中间件是怎么做访客风险分析的？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/security.html">安全防护</a> ›
+    <span>你的自研 WAF 中间件是怎么做访客风险分析的？</span>
+  </nav>
+
+  <article class="question">
+    <h1>你的自研 WAF 中间件是怎么做访客风险分析的？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>多层风险分析</h4>
+<pre><code>func WAFMiddleware(c *fiber.Ctx) error {
+    risk := &RiskScore{}
+
+    // 1. ASN 识别（云服务商 IP 段）
+    asn := lookupASN(c.IP())
+    if isCloudProvider(asn) { // AWS/GCP/Azure/阿里云
+        risk.Add(30, "cloud_provider_ip")
+    }
+
+    // 2. 代理头伪造检测
+    if hasConflictingProxyHeaders(c) {
+        // X-Forwarded-For 和实际 IP 不一致
+        risk.Add(20, "proxy_header_forgery")
+    }
+
+    // 3. WAF 正则匹配（SQL注入/XSS/路径遍历）
+    if matched, rule := matchWAFRules(c); matched {
+        risk.Add(50, "waf_rule: " + rule)
+    }
+
+    // 4. 高频访问防护（滑动窗口）
+    count := redis.Incr("rate:" + c.IP()) // 1 分钟窗口
+    if count > threshold {
+        risk.Add(40, "high_frequency")
+        // 触发 10 分钟冷却
+        redis.Set("cooldown:" + c.IP(), 1, 10*time.Minute)
+    }
+
+    // 5. 超过阈值 → 拦截
+    if risk.Total() >= 80 {
+        return c.Status(403).JSON(...)
+    }
+
+    // 6. 异步批处理：将访客记录推入队列
+    visitorQueue <- VisitorLog{IP: c.IP(), Risk: risk, ...}
+    return c.Next()
+}
+
+// 后台 worker 批量写入，不阻塞主链路
+go func() {
+    batch := make([]VisitorLog, 0, 100)
+    ticker := time.NewTicker(5 * time.Second)
+    for {
+        select {
+        case v := <-visitorQueue: batch = append(batch, v)
+        case <-ticker.C: flushBatch(batch); batch = batch[:0]
+        }
+    }
+}()</code></pre>
+<div class="project-link">简历关联：自研轻量级 WAF 中间件，集成 ASN 识别、代理头伪造检测、WAF 正则匹配、高频访问防护（1 分钟窗口 + 10 分钟冷却），异步批处理</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./aes-cbc-rsa-rsa-q-1fg3w7k.html">AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？</a></li>
+      <li><a href="./waf-q-sec-waf-score.html">WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？</a></li>
+      <li><a href="./cookie-q-sec-ratelimit-cookie.html">频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？</a></li>
+      <li><a href="./jwt-rsa-hmac-q-1o4zsc6.html">JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/security.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=6">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

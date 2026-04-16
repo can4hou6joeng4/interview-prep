@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三个高频失败场景 工具调用失败 ：LLM 生成的参数格式不对、字段缺失、调用结果不符合预期 上下文溢出 ：对话轮数变长后，Agent 忘记之前的关键约束和历史状态 目标漂移 ：任务执行越走越偏，输出和原始目标不再一致 治理手段 工具调用失败 ：加参数校验层，非法参数先拦住；可恢复错误让模型重试，不可恢复错误直接走兜底逻…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-agent-q-1s90v9j.html">
+<meta property="og:title" content="AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？ - Go 后端面试题库">
+<meta property="og:description" content="三个高频失败场景 工具调用失败 ：LLM 生成的参数格式不对、字段缺失、调用结果不符合预期 上下文溢出 ：对话轮数变长后，Agent 忘记之前的关键约束和历史状态 目标漂移 ：任务执行越走越偏，输出和原始目标不再一致 治理手段 工具调用失败 ：加参数校验层，非法参数先拦住；可恢复错误让模型重试，不可恢复错误直接走兜底逻…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-agent-q-1s90v9j.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？ - Go 后端面试题库">
+<meta name="twitter:description" content="三个高频失败场景 工具调用失败 ：LLM 生成的参数格式不对、字段缺失、调用结果不符合预期 上下文溢出 ：对话轮数变长后，Agent 忘记之前的关键约束和历史状态 目标漂移 ：任务执行越走越偏，输出和原始目标不再一致 治理手段 工具调用失败 ：加参数校验层，非法参数先拦住；可恢复错误让模型重试，不可恢复错误直接走兜底逻…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三个高频失败场景</h4>
+<ul>
+<li><b>工具调用失败</b>：LLM 生成的参数格式不对、字段缺失、调用结果不符合预期</li>
+<li><b>上下文溢出</b>：对话轮数变长后，Agent 忘记之前的关键约束和历史状态</li>
+<li><b>目标漂移</b>：任务执行越走越偏，输出和原始目标不再一致</li>
+</ul>
+<h4>治理手段</h4>
+<ul>
+<li><b>工具调用失败</b>：加参数校验层，非法参数先拦住；可恢复错误让模型重试，不可恢复错误直接走兜底逻辑</li>
+<li><b>上下文溢出</b>：做摘要压缩、sliding window、长期记忆抽取，不要把所有历史生硬塞进上下文</li>
+<li><b>目标漂移</b>：每一步都显式保留目标约束，阶段性做自检或反思，必要时重新规划</li>
+</ul>
+<h4>工程上要补的东西</h4>
+<ul>
+<li>结构化日志：至少能看到用户输入、工具调用、模型输出和最终结果</li>
+<li>失败分类：区分模型问题、工具问题、数据问题、上下文问题</li>
+<li>人工兜底：关键链路不能让 Agent 无限制重试到天荒地老</li>
+</ul>
+<div class="key-point">现在 AI Agent 岗很爱问这题，因为它能直接区分“做过 Demo”和“做过真实可恢复系统”的差别。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./re-act-co-t-to-t-q-zff9w4.html">ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？</a></li>
+      <li><a href="./ai-agent-q-1vy0rvs.html">面向企业客服的 AI Agent 怎么做分层架构、记忆设计和幻觉防控？</a></li>
+      <li><a href="./ai-q-ai1etl.html">AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？</a></li>
+      <li><a href="./redis-rehash-q-rd1int.html">Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？</a></li>
+      <li><a href="./go-ssr-node-js-q-5gq8ts.html">为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="累加评分制 初始 Score = 0，各检测模块独立加/减分： Score 50 ≤ Score Score ≥ 80：直接拉黑 Score ≥ 100：短路返回（跳过后续检测节省资源） 加分项 代理头检测（Via / X-Forwarded-For 多层跳板 / 隐蔽代理头）：+20~+40 ASN 识别（Digit…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/waf-q-sec-waf-score.html">
+<meta property="og:title" content="WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="累加评分制 初始 Score = 0，各检测模块独立加/减分： Score 50 ≤ Score Score ≥ 80：直接拉黑 Score ≥ 100：短路返回（跳过后续检测节省资源） 加分项 代理头检测（Via / X-Forwarded-For 多层跳板 / 隐蔽代理头）：+20~+40 ASN 识别（Digit…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/waf-q-sec-waf-score.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="累加评分制 初始 Score = 0，各检测模块独立加/减分： Score 50 ≤ Score Score ≥ 80：直接拉黑 Score ≥ 100：短路返回（跳过后续检测节省资源） 加分项 代理头检测（Via / X-Forwarded-For 多层跳板 / 隐蔽代理头）：+20~+40 ASN 识别（Digit…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/security.html">安全防护</a> ›
+    <span>WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>累加评分制</h4>
+<p>初始 Score = 0，各检测模块独立加/减分：</p>
+<ul>
+<li>Score < 50：正常放行</li>
+<li>50 ≤ Score < 80：弹出验证码（CAPTCHA）</li>
+<li>Score ≥ 80：直接拉黑</li>
+<li>Score ≥ 100：短路返回（跳过后续检测节省资源）</li>
+</ul>
+<h4>加分项</h4>
+<ul>
+<li>代理头检测（Via / X-Forwarded-For 多层跳板 / 隐蔽代理头）：+20~+40</li>
+<li>ASN 识别（DigitalOcean/Vultr/OVH/Hetzner）：高危 ASN 高分</li>
+<li>频率限制（10s 超阈值）：softLimit +60，hardLimit 直接 200</li>
+<li>无 Cookie 连续访问（阶梯式：3次+15，5次+50，10次+80）</li>
+<li>HTTP/1.0 协议降级：+20</li>
+</ul>
+<h4>减分项（信用加分）</h4>
+<ul>
+<li>来源是搜索引擎（Google/Bing/Baidu 等）：直接放行</li>
+<li>有本站 Referer + Cookie：-40</li>
+</ul>
+<div class="key-point">灰度拦截哲学：不是非黑即白，可疑流量弹验证码给自证机会，只有高度确认的恶意流量才封禁</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./cookie-q-sec-ratelimit-cookie.html">频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？</a></li>
+      <li><a href="./jwt-rsa-hmac-q-1o4zsc6.html">JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？</a></li>
+      <li><a href="./waf-q-2zizcr.html">你的自研 WAF 中间件是怎么做访客风险分析的？</a></li>
+      <li><a href="./aes-cbc-rsa-rsa-q-1fg3w7k.html">AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/security.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=6">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

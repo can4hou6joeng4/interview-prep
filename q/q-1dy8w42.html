@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心目标 不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。 常见实现方式 Kubernetes ：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流 Service Mesh ：如 Istio 通过 VirtualService 按比例分…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1dy8w42.html">
+<meta property="og:title" content="灰度发布和金丝雀发布怎么实现？ - Go 后端面试题库">
+<meta property="og:description" content="核心目标 不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。 常见实现方式 Kubernetes ：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流 Service Mesh ：如 Istio 通过 VirtualService 按比例分…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1dy8w42.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="灰度发布和金丝雀发布怎么实现？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心目标 不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。 常见实现方式 Kubernetes ：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流 Service Mesh ：如 Istio 通过 VirtualService 按比例分…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>灰度发布和金丝雀发布怎么实现？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/docker.html">Docker 与部署</a> ›
+    <span>灰度发布和金丝雀发布怎么实现？</span>
+  </nav>
+
+  <article class="question">
+    <h1>灰度发布和金丝雀发布怎么实现？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>核心目标</h4>
+<p>不是一次性全量替换，而是先让一小部分流量进入新版本，观察指标没问题再逐步放量。</p>
+<h4>常见实现方式</h4>
+<ul>
+<li><b>Kubernetes</b>：两个 Deployment 并存，通过 Service、Ingress 或 Gateway 做权重分流</li>
+<li><b>Service Mesh</b>：如 Istio 通过 <code>VirtualService</code> 按比例分流，例如 10% → 30% → 100%</li>
+<li><b>应用层</b>：按用户 ID、租户 ID、地区或白名单做 Feature Flag 分桶</li>
+</ul>
+<h4>发布时看什么</h4>
+<ul>
+<li>错误率、延迟、CPU/内存、下游依赖异常</li>
+<li>关键业务指标是否劣化，比如下单成功率、支付成功率</li>
+<li>一旦指标异常，立刻切回旧版本，这就是灰度发布真正的价值</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./aws-ec2-s3-rds-lambda-q-1snbf9s.html">AWS 核心服务有哪些？EC2、S3、RDS、Lambda 分别适合什么场景？</a></li>
+      <li><a href="./aws-q-1aoeo63.html">如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？</a></li>
+      <li><a href="./docker-namespace-cgroup-q-1juftm.html">Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？</a></li>
+      <li><a href="./go-dockerfile-q-7n8n2h.html">Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？</a></li>
+      <li><a href="./k8s-q-1ry7gt7.html">容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/docker.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=8">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

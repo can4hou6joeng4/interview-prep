@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="两者的核心差异 SSE (Server-Sent Events) ：基于 HTTP 长连接，服务端单向推送文本事件给客户端，浏览器原生支持 EventSource WebSocket ：一次 Upgrade 后建立全双工连接，客户端和服务端都能持续发消息 维度 SSE WebSocket 通信方向 服务端 → 客户端…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/sse-web-socket-ai-q-1g7gty9.html">
+<meta property="og:title" content="SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？ - Go 后端面试题库">
+<meta property="og:description" content="两者的核心差异 SSE (Server-Sent Events) ：基于 HTTP 长连接，服务端单向推送文本事件给客户端，浏览器原生支持 EventSource WebSocket ：一次 Upgrade 后建立全双工连接，客户端和服务端都能持续发消息 维度 SSE WebSocket 通信方向 服务端 → 客户端…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/sse-web-socket-ai-q-1g7gty9.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？ - Go 后端面试题库">
+<meta name="twitter:description" content="两者的核心差异 SSE (Server-Sent Events) ：基于 HTTP 长连接，服务端单向推送文本事件给客户端，浏览器原生支持 EventSource WebSocket ：一次 Upgrade 后建立全双工连接，客户端和服务端都能持续发消息 维度 SSE WebSocket 通信方向 服务端 → 客户端…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/websocket.html">WebSocket 与实时通信</a> ›
+    <span>SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？</span>
+  </nav>
+
+  <article class="question">
+    <h1>SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>两者的核心差异</h4>
+<ul>
+<li><b>SSE (Server-Sent Events)</b>：基于 HTTP 长连接，服务端单向推送文本事件给客户端，浏览器原生支持 <code>EventSource</code></li>
+<li><b>WebSocket</b>：一次 Upgrade 后建立全双工连接，客户端和服务端都能持续发消息</li>
+</ul>
+<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">维度</th><th style="text-align:left;padding:6px">SSE</th><th style="text-align:left;padding:6px">WebSocket</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">通信方向</td><td style="padding:6px">服务端 → 客户端</td><td style="padding:6px">双向</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">协议基础</td><td style="padding:6px">HTTP</td><td style="padding:6px">独立 WebSocket 协议</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">断线重连</td><td style="padding:6px">浏览器原生支持</td><td style="padding:6px">通常要自己实现</td></tr>
+<tr><td style="padding:6px">适合场景</td><td style="padding:6px">流式文本、进度更新、通知</td><td style="padding:6px">聊天、协作、实时控制</td></tr>
+</table>
+<h4>AI 流式输出怎么选</h4>
+<ul>
+<li><b>只需要把 token 连续推给前端</b>：优先 SSE，接入简单、对代理和 CDN 更友好</li>
+<li><b>需要前端同时持续上送控制消息</b>：如语音对话、多人协作、实时打断，选 WebSocket</li>
+<li><b>工程细节</b>：SSE 要考虑心跳注释、防代理超时、事件 ID 断点续传；WebSocket 要考虑连接管理、背压和广播</li>
+</ul>
+<div class="key-point">现在很多 AI Agent 岗写“流式输出”，面试里说“token 流默认 SSE，双向互动再升到 WebSocket”会非常加分。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1s009sz.html">语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？</a></li>
+      <li><a href="./tcp-udp-web-socket-http-q-szt6bc.html">TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？</a></li>
+      <li><a href="./web-socket-http-web-socket-q-u0lewn.html">WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？</a></li>
+      <li><a href="./web-socket-q-10vreb4.html">WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/websocket.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=7">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

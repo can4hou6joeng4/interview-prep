@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三层幂等机制 Checkout 层 ：同一个 Checkout ID 只允许创建一笔成功的 Payment，重复提交直接返回已有结果 Trade 层 ：每次支付尝试生成唯一 Trade ID 传给支付网关（PayPal/Stripe），网关侧保证同一 Trade ID 不会重复扣款 Webhook 层 ：支付网关可能重…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/checkout-id-trade-id-webhook-q-idempotent-design.html">
+<meta property="og:title" content="支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？ - Go 后端面试题库">
+<meta property="og:description" content="三层幂等机制 Checkout 层 ：同一个 Checkout ID 只允许创建一笔成功的 Payment，重复提交直接返回已有结果 Trade 层 ：每次支付尝试生成唯一 Trade ID 传给支付网关（PayPal/Stripe），网关侧保证同一 Trade ID 不会重复扣款 Webhook 层 ：支付网关可能重…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/checkout-id-trade-id-webhook-q-idempotent-design.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？ - Go 后端面试题库">
+<meta name="twitter:description" content="三层幂等机制 Checkout 层 ：同一个 Checkout ID 只允许创建一笔成功的 Payment，重复提交直接返回已有结果 Trade 层 ：每次支付尝试生成唯一 Trade ID 传给支付网关（PayPal/Stripe），网关侧保证同一 Trade ID 不会重复扣款 Webhook 层 ：支付网关可能重…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</span>
+  </nav>
+
+  <article class="question">
+    <h1>支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三层幂等机制</h4>
+<ul>
+<li><b>Checkout 层</b>：同一个 Checkout ID 只允许创建一笔成功的 Payment，重复提交直接返回已有结果</li>
+<li><b>Trade 层</b>：每次支付尝试生成唯一 Trade ID 传给支付网关（PayPal/Stripe），网关侧保证同一 Trade ID 不会重复扣款</li>
+<li><b>Webhook 层</b>：支付网关可能重复推送回调通知，用 <code>webhook_event_id</code> 做去重，已处理过的事件直接返回 200 不重复执行</li>
+</ul>
+<h4>为什么需要三层而不是一层</h4>
+<ul>
+<li>Checkout 层防的是<b>用户重复点击</b>提交按钮</li>
+<li>Trade 层防的是<b>网络超时重试</b>导致网关侧重复扣款</li>
+<li>Webhook 层防的是<b>网关重复推送</b>导致本地重复处理订单状态</li>
+</ul>
+<h4>实现细节</h4>
+<pre><code>// Webhook 去重伪代码
+func HandleWebhook(eventId string, payload []byte) error {
+    // 1. 检查是否已处理
+    if exists := redis.SetNX("webhook:"+eventId, 1, 24*time.Hour); !exists {
+        return nil // 已处理，直接返回成功
+    }
+    // 2. 处理业务逻辑
+    err := processPayment(payload)
+    if err != nil {
+        redis.Del("webhook:" + eventId) // 处理失败，允许重试
+        return err
+    }
+    return nil
+}</code></pre>
+<div class="key-point">面试核心：幂等不是"加个唯一索引"就完事，而是要在每一层分别防御不同来源的重复请求。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./decimal-vs-vs-float-q-currency-storage.html">多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</a></li>
+      <li><a href="./ai-agent-web-socket-q-ws-design.html">AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</a></li>
+      <li><a href="./asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</a></li>
+      <li><a href="./go-storage-storage-oss-sdk-q-storage-adapter.html">go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</a></li>
+      <li><a href="./saa-s-jwt-rsa-session-q-jwt-vs-session.html">SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

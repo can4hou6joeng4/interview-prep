@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="分片上传三步 // 1. ChunkInit — 初始化上传会话 uploadId, err := storage.ChunkInit(&quot;video.mp4&quot;, fileSize) // Local: 创建临时目录存放分片 // OSS: 调用 InitiateMultipartUpload 获取 uploadId /…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-storage-io-read-seeker-q-1dqlfpk.html">
+<meta property="og:title" content="请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？ - Go 后端面试题库">
+<meta property="og:description" content="分片上传三步 // 1. ChunkInit — 初始化上传会话 uploadId, err := storage.ChunkInit(&quot;video.mp4&quot;, fileSize) // Local: 创建临时目录存放分片 // OSS: 调用 InitiateMultipartUpload 获取 uploadId /…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-storage-io-read-seeker-q-1dqlfpk.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？ - Go 后端面试题库">
+<meta name="twitter:description" content="分片上传三步 // 1. ChunkInit — 初始化上传会话 uploadId, err := storage.ChunkInit(&quot;video.mp4&quot;, fileSize) // Local: 创建临时目录存放分片 // OSS: 调用 InitiateMultipartUpload 获取 uploadId /…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</span>
+  </nav>
+
+  <article class="question">
+    <h1>请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>分片上传三步</h4>
+<pre><code>// 1. ChunkInit — 初始化上传会话
+uploadId, err := storage.ChunkInit("video.mp4", fileSize)
+// Local: 创建临时目录存放分片
+// OSS:  调用 InitiateMultipartUpload 获取 uploadId
+
+// 2. ChunkPart — 上传每个分片
+for partNum := 1; partNum <= totalParts; partNum++ {
+    reader := io.NewSectionReader(file, offset, chunkSize)
+    err := storage.ChunkPart(uploadId, partNum, reader)
+    // Local: 写入 tmp/{uploadId}/part_{partNum}
+    // OSS:  调用 UploadPart
+}
+
+// 3. ChunkComplete — 合并分片
+url, err := storage.ChunkComplete(uploadId)
+// Local: 按顺序合并所有分片文件，删除临时目录
+// OSS:  调用 CompleteMultipartUpload</code></pre>
+<h4>为什么用 io.ReadSeeker / io.ReadCloser</h4>
+<ul>
+<li><code>io.ReadSeeker</code>：支持 <code>Seek()</code>，OSS SDK 需要在失败重试时重新定位到分片起始位置重新读取</li>
+<li><code>io.ReadCloser</code>：用于流式传输场景，读完即释放，不需要缓冲整个文件到内存</li>
+<li>使用标准接口而非 <code>[]byte</code>，支持大文件（如几 GB 的视频）不占内存</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-agent-q-teeahw.html">你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</a></li>
+      <li><a href="./go-php-go-q-1logdyo.html">为什么选择 Go + PHP 混合架构而不是纯 Go？</a></li>
+      <li><a href="./checkout-q-1mw1c5q.html">Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</a></li>
+      <li><a href="./capability-assert-q-123b1zo.html">Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</a></li>
+      <li><a href="./uu-find-q-esz930.html">UUFind 的跨平台商品统一标识是怎么设计的？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="MongoDB 事务怎么写 MongoDB 4.0+ 支持多文档事务，但需要在副本集或分片集群里，通过 session 开启： session, _ := client.StartSession() defer session.EndSession(ctx) err := mongo.WithSession(ctx,…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-my-sql-q-ikzhl1.html">
+<meta property="og:title" content="MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？ - Go 后端面试题库">
+<meta property="og:description" content="MongoDB 事务怎么写 MongoDB 4.0+ 支持多文档事务，但需要在副本集或分片集群里，通过 session 开启： session, _ := client.StartSession() defer session.EndSession(ctx) err := mongo.WithSession(ctx,…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-my-sql-q-ikzhl1.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？ - Go 后端面试题库">
+<meta name="twitter:description" content="MongoDB 事务怎么写 MongoDB 4.0+ 支持多文档事务，但需要在副本集或分片集群里，通过 session 开启： session, _ := client.StartSession() defer session.EndSession(ctx) err := mongo.WithSession(ctx,…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mongodb.html">MongoDB</a> ›
+    <span>MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？</span>
+  </nav>
+
+  <article class="question">
+    <h1>MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>MongoDB 事务怎么写</h4>
+<p>MongoDB 4.0+ 支持多文档事务，但需要在副本集或分片集群里，通过 <code>session</code> 开启：</p>
+<pre><code>session, _ := client.StartSession()
+defer session.EndSession(ctx)
+
+err := mongo.WithSession(ctx, session, func(sc mongo.SessionContext) error {
+    if err := session.StartTransaction(); err != nil {
+        return err
+    }
+    if _, err := orderCol.InsertOne(sc, orderDoc); err != nil {
+        return session.AbortTransaction(sc)
+    }
+    if _, err := stockCol.UpdateOne(sc, filter, update); err != nil {
+        return session.AbortTransaction(sc)
+    }
+    return session.CommitTransaction(sc)
+})</code></pre>
+<h4>和 MySQL 的差异</h4>
+<ul>
+<li><b>MySQL</b>：事务是第一公民，关系模型、外键、JOIN、锁模型都更成熟，适合订单、支付这类强事务场景</li>
+<li><b>MongoDB</b>：事务是后来补上的能力，能用但成本更高，通常更鼓励通过文档建模减少跨文档事务</li>
+<li><b>性能影响</b>：MongoDB 多文档事务会带来更多协调和资源占用，不适合滥用</li>
+<li><b>设计思路</b>：如果数据能嵌入同一文档，MongoDB 更推荐单文档原子更新；MySQL 则天然适合多表事务</li>
+</ul>
+<h4>工程建议</h4>
+<ul>
+<li>只在确实需要维护跨文档一致性时再上事务</li>
+<li>事务里不要做长时间外部调用，避免持有资源过久</li>
+<li>对高并发读多写少场景，优先靠文档模型设计而不是把 MongoDB 用成另一套 MySQL</li>
+</ul>
+<div class="key-point">现在不少 Go 后端 JD 只写“MongoDB 经验”，真正拉开差距的是你能说清：什么时候该用事务，什么时候应该回到文档建模本身。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./my-sql-redis-mongo-db-q-l2i20y.html">时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？</a></li>
+      <li><a href="./mongo-db-q-mg1shr.html">MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？</a></li>
+      <li><a href="./mongo-db-my-sql-mongo-db-q-gay2ec.html">MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？</a></li>
+      <li><a href="./mongo-db-my-sql-q-m6ivnq.html">MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？</a></li>
+      <li><a href="./mongo-db-aggregation-pipeline-q-jljpb8.html">MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mongodb.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=15">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

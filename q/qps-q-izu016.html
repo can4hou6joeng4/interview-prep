@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先别把压测做成“刷一个 QPS 数字” 压测流量要尽量接近真实读写比例、热点分布和依赖调用路径 只看平均值意义不大，必须关注尾延迟和错误率 压测的目标不是“机器打满”，而是定位系统的第一瓶颈在哪 除了 QPS 还要看什么 延迟 ：P95 / P99，别只看平均响应时间 错误率 ：超时、5xx、熔断、限流比例 应用指标…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/qps-q-izu016.html">
+<meta property="og:title" content="压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？ - Go 后端面试题库">
+<meta property="og:description" content="先别把压测做成“刷一个 QPS 数字” 压测流量要尽量接近真实读写比例、热点分布和依赖调用路径 只看平均值意义不大，必须关注尾延迟和错误率 压测的目标不是“机器打满”，而是定位系统的第一瓶颈在哪 除了 QPS 还要看什么 延迟 ：P95 / P99，别只看平均响应时间 错误率 ：超时、5xx、熔断、限流比例 应用指标…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/qps-q-izu016.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？ - Go 后端面试题库">
+<meta name="twitter:description" content="先别把压测做成“刷一个 QPS 数字” 压测流量要尽量接近真实读写比例、热点分布和依赖调用路径 只看平均值意义不大，必须关注尾延迟和错误率 压测的目标不是“机器打满”，而是定位系统的第一瓶颈在哪 除了 QPS 还要看什么 延迟 ：P95 / P99，别只看平均响应时间 错误率 ：超时、5xx、熔断、限流比例 应用指标…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/testing.html">测试与工程质量</a> ›
+    <span>压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？</span>
+  </nav>
+
+  <article class="question">
+    <h1>压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先别把压测做成“刷一个 QPS 数字”</h4>
+<ul>
+<li>压测流量要尽量接近真实读写比例、热点分布和依赖调用路径</li>
+<li>只看平均值意义不大，必须关注尾延迟和错误率</li>
+<li>压测的目标不是“机器打满”，而是定位系统的第一瓶颈在哪</li>
+</ul>
+<h4>除了 QPS 还要看什么</h4>
+<ul>
+<li><b>延迟</b>：P95 / P99，别只看平均响应时间</li>
+<li><b>错误率</b>：超时、5xx、熔断、限流比例</li>
+<li><b>应用指标</b>：CPU、内存、goroutine、GC 次数和停顿</li>
+<li><b>连接池</b>：DB / Redis / HTTP 连接池是否打满</li>
+<li><b>缓存层</b>：命中率、热点 key、慢日志</li>
+<li><b>队列层</b>：lag、积压时长、消费速率</li>
+<li><b>数据库</b>：慢查询数、锁等待、扫描行数</li>
+</ul>
+<h4>一个更完整的闭环</h4>
+<ol>
+<li>先定义目标链路和业务场景</li>
+<li>压测前做好指标埋点和观测面板</li>
+<li>压测时同步看应用、缓存、DB、MQ 四层指标</li>
+<li>压测后把瓶颈收敛到具体组件或代码路径，而不是只汇报“最高能扛多少 QPS”</li>
+</ol>
+<div class="key-point">这题真正想听的是你的诊断思维：QPS 只是表象，定位瓶颈要靠尾延迟、错误率和分层指标一起看。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-testcontainers-q-tc1int.html">Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？</a></li>
+      <li><a href="./go-table-driven-tests-mock-q-zwrzuz.html">Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？</a></li>
+      <li><a href="./tdd-red-green-refactor-q-ktllce.html">TDD（测试驱动开发）的流程是什么？Red-Green-Refactor 分别代表什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/testing.html">浏览本分类全部 4 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=11">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

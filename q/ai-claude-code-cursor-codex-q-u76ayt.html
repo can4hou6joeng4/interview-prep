@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么面试会问这个 越来越多公司把&quot;会用 AI 工具&quot;作为硬性要求。不是问你&quot;知不知道有这些工具&quot;，而是要看你 日常开发中真的在用，并且能说出具体提效场景 。 主流 AI 编程工具定位 Claude Code (CLI) ：终端原生的 AI 编程助手，擅长多文件重构、代码库级别的理解、复杂 debug。适合后端工程师在…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-claude-code-cursor-codex-q-u76ayt.html">
+<meta property="og:title" content="AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？ - Go 后端面试题库">
+<meta property="og:description" content="为什么面试会问这个 越来越多公司把&quot;会用 AI 工具&quot;作为硬性要求。不是问你&quot;知不知道有这些工具&quot;，而是要看你 日常开发中真的在用，并且能说出具体提效场景 。 主流 AI 编程工具定位 Claude Code (CLI) ：终端原生的 AI 编程助手，擅长多文件重构、代码库级别的理解、复杂 debug。适合后端工程师在…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-claude-code-cursor-codex-q-u76ayt.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么面试会问这个 越来越多公司把&quot;会用 AI 工具&quot;作为硬性要求。不是问你&quot;知不知道有这些工具&quot;，而是要看你 日常开发中真的在用，并且能说出具体提效场景 。 主流 AI 编程工具定位 Claude Code (CLI) ：终端原生的 AI 编程助手，擅长多文件重构、代码库级别的理解、复杂 debug。适合后端工程师在…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么面试会问这个</h4>
+<p>越来越多公司把"会用 AI 工具"作为硬性要求。不是问你"知不知道有这些工具"，而是要看你<b>日常开发中真的在用，并且能说出具体提效场景</b>。</p>
+<h4>主流 AI 编程工具定位</h4>
+<ul>
+<li><b>Claude Code (CLI)</b>：终端原生的 AI 编程助手，擅长多文件重构、代码库级别的理解、复杂 debug。适合后端工程师在终端工作流中使用</li>
+<li><b>Cursor</b>：基于 VS Code 的 AI IDE，Tab 补全 + Chat + Composer 多文件编辑。适合需要实时补全和可视化的全栈开发</li>
+<li><b>GitHub Copilot</b>：最广泛的行级补全工具，集成到各种 IDE。适合日常编码加速</li>
+<li><b>Codex (OpenAI)</b>：API 级别的代码生成能力，适合集成到自动化流水线或自定义工具中</li>
+<li><b>Gemini CLI</b>：Google 的终端 AI 工具，擅长搜索整合和代码生成</li>
+</ul>
+<h4>实际提效场景</h4>
+<ul>
+<li><b>代码生成</b>：给 AI 描述业务需求，生成 CRUD、数据模型、API 路由的初始代码，再人工审查调整</li>
+<li><b>Debug</b>：把报错信息和相关代码丢给 AI，让它分析根因并给出修复方案</li>
+<li><b>重构</b>：让 AI 理解现有代码结构后，批量重命名、拆分函数、提取公共模块</li>
+<li><b>写测试</b>：给 AI 看实现代码，让它生成 Table-Driven Tests，覆盖正常/边界/异常用例</li>
+<li><b>代码审查</b>：让 AI 审查 PR diff，找潜在 bug、性能问题、安全风险</li>
+<li><b>文档与注释</b>：给复杂函数生成清晰的文档和使用示例</li>
+</ul>
+<h4>怎么答得像真正在用</h4>
+<p>不要泛泛而谈，要举具体例子："上周我用 Claude Code 重构了支付模块的错误处理链路，它理解了整个 Checkout→Payment→Webhook 的调用关系，一次性把 15 个文件的错误包装统一成 fmt.Errorf + %w 格式。人工审查后只改了两处。"</p>
+<div class="key-point">核心态度：AI 是加速器不是替代品。你要展示的是"我用 AI 提效，但我能判断 AI 的输出质量并做最终决策"。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-ai-q-wjtvi3.html">AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</a></li>
+      <li><a href="./python-go-java-saa-s-q-7zioa5.html">Python、Go、Java 各自适合什么后端场景？出海 SaaS 技术栈怎么选？</a></li>
+      <li><a href="./llm-api-open-ai-claude-q-16opd4.html">后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？</a></li>
+      <li><a href="./next-js-api-q-xm41mo.html">全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？</a></li>
+      <li><a href="./visitor-id-q-vid-design.html">系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

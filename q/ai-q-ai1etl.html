@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="数据清洗管道的典型流程 数据采集 → 格式统一 → 去重去噪 → 标注/校验 → 质量评估 → 入库/交付 数据采集 ：从多源拉取（API、爬虫、日志、数据库导出），统一写入消息队列或对象存储 格式统一 ：编码归一、字段映射、时间格式标准化、多语言处理 去重去噪 ：基于内容哈希或 SimHash 去重；过滤无效数据（空…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-q-ai1etl.html">
+<meta property="og:title" content="AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？ - Go 后端面试题库">
+<meta property="og:description" content="数据清洗管道的典型流程 数据采集 → 格式统一 → 去重去噪 → 标注/校验 → 质量评估 → 入库/交付 数据采集 ：从多源拉取（API、爬虫、日志、数据库导出），统一写入消息队列或对象存储 格式统一 ：编码归一、字段映射、时间格式标准化、多语言处理 去重去噪 ：基于内容哈希或 SimHash 去重；过滤无效数据（空…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-q-ai1etl.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="数据清洗管道的典型流程 数据采集 → 格式统一 → 去重去噪 → 标注/校验 → 质量评估 → 入库/交付 数据采集 ：从多源拉取（API、爬虫、日志、数据库导出），统一写入消息队列或对象存储 格式统一 ：编码归一、字段映射、时间格式标准化、多语言处理 去重去噪 ：基于内容哈希或 SimHash 去重；过滤无效数据（空…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>数据清洗管道的典型流程</h4>
+<pre><code>数据采集 → 格式统一 → 去重去噪 → 标注/校验 → 质量评估 → 入库/交付</code></pre>
+<ul>
+<li><b>数据采集</b>：从多源拉取（API、爬虫、日志、数据库导出），统一写入消息队列或对象存储</li>
+<li><b>格式统一</b>：编码归一、字段映射、时间格式标准化、多语言处理</li>
+<li><b>去重去噪</b>：基于内容哈希或 SimHash 去重；过滤无效数据（空值、乱码、过短文本）</li>
+<li><b>质量评估</b>：抽样人工校验 + 自动化规则检查（覆盖率、一致性、完整性）</li>
+</ul>
+<h4>后端工程师的职责</h4>
+<ul>
+<li>构建稳定的数据处理管道（Kafka + Worker Pool / Flink）</li>
+<li>设计任务调度和重试机制，保证幂等和断点续跑</li>
+<li>管理数据版本和血缘关系，知道每批数据从哪来、经过什么处理</li>
+<li>提供 API 给标注团队和模型训练侧消费清洗后的数据</li>
+</ul>
+<h4>和普通业务 ETL 的区别</h4>
+<ul>
+<li>AI 数据清洗对质量的要求更高——脏数据进模型，训练结果直接崩</li>
+<li>数据量通常更大，需要分布式处理能力</li>
+<li>需要支持「人在回路」（Human-in-the-Loop），标注和校验环节有人工介入</li>
+</ul>
+<div class="key-point">面试不会让你讲模型训练，而是看你能不能把数据管道讲清楚：采集、清洗、调度、质量保障、交付，这些全是后端能力。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-rehash-q-rd1int.html">Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？</a></li>
+      <li><a href="./go-ssr-node-js-q-5gq8ts.html">为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？</a></li>
+      <li><a href="./builder-q-a0qyy2.html">积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？</a></li>
+      <li><a href="./ai-key-q-5c8mut.html">企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？</a></li>
+      <li><a href="./qps-q-tdwoih.html">你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

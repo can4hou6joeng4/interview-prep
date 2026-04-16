@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="问题背景 1688、淘宝、Shopify 等平台的商品 ID 体系不同，直接拿原始平台 ID 做主键会导致跨平台聚合、去重和回显都很难统一。 设计思路 定义平台无关的统一商品实体，如 UufindProduct ，作为内部主标识 各平台原始商品通过关联表映射到统一实体，例如记录平台类型、平台商品 ID、店铺信息和同步状…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/uu-find-q-esz930.html">
+<meta property="og:title" content="UUFind 的跨平台商品统一标识是怎么设计的？ - Go 后端面试题库">
+<meta property="og:description" content="问题背景 1688、淘宝、Shopify 等平台的商品 ID 体系不同，直接拿原始平台 ID 做主键会导致跨平台聚合、去重和回显都很难统一。 设计思路 定义平台无关的统一商品实体，如 UufindProduct ，作为内部主标识 各平台原始商品通过关联表映射到统一实体，例如记录平台类型、平台商品 ID、店铺信息和同步状…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/uu-find-q-esz930.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UUFind 的跨平台商品统一标识是怎么设计的？ - Go 后端面试题库">
+<meta name="twitter:description" content="问题背景 1688、淘宝、Shopify 等平台的商品 ID 体系不同，直接拿原始平台 ID 做主键会导致跨平台聚合、去重和回显都很难统一。 设计思路 定义平台无关的统一商品实体，如 UufindProduct ，作为内部主标识 各平台原始商品通过关联表映射到统一实体，例如记录平台类型、平台商品 ID、店铺信息和同步状…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>UUFind 的跨平台商品统一标识是怎么设计的？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>UUFind 的跨平台商品统一标识是怎么设计的？</span>
+  </nav>
+
+  <article class="question">
+    <h1>UUFind 的跨平台商品统一标识是怎么设计的？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>问题背景</h4>
+<p>1688、淘宝、Shopify 等平台的商品 ID 体系不同，直接拿原始平台 ID 做主键会导致跨平台聚合、去重和回显都很难统一。</p>
+<h4>设计思路</h4>
+<ul>
+<li>定义平台无关的统一商品实体，如 <code>UufindProduct</code>，作为内部主标识</li>
+<li>各平台原始商品通过关联表映射到统一实体，例如记录平台类型、平台商品 ID、店铺信息和同步状态</li>
+<li>查询时优先命中统一实体，再按平台信息回查原始详情，实现聚合展示和二次加工</li>
+</ul>
+<h4>好处</h4>
+<ul>
+<li>同一商品可以挂多个来源，方便做比价、聚合和去重</li>
+<li>上层业务不需要关心各平台字段差异，只依赖统一模型</li>
+<li>后续新增平台时，只要新增映射层，不需要改核心业务模型</li>
+</ul>
+<div class="project-link">简历关联：UUFind 通过统一商品标识模型，把多平台原始商品映射到同一业务实体，支撑聚合检索和数据治理。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./prompt-engineering-few-shot-chain-of-q-10vccg3.html">Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</a></li>
+      <li><a href="./llm-rag-q-gebpar.html">LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？</a></li>
+      <li><a href="./ai-v-llm-tgi-triton-q-1xgzadm.html">AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？</a></li>
+      <li><a href="./dify-lang-chain-ai-q-ewu3mp.html">Dify 和 LangChain 这类 AI 应用开发框架有什么区别？怎么选？</a></li>
+      <li><a href="./lang-chain-chain-agent-tool-memory-q-o9wizi.html">LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="执行规则 LIFO（后进先出） ：多个 defer 按栈顺序逆序执行 defer 的参数在 注册时求值 ，而非执行时 defer 在 return 之后、函数真正返回之前执行（可修改命名返回值） panic/recover 机制 func safeCall() (err error) { defer func() {…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-defer-defer-panic-recover-q-yws6gn.html">
+<meta property="og:title" content="Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？ - Go 后端面试题库">
+<meta property="og:description" content="执行规则 LIFO（后进先出） ：多个 defer 按栈顺序逆序执行 defer 的参数在 注册时求值 ，而非执行时 defer 在 return 之后、函数真正返回之前执行（可修改命名返回值） panic/recover 机制 func safeCall() (err error) { defer func() {…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-defer-defer-panic-recover-q-yws6gn.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？ - Go 后端面试题库">
+<meta name="twitter:description" content="执行规则 LIFO（后进先出） ：多个 defer 按栈顺序逆序执行 defer 的参数在 注册时求值 ，而非执行时 defer 在 return 之后、函数真正返回之前执行（可修改命名返回值） panic/recover 机制 func safeCall() (err error) { defer func() {…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>执行规则</h4>
+<ul>
+<li><b>LIFO（后进先出）</b>：多个 defer 按栈顺序逆序执行</li>
+<li>defer 的参数在 <b>注册时求值</b>，而非执行时</li>
+<li>defer 在 <code>return</code> 之后、函数真正返回之前执行（可修改命名返回值）</li>
+</ul>
+<h4>panic/recover 机制</h4>
+<pre><code>func safeCall() (err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("panic recovered: %v", r)
+            // 记录堆栈: debug.Stack()
+        }
+    }()
+    riskyOperation()
+    return nil
+}</code></pre>
+<ul>
+<li><code>panic</code> 触发后，当前函数停止执行，按 LIFO 执行已注册的 defer</li>
+<li><code>recover</code> 只能在 defer 函数中生效，捕获 panic 值并恢复正常流程</li>
+<li>recover 后函数返回零值（除非使用命名返回值在 defer 中赋值）</li>
+</ul>
+<div class="key-point">经典陷阱：<code>defer f.Close()</code> 如果 f 为 nil 会 panic。应先判断 err 再 defer</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-gc-stw-q-11rk16a.html">Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</a></li>
+      <li><a href="./go-sync-map-map-mutex-q-1cw0vwp.html">Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？</a></li>
+      <li><a href="./errgroup-q-7hw7o6.html">errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</a></li>
+      <li><a href="./go-plugin-so-q-1f99wc9.html">Go Plugin (.so) 热加载的原理、限制和你的实践？</a></li>
+      <li><a href="./go-wait-group-q-16gf8u3.html">Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

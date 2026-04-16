@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三层模型 Plan（套餐） ：Free / Pro / Enterprise，定义在配置中，运行时通过 planCatalogSource() 加载 Quota（配额） ：每个套餐定义资源上限，如 ProductMax 、 CustomDomainMax 、 ThemeInstallMax 、 EmployeeMax…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/capability-assert-q-123b1zo.html">
+<meta property="og:title" content="Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？ - Go 后端面试题库">
+<meta property="og:description" content="三层模型 Plan（套餐） ：Free / Pro / Enterprise，定义在配置中，运行时通过 planCatalogSource() 加载 Quota（配额） ：每个套餐定义资源上限，如 ProductMax 、 CustomDomainMax 、 ThemeInstallMax 、 EmployeeMax…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/capability-assert-q-123b1zo.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？ - Go 后端面试题库">
+<meta name="twitter:description" content="三层模型 Plan（套餐） ：Free / Pro / Enterprise，定义在配置中，运行时通过 planCatalogSource() 加载 Quota（配额） ：每个套餐定义资源上限，如 ProductMax 、 CustomDomainMax 、 ThemeInstallMax 、 EmployeeMax…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三层模型</h4>
+<ul>
+<li><b>Plan（套餐）</b>：Free / Pro / Enterprise，定义在配置中，运行时通过 <code>planCatalogSource()</code> 加载</li>
+<li><b>Quota（配额）</b>：每个套餐定义资源上限，如 <code>ProductMax</code>、<code>CustomDomainMax</code>、<code>ThemeInstallMax</code>、<code>EmployeeMax</code>，-1 表示无限制</li>
+<li><b>Feature（功能开关）</b>：布尔开关控制高级功能是否可用，如 <code>RecoveryEnabled</code>（营销召回）</li>
+</ul>
+<h4>什么是 Assert 模式</h4>
+<p>Assert 模式的语义类似断言：<b>"断言当前操作在配额范围内，否则中断"</b>。在需要校验配额的业务代码点，主动调用 Assert 方法拦截。</p>
+<pre><code>// 创建商品前校验商品配额
+func (s *ProductService) Create(ctx context.Context, input ProductInput) error {
+    if err := capability.AssertProductLimit(ctx, s.db, 1); err != nil {
+        return err // 超出套餐商品数上限，拦截创建
+    }
+    // ... 正常创建逻辑
+}
+
+// Assert 内部实现
+func AssertProductLimit(ctx context.Context, db *gorm.DB, incoming int) error {
+    plan := loadStorePlan(ctx, db)       // 加载当前店铺套餐快照
+    used := countProducts(ctx, db)       // 查询实际已用数量
+    limit := plan.Quota.ProductMax       // 获取配额上限
+    if limit != -1 && used+incoming > limit {
+        log.Warn("product limit exceeded", "source", "product.create", "used", used, "limit", limit)
+        return ErrQuotaExceeded
+    }
+    return nil
+}</code></pre>
+<h4>为什么不用统一中间件拦截</h4>
+<ul>
+<li><b>校验时机不同</b>：创建商品、绑定域名、触发召回任务发生在完全不同的业务入口，统一中间件无法知道当前请求涉及哪种资源操作</li>
+<li><b>调用点明确</b>：Assert 嵌入具体业务代码中，每个方法都带 <code>source</code> 参数（如 <code>product.create</code>、<code>domain.bindCustom</code>），日志里一眼就能追踪是哪个入口触发的</li>
+<li><b>精确校验</b>：中间件只能做"有没有权限"的粗粒度判断，Assert 可以做"当前余量够不够"的增量校验</li>
+</ul>
+<h4>Assert 模式 vs 常见替代方案</h4>
+<table>
+<tr><th>方案</th><th>适用场景</th><th>不适用场景</th></tr>
+<tr><td>Assert 模式（本项目）</td><td>资源配额校验、增量判断、校验时机分散</td><td>统一的角色权限控制</td></tr>
+<tr><td>RBAC 中间件</td><td>角色权限校验（管理员/普通用户）</td><td>资源余量判断（它只知道角色，不知道数量）</td></tr>
+<tr><td>装饰器/AOP</td><td>统一的横切关注点（日志、鉴权）</td><td>每个校验点逻辑不同的场景</td></tr>
+</table>
+<h4>套餐降级后超限怎么处理</h4>
+<ul>
+<li>采用<b>"存量不删、增量拦截"</b>策略：降级后已有的商品、域名、模板不会被自动删除（避免数据丢失），但新增操作会被 Assert 拦截</li>
+<li>前端通过 <code>Current()</code> 接口获取实时配额信息（已用/剩余/上限），展示升级引导</li>
+</ul>
+<div class="project-link">简历关联：Shoply 的套餐系统采用 Plan + Quota + Feature 三层模型，并通过 Assert 模式做增量拦截。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./uu-find-q-esz930.html">UUFind 的跨平台商品统一标识是怎么设计的？</a></li>
+      <li><a href="./prompt-engineering-few-shot-chain-of-q-10vccg3.html">Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</a></li>
+      <li><a href="./llm-rag-q-gebpar.html">LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？</a></li>
+      <li><a href="./ai-v-llm-tgi-triton-q-1xgzadm.html">AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？</a></li>
+      <li><a href="./dify-lang-chain-ai-q-ewu3mp.html">Dify 和 LangChain 这类 AI 应用开发框架有什么区别？怎么选？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心原因 Go 负责高并发、长连接、任务调度和网关层，适合扛流量和做基础设施能力 PHP 负责插件系统、动态业务逻辑和电商场景下快速迭代，生态成熟、业务团队改动成本低 为什么不是纯 Go 纯 Go 当然能做，但会推高业务改造成本，尤其是已有 PHP 插件和后台逻辑已经很重的时候 混合架构的目标不是追求技术纯度，而是在性…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-php-go-q-1logdyo.html">
+<meta property="og:title" content="为什么选择 Go + PHP 混合架构而不是纯 Go？ - Go 后端面试题库">
+<meta property="og:description" content="核心原因 Go 负责高并发、长连接、任务调度和网关层，适合扛流量和做基础设施能力 PHP 负责插件系统、动态业务逻辑和电商场景下快速迭代，生态成熟、业务团队改动成本低 为什么不是纯 Go 纯 Go 当然能做，但会推高业务改造成本，尤其是已有 PHP 插件和后台逻辑已经很重的时候 混合架构的目标不是追求技术纯度，而是在性…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-php-go-q-1logdyo.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="为什么选择 Go + PHP 混合架构而不是纯 Go？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心原因 Go 负责高并发、长连接、任务调度和网关层，适合扛流量和做基础设施能力 PHP 负责插件系统、动态业务逻辑和电商场景下快速迭代，生态成熟、业务团队改动成本低 为什么不是纯 Go 纯 Go 当然能做，但会推高业务改造成本，尤其是已有 PHP 插件和后台逻辑已经很重的时候 混合架构的目标不是追求技术纯度，而是在性…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>为什么选择 Go + PHP 混合架构而不是纯 Go？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>为什么选择 Go + PHP 混合架构而不是纯 Go？</span>
+  </nav>
+
+  <article class="question">
+    <h1>为什么选择 Go + PHP 混合架构而不是纯 Go？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>核心原因</h4>
+<ul>
+<li><b>Go</b> 负责高并发、长连接、任务调度和网关层，适合扛流量和做基础设施能力</li>
+<li><b>PHP</b> 负责插件系统、动态业务逻辑和电商场景下快速迭代，生态成熟、业务团队改动成本低</li>
+</ul>
+<h4>为什么不是纯 Go</h4>
+<ul>
+<li>纯 Go 当然能做，但会推高业务改造成本，尤其是已有 PHP 插件和后台逻辑已经很重的时候</li>
+<li>混合架构的目标不是追求技术纯度，而是在性能、迭代速度和迁移成本之间取平衡</li>
+</ul>
+<h4>落地方式</h4>
+<p>系统采用 Go 作为高性能网关层，PHP 作为灵活业务层，通过 RPC 桥接。这样既能利用 Go 的并发性能，又能保留 PHP 生态对电商插件和模板体系的支持。</p>
+<div class="project-link">简历关联：Shoply 采用 Go + PHP 双引擎架构，Go 侧承接性能敏感链路，PHP 侧承接高频业务迭代。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./checkout-q-1mw1c5q.html">Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</a></li>
+      <li><a href="./capability-assert-q-123b1zo.html">Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</a></li>
+      <li><a href="./uu-find-q-esz930.html">UUFind 的跨平台商品统一标识是怎么设计的？</a></li>
+      <li><a href="./prompt-engineering-few-shot-chain-of-q-10vccg3.html">Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</a></li>
+      <li><a href="./llm-rag-q-gebpar.html">LLM 应用里的 RAG 架构是什么？为什么它常常比直接长上下文更实用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

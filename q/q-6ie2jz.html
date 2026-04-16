@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="缓存穿透 查询一个 不存在 的数据，缓存和 DB 都没有，每次请求都打到 DB 解决：(1) 缓存空值/空对象（设较短 TTL） (2) 布隆过滤器 前置拦截 缓存击穿 热点 key 过期 的瞬间，大量并发请求同时打到 DB 解决：(1) singleflight 合并并发请求，只有一个去查 DB (2) 互斥锁（Re…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-6ie2jz.html">
+<meta property="og:title" content="缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？ - Go 后端面试题库">
+<meta property="og:description" content="缓存穿透 查询一个 不存在 的数据，缓存和 DB 都没有，每次请求都打到 DB 解决：(1) 缓存空值/空对象（设较短 TTL） (2) 布隆过滤器 前置拦截 缓存击穿 热点 key 过期 的瞬间，大量并发请求同时打到 DB 解决：(1) singleflight 合并并发请求，只有一个去查 DB (2) 互斥锁（Re…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-6ie2jz.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？ - Go 后端面试题库">
+<meta name="twitter:description" content="缓存穿透 查询一个 不存在 的数据，缓存和 DB 都没有，每次请求都打到 DB 解决：(1) 缓存空值/空对象（设较短 TTL） (2) 布隆过滤器 前置拦截 缓存击穿 热点 key 过期 的瞬间，大量并发请求同时打到 DB 解决：(1) singleflight 合并并发请求，只有一个去查 DB (2) 互斥锁（Re…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？</span>
+  </nav>
+
+  <article class="question">
+    <h1>缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>缓存穿透</h4>
+<p>查询一个<b>不存在</b>的数据，缓存和 DB 都没有，每次请求都打到 DB</p>
+<ul>
+<li>解决：(1) 缓存空值/空对象（设较短 TTL） (2) <b>布隆过滤器</b>前置拦截</li>
+</ul>
+<h4>缓存击穿</h4>
+<p><b>热点 key 过期</b>的瞬间，大量并发请求同时打到 DB</p>
+<ul>
+<li>解决：(1) <b>singleflight</b> 合并并发请求，只有一个去查 DB (2) 互斥锁（Redis SETNX）(3) 热点 key 永不过期 + 异步更新</li>
+</ul>
+<h4>缓存雪崩</h4>
+<p>大量 key <b>同时过期</b>或 Redis 宕机，请求全部打到 DB</p>
+<ul>
+<li>解决：(1) 过期时间加<b>随机偏移</b> (2) Redis 集群高可用 (3) 本地缓存兜底 (4) 限流降级</li>
+</ul>
+<div class="project-link">简历关联：你的 go-cache 适配器支持 Redis/Badger/File 三后端，可实现多级缓存兜底策略</div>
+<div class="key-point">三者的核心区别：穿透是数据不存在，击穿是热点过期，雪崩是大面积失效。面试时先一句话概括再展开。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./asynq-q-18vz82y.html">Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？</a></li>
+      <li><a href="./redis-q-x046rc.html">Redis 分布式锁怎么实现？有什么陷阱？</a></li>
+      <li><a href="./q-1l47aze.html">缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？</a></li>
+      <li><a href="./redis-q-sheogy.html">Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？</a></li>
+      <li><a href="./redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

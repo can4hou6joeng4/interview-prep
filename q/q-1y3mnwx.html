@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="浮点数问题 // 经典陷阱 0.1 + 0.2 = 0.30000000000000004 // 金融场景绝不能用 float 你的双轨金额方案 type OrderAmount struct { // 基础币种（商品原始币种，如 CNY） SubtotalPrice decimal.Decimal // 小计 Tot…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1y3mnwx.html">
+<meta property="og:title" content="跨境电商中多币种金额精度问题怎么解决？ - Go 后端面试题库">
+<meta property="og:description" content="浮点数问题 // 经典陷阱 0.1 + 0.2 = 0.30000000000000004 // 金融场景绝不能用 float 你的双轨金额方案 type OrderAmount struct { // 基础币种（商品原始币种，如 CNY） SubtotalPrice decimal.Decimal // 小计 Tot…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1y3mnwx.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="跨境电商中多币种金额精度问题怎么解决？ - Go 后端面试题库">
+<meta name="twitter:description" content="浮点数问题 // 经典陷阱 0.1 + 0.2 = 0.30000000000000004 // 金融场景绝不能用 float 你的双轨金额方案 type OrderAmount struct { // 基础币种（商品原始币种，如 CNY） SubtotalPrice decimal.Decimal // 小计 Tot…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>跨境电商中多币种金额精度问题怎么解决？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>跨境电商中多币种金额精度问题怎么解决？</span>
+  </nav>
+
+  <article class="question">
+    <h1>跨境电商中多币种金额精度问题怎么解决？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>浮点数问题</h4>
+<pre><code>// 经典陷阱
+0.1 + 0.2 = 0.30000000000000004
+// 金融场景绝不能用 float</code></pre>
+<h4>你的双轨金额方案</h4>
+<pre><code>type OrderAmount struct {
+    // 基础币种（商品原始币种，如 CNY）
+    SubtotalPrice decimal.Decimal  // 小计
+    TotalPrice    decimal.Decimal  // 总价
+    PayPrice      decimal.Decimal  // 实付
+
+    // 结算币种（用户支付币种，如 USD）
+    SettleSubtotalPrice decimal.Decimal
+    SettleTotalPrice    decimal.Decimal
+    SettlePayPrice      decimal.Decimal
+
+    ExchangeRate decimal.Decimal   // 下单时锁定汇率
+    BaseCurrency string            // "CNY"
+    SettleCurrency string          // "USD"
+}</code></pre>
+<h4>关键设计</h4>
+<ul>
+<li>使用 <code>shopspring/decimal</code> 库，避免浮点精度丢失</li>
+<li>下单时<b>锁定汇率快照</b>，退款时按原汇率计算，不受汇率波动影响</li>
+<li>DB 中用 <code>DECIMAL(20,4)</code> 存储，Go 中全程 decimal 运算</li>
+<li>Checkout 时生成商品快照和地址快照，确保支付时数据不变</li>
+</ul>
+<div class="key-point">核心原则：永远不用 float 算钱。用最小货币单位（分）的整数运算，或用 decimal 库。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./webhook-q-15z7zx.html">支付系统如何保证幂等性？Webhook 重复回调怎么处理？</a></li>
+      <li><a href="./q-ro9kaq.html">优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？</a></li>
+      <li><a href="./q-1bwu8at.html">为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？</a></li>
+      <li><a href="./q-wf1rul.html">工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？</a></li>
+      <li><a href="./wms-tms-q-tms1wm.html">跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

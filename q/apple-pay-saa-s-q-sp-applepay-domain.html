@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Apple Pay 域名验证流程 域名注册 API ：后台调用 PayPal Apple Pay 域名注册接口，传入商户域名 校验文件托管 ：Apple 访问 https://{domain}/.well-known/apple-developer-merchantid-domain-association 验证域名所…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/apple-pay-saa-s-q-sp-applepay-domain.html">
+<meta property="og:title" content="Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？ - Go 后端面试题库">
+<meta property="og:description" content="Apple Pay 域名验证流程 域名注册 API ：后台调用 PayPal Apple Pay 域名注册接口，传入商户域名 校验文件托管 ：Apple 访问 https://{domain}/.well-known/apple-developer-merchantid-domain-association 验证域名所…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/apple-pay-saa-s-q-sp-applepay-domain.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？ - Go 后端面试题库">
+<meta name="twitter:description" content="Apple Pay 域名验证流程 域名注册 API ：后台调用 PayPal Apple Pay 域名注册接口，传入商户域名 校验文件托管 ：Apple 访问 https://{domain}/.well-known/apple-developer-merchantid-domain-association 验证域名所…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>Apple Pay 域名验证流程</h4>
+<ol>
+<li><b>域名注册 API</b>：后台调用 PayPal Apple Pay 域名注册接口，传入商户域名</li>
+<li><b>校验文件托管</b>：Apple 访问 <code>https://{domain}/.well-known/apple-developer-merchantid-domain-association</code> 验证域名所有权</li>
+<li><b>动态路由代理</b>：Go 层通过动态路由将 .well-known 路径映射到文件解析服务</li>
+<li><b>状态管理</b>：注册状态存入 Payment 配置的 <code>paymentMethods.PayPal_APPLEPAY</code> 字段</li>
+</ol>
+<h4>SaaS 多租户兼容</h4>
+<ul>
+<li>每个店铺可绑定不同的自定义域名，每个域名需要<b>独立注册</b></li>
+<li>域名标准化处理：去协议头、去端口、去路径、转小写</li>
+<li>实现涉及 go-fast（路由代理）+ go-shoply（注册 API + 配置管理）+ Shoply-admin（前端配置页）三层协作</li>
+</ul>
+<div class="project-link">简历关联：Apple Pay 域名注册与校验文件托管全链路</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-pay1bas.html">支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？</a></li>
+      <li><a href="./q-atv685.html">你对接了 4 种支付网关，统一抽象层是怎么设计的？</a></li>
+      <li><a href="./q-k0d4gn.html">订单状态机如何设计？主子订单拆分架构怎么处理退款？</a></li>
+      <li><a href="./q-1y3mnwx.html">跨境电商中多币种金额精度问题怎么解决？</a></li>
+      <li><a href="./webhook-q-15z7zx.html">支付系统如何保证幂等性？Webhook 重复回调怎么处理？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

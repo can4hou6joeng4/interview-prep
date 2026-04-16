@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="覆盖 Go 语言核心 的 21 道面试题，包括 easy 5 / medium 10 / hard 6。">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/c/go-core.html">
+<meta property="og:title" content="Go 语言核心 面试题汇总（21 题） - Go 后端面试题库">
+<meta property="og:description" content="覆盖 Go 语言核心 的 21 道面试题，包括 easy 5 / medium 10 / hard 6。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/c/go-core.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 语言核心 面试题汇总（21 题） - Go 后端面试题库">
+<meta name="twitter:description" content="覆盖 Go 语言核心 的 21 道面试题，包括 easy 5 / medium 10 / hard 6。">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 语言核心 面试题汇总（21 题） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="category">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <span>Go 语言核心</span>
+  </nav>
+
+  <header class="cat-header">
+    <h1>Go 语言核心</h1>
+    <p class="summary">21 题 · easy 5 · medium 10 · hard 6</p>
+  </header>
+
+  <section class="list">
+    <h2>easy · 5 题</h2>
+    <ol class="cat-list">
+      <li><a href="../q/goroutine-gmp-g-m-p-q-q1rk0k.html">Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？</a></li>
+      <li><a href="../q/go-channel-channel-q-1uwipet.html">Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</a></li>
+      <li><a href="../q/go-defer-defer-panic-recover-q-yws6gn.html">Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</a></li>
+      <li><a href="../q/go-goroutine-q-1cuk3uh.html">为什么 Go 里要用 goroutine，而不是线程？</a></li>
+      <li><a href="../q/go-java-go-error-try-catch-q-ueisf2.html">Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</a></li>
+    </ol>
+    <h2>medium · 10 题</h2>
+    <ol class="cat-list">
+      <li><a href="../q/go-interface-q-1v8drm9.html">Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</a></li>
+      <li><a href="../q/go-gc-stw-q-11rk16a.html">Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</a></li>
+      <li><a href="../q/go-sync-map-map-mutex-q-1cw0vwp.html">Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？</a></li>
+      <li><a href="../q/go-wait-group-q-16gf8u3.html">Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</a></li>
+      <li><a href="../q/select-case-for-select-q-m0larr.html">select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</a></li>
+      <li><a href="../q/go-q-u7zuhe.html">Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</a></li>
+      <li><a href="../q/goroutine-q-ha99tv.html">Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</a></li>
+      <li><a href="../q/java-go-q-3jsw8b.html">从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</a></li>
+      <li><a href="../q/go-java-goroutine-vs-channel-vs-q-dbi34y.html">Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</a></li>
+      <li><a href="../q/go-java-gc-q-5cwrb2.html">Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</a></li>
+    </ol>
+    <h2>hard · 6 题</h2>
+    <ol class="cat-list">
+      <li><a href="../q/go-reflect-go-cache-reflect-redis-q-1dumk95.html">Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</a></li>
+      <li><a href="../q/errgroup-q-7hw7o6.html">errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</a></li>
+      <li><a href="../q/go-plugin-so-q-1f99wc9.html">Go Plugin (.so) 热加载的原理、限制和你的实践？</a></li>
+      <li><a href="../q/sync-map-q-1arld6w.html">sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</a></li>
+      <li><a href="../q/go-net-http-fasthttp-gnet-q-sut1qe.html">Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</a></li>
+      <li><a href="../q/gmp-i-o-netpoller-hand-off-q-wfdrom.html">GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</a></li>
+    </ol>
+  </section>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">在 SPA 中学习本分类</a>
+    <a class="cta-btn" href="../index.html">返回首页</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a>
+  </footer>
+</main>
+</body>
+</html>

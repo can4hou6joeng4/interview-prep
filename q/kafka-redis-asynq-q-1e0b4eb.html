@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="对比 特性 Kafka Asynq (Redis) 定位 分布式事件流平台 异步任务队列 消息保留 持久化，可重复消费 处理完即删除 吞吐量 百万级/秒 万级/秒 消费模式 发布/订阅 + Consumer Group 竞争消费 延时任务 不原生支持 原生支持 (ProcessIn) 运维复杂度 高（ZK/KRaft…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/kafka-redis-asynq-q-1e0b4eb.html">
+<meta property="og:title" content="Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？ - Go 后端面试题库">
+<meta property="og:description" content="对比 特性 Kafka Asynq (Redis) 定位 分布式事件流平台 异步任务队列 消息保留 持久化，可重复消费 处理完即删除 吞吐量 百万级/秒 万级/秒 消费模式 发布/订阅 + Consumer Group 竞争消费 延时任务 不原生支持 原生支持 (ProcessIn) 运维复杂度 高（ZK/KRaft…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/kafka-redis-asynq-q-1e0b4eb.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？ - Go 后端面试题库">
+<meta name="twitter:description" content="对比 特性 Kafka Asynq (Redis) 定位 分布式事件流平台 异步任务队列 消息保留 持久化，可重复消费 处理完即删除 吞吐量 百万级/秒 万级/秒 消费模式 发布/订阅 + Consumer Group 竞争消费 延时任务 不原生支持 原生支持 (ProcessIn) 运维复杂度 高（ZK/KRaft…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kafka.html">Kafka 消息队列</a> ›
+    <span>Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>对比</h4>
+<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">Kafka</th><th style="text-align:left;padding:6px">Asynq (Redis)</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">定位</td><td style="padding:6px">分布式事件流平台</td><td style="padding:6px">异步任务队列</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">消息保留</td><td style="padding:6px">持久化，可重复消费</td><td style="padding:6px">处理完即删除</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">吞吐量</td><td style="padding:6px">百万级/秒</td><td style="padding:6px">万级/秒</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">消费模式</td><td style="padding:6px">发布/订阅 + Consumer Group</td><td style="padding:6px">竞争消费</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">延时任务</td><td style="padding:6px">不原生支持</td><td style="padding:6px">原生支持 (ProcessIn)</td></tr>
+<tr><td style="padding:6px">运维复杂度</td><td style="padding:6px">高（ZK/KRaft + Broker 集群）</td><td style="padding:6px">低（复用 Redis）</td></tr>
+</table>
+<h4>选型建议</h4>
+<ul>
+<li><b>Kafka</b>：大数据量事件流、日志收集、跨服务事件广播、需要消息回溯</li>
+<li><b>Asynq</b>：后台异步任务（邮件/通知）、定时任务、延时任务、业务量中等</li>
+</ul>
+<div class="project-link">简历关联：你的项目用 Asynq 做营销召回（延时任务场景），如果面试岗位问 Kafka，可以说明为什么当前场景选 Asynq 以及何时该引入 Kafka</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1vkbj6o.html">延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？</a></li>
+      <li><a href="./redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-partition-q-w5vcxz.html">Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-q-13n8aa.html">Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？</a></li>
+      <li><a href="./kafka-consumer-q-rmp1qo.html">Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kafka.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=12">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

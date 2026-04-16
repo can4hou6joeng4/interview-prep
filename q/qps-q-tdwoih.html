@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="这三个问题几乎每场面试都会问 它们考察的不是标准答案，而是你对自己项目的理解深度和反思能力。 QPS 怎么答 如果有监控数据，直接说：日常 QPS XX，峰值 QPS XX，P99 延迟 XXms 如果没有精确数据，按合理估算：日活用户 × 平均请求数 ÷ 活跃时长秒数 关键是能说清 瓶颈在哪 ：是数据库、缓存、还是下…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/qps-q-tdwoih.html">
+<meta property="og:title" content="你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？ - Go 后端面试题库">
+<meta property="og:description" content="这三个问题几乎每场面试都会问 它们考察的不是标准答案，而是你对自己项目的理解深度和反思能力。 QPS 怎么答 如果有监控数据，直接说：日常 QPS XX，峰值 QPS XX，P99 延迟 XXms 如果没有精确数据，按合理估算：日活用户 × 平均请求数 ÷ 活跃时长秒数 关键是能说清 瓶颈在哪 ：是数据库、缓存、还是下…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/qps-q-tdwoih.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="这三个问题几乎每场面试都会问 它们考察的不是标准答案，而是你对自己项目的理解深度和反思能力。 QPS 怎么答 如果有监控数据，直接说：日常 QPS XX，峰值 QPS XX，P99 延迟 XXms 如果没有精确数据，按合理估算：日活用户 × 平均请求数 ÷ 活跃时长秒数 关键是能说清 瓶颈在哪 ：是数据库、缓存、还是下…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>这三个问题几乎每场面试都会问</h4>
+<p>它们考察的不是标准答案，而是你对自己项目的理解深度和反思能力。</p>
+<h4>QPS 怎么答</h4>
+<ul>
+<li>如果有监控数据，直接说：日常 QPS XX，峰值 QPS XX，P99 延迟 XXms</li>
+<li>如果没有精确数据，按合理估算：日活用户 × 平均请求数 ÷ 活跃时长秒数</li>
+<li>关键是能说清<b>瓶颈在哪</b>：是数据库、缓存、还是下游依赖</li>
+<li>不要凭空编大数字，面试官一追问就会穿帮</li>
+</ul>
+<h4>最大技术挑战怎么答（STAR 结构）</h4>
+<ul>
+<li><b>Situation</b>：什么背景下遇到了什么问题</li>
+<li><b>Task</b>：你需要解决什么</li>
+<li><b>Action</b>：你具体做了什么（技术方案 + 为什么选这个方案）</li>
+<li><b>Result</b>：结果如何（最好有量化数据）</li>
+</ul>
+<p>比如：多币种精度问题 → 从 float 迁移到 decimal → 配合残差补偿算法 → 财务对账零差异</p>
+<h4>重新设计会改什么（反思能力）</h4>
+<p>这题答得好会非常加分。可以从以下角度思考：</p>
+<ul>
+<li>当初因为赶工妥协了什么？现在会怎么做？</li>
+<li>哪些模块耦合度太高？会怎么拆？</li>
+<li>哪些技术选型现在看来不是最优？</li>
+<li>监控和可观测性当初做得够不够？</li>
+</ul>
+<div class="key-point">切忌说"我觉得现在设计已经很好了不需要改"——面试官要的是你的反思和成长能力，而不是自满。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-proj-coldhot-optimize.html">冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</a></li>
+      <li><a href="./saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</a></li>
+      <li><a href="./saa-s-q-proj-recovery.html">营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</a></li>
+      <li><a href="./star-q-proj-star-behavior.html">行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</a></li>
+      <li><a href="./ai-claude-code-cursor-codex-q-u76ayt.html">AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

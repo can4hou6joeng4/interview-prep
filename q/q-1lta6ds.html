@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="服务雪崩 服务 A 调用服务 B，B 响应慢 → A 的线程/goroutine 被占满 → A 也变慢 → 调用 A 的 C 也受影响 → 雪崩 三板斧 限流 (Rate Limiting) ：入口处控制流量，超过阈值直接拒绝。防止过载 熔断 (Circuit Breaker) ：检测到下游错误率过高时，暂停调用一段…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1lta6ds.html">
+<meta property="og:title" content="服务雪崩是什么？熔断、降级、限流怎么配合？ - Go 后端面试题库">
+<meta property="og:description" content="服务雪崩 服务 A 调用服务 B，B 响应慢 → A 的线程/goroutine 被占满 → A 也变慢 → 调用 A 的 C 也受影响 → 雪崩 三板斧 限流 (Rate Limiting) ：入口处控制流量，超过阈值直接拒绝。防止过载 熔断 (Circuit Breaker) ：检测到下游错误率过高时，暂停调用一段…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1lta6ds.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="服务雪崩是什么？熔断、降级、限流怎么配合？ - Go 后端面试题库">
+<meta name="twitter:description" content="服务雪崩 服务 A 调用服务 B，B 响应慢 → A 的线程/goroutine 被占满 → A 也变慢 → 调用 A 的 C 也受影响 → 雪崩 三板斧 限流 (Rate Limiting) ：入口处控制流量，超过阈值直接拒绝。防止过载 熔断 (Circuit Breaker) ：检测到下游错误率过高时，暂停调用一段…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>服务雪崩是什么？熔断、降级、限流怎么配合？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>服务雪崩是什么？熔断、降级、限流怎么配合？</span>
+  </nav>
+
+  <article class="question">
+    <h1>服务雪崩是什么？熔断、降级、限流怎么配合？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>服务雪崩</h4>
+<p>服务 A 调用服务 B，B 响应慢 → A 的线程/goroutine 被占满 → A 也变慢 → 调用 A 的 C 也受影响 → 雪崩</p>
+<h4>三板斧</h4>
+<ul>
+<li><b>限流 (Rate Limiting)</b>：入口处控制流量，超过阈值直接拒绝。防止过载</li>
+<li><b>熔断 (Circuit Breaker)</b>：检测到下游错误率过高时，暂停调用一段时间（快速失败），避免无效重试。状态：Closed → Open → Half-Open</li>
+<li><b>降级 (Fallback)</b>：熔断后返回兜底数据（缓存数据/默认值），而非直接报错</li>
+</ul>
+<pre><code>// Go 熔断器（简化版）
+type CircuitBreaker struct {
+    failures    int
+    threshold   int       // 连续失败 N 次后熔断
+    state       string    // closed / open / half-open
+    lastFailure time.Time
+    cooldown    time.Duration
+}
+
+func (cb *CircuitBreaker) Call(fn func() error) error {
+    if cb.state == "open" {
+        if time.Since(cb.lastFailure) > cb.cooldown {
+            cb.state = "half-open" // 试探一次
+        } else {
+            return ErrCircuitOpen // 快速失败
+        }
+    }
+    err := fn()
+    if err != nil {
+        cb.failures++
+        cb.lastFailure = time.Now()
+        if cb.failures >= cb.threshold { cb.state = "open" }
+        return err
+    }
+    cb.failures = 0
+    cb.state = "closed"
+    return nil
+}</code></pre>
+<div class="key-point">岗位关联：腾讯赛事平台要求「高可用系统设计经验」，熔断+降级+限流是核心考点</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-pprof-trace-benchmark-q-94lt8t.html">Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</a></li>
+      <li><a href="./q-6ao1y7.html">性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</a></li>
+      <li><a href="./redis-key-key-q-es6a6z.html">Redis 热点 Key 和大 Key 怎么治理？</a></li>
+      <li><a href="./my-sql-q-1sde06e.html">MySQL 慢查询定位和优化的完整流程？</a></li>
+      <li><a href="./q-vszs02.html">线上接口响应变慢，系统化排查思路是什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

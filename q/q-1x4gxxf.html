@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="游客订单归户 用户未登录时以游客身份（visitorId，通常存在 Cookie/localStorage）浏览、加购、甚至下单。用户登录/注册后，需要将游客期间的数据归属到用户账号 func MergeVisitorData(userId uint, visitorId string) error { // 1. 合…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1x4gxxf.html">
+<meta property="og:title" content="「游客订单归户」是什么？购物车串单问题怎么解决的？ - Go 后端面试题库">
+<meta property="og:description" content="游客订单归户 用户未登录时以游客身份（visitorId，通常存在 Cookie/localStorage）浏览、加购、甚至下单。用户登录/注册后，需要将游客期间的数据归属到用户账号 func MergeVisitorData(userId uint, visitorId string) error { // 1. 合…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1x4gxxf.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="「游客订单归户」是什么？购物车串单问题怎么解决的？ - Go 后端面试题库">
+<meta name="twitter:description" content="游客订单归户 用户未登录时以游客身份（visitorId，通常存在 Cookie/localStorage）浏览、加购、甚至下单。用户登录/注册后，需要将游客期间的数据归属到用户账号 func MergeVisitorData(userId uint, visitorId string) error { // 1. 合…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>「游客订单归户」是什么？购物车串单问题怎么解决的？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>「游客订单归户」是什么？购物车串单问题怎么解决的？</span>
+  </nav>
+
+  <article class="question">
+    <h1>「游客订单归户」是什么？购物车串单问题怎么解决的？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>游客订单归户</h4>
+<p>用户未登录时以游客身份（visitorId，通常存在 Cookie/localStorage）浏览、加购、甚至下单。用户登录/注册后，需要将游客期间的数据归属到用户账号</p>
+<pre><code>func MergeVisitorData(userId uint, visitorId string) error {
+    // 1. 合并购物车
+    visitorCart := getCartByVisitorId(visitorId)
+    userCart := getCartByUserId(userId)
+    mergedCart := mergeCartItems(userCart, visitorCart)
+    saveCart(userId, mergedCart)
+
+    // 2. 关联历史订单
+    db.Model(&Order{}).
+        Where("visitor_id = ? AND user_id = 0", visitorId).
+        Update("user_id", userId)
+
+    // 3. 清理游客数据
+    deleteVisitorCart(visitorId)
+    return nil
+}</code></pre>
+<h4>购物车串单问题</h4>
+<p>场景：游客 A 和游客 B 在同一浏览器（如公用电脑），购物车勾选列表可能串到另一个人</p>
+<pre><code>// 问题根因：勾选状态存在 Redis，key 只用了 visitorId
+// 但 visitorId 的 Cookie 可能被多人共享
+
+// 解决方案：
+// 1. 勾选列表绑定 session（而非 visitorId）
+// 2. 登录后立即清除游客态的勾选状态
+// 3. 切换用户时重置购物车勾选
+func (c *CartService) GetCheckedItems(ctx context.Context) []CartItem {
+    sessionId := getSessionId(ctx)  // 绑定 session 而非 visitor
+    checkedIds := redis.SMembers("cart_checked:" + sessionId)
+    return filterByIds(c.GetAll(ctx), checkedIds)
+}</code></pre>
+<div class="project-link">简历关联：通过 visitorId 透传完成登录注册后历史订单与购物车的自动关联，并解决购物车勾选列表游客串单问题</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-2mq2hq.html">第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</a></li>
+      <li><a href="./go-storage-io-read-seeker-q-1dqlfpk.html">请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</a></li>
+      <li><a href="./ai-agent-q-teeahw.html">你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</a></li>
+      <li><a href="./go-php-go-q-1logdyo.html">为什么选择 Go + PHP 混合架构而不是纯 Go？</a></li>
+      <li><a href="./checkout-q-1mw1c5q.html">Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

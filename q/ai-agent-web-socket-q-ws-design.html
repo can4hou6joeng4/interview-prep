@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="连接管理 每个 WebSocket 连接绑定 userId + sessionId ，用 sync.Map 维护在线连接池 同一用户允许多个连接（多 tab 页），通过 sessionId 区分 连接建立时注册到连接池，断开时自动清理 心跳保活 服务端每 30 秒发送 Ping 帧，客户端响应 Pong 超过 60 秒…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-agent-web-socket-q-ws-design.html">
+<meta property="og:title" content="AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="连接管理 每个 WebSocket 连接绑定 userId + sessionId ，用 sync.Map 维护在线连接池 同一用户允许多个连接（多 tab 页），通过 sessionId 区分 连接建立时注册到连接池，断开时自动清理 心跳保活 服务端每 30 秒发送 Ping 帧，客户端响应 Pong 超过 60 秒…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-agent-web-socket-q-ws-design.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="连接管理 每个 WebSocket 连接绑定 userId + sessionId ，用 sync.Map 维护在线连接池 同一用户允许多个连接（多 tab 页），通过 sessionId 区分 连接建立时注册到连接池，断开时自动清理 心跳保活 服务端每 30 秒发送 Ping 帧，客户端响应 Pong 超过 60 秒…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>连接管理</h4>
+<ul>
+<li>每个 WebSocket 连接绑定 <code>userId</code> + <code>sessionId</code>，用 <code>sync.Map</code> 维护在线连接池</li>
+<li>同一用户允许多个连接（多 tab 页），通过 sessionId 区分</li>
+<li>连接建立时注册到连接池，断开时自动清理</li>
+</ul>
+<h4>心跳保活</h4>
+<ul>
+<li>服务端每 30 秒发送 Ping 帧，客户端响应 Pong</li>
+<li>超过 60 秒未收到 Pong 则主动断开连接，释放资源</li>
+<li>为什么服务端主动 Ping 而不是客户端：服务端需要及时感知僵尸连接并释放资源，依赖客户端不可靠</li>
+</ul>
+<h4>多任务隔离</h4>
+<ul>
+<li>每个 AI 异步任务（文章生成、SEO 优化）有独立的 <code>taskId</code></li>
+<li>推送消息格式：<code>{taskId, status, data}</code>，前端按 taskId 路由到对应的 UI 组件</li>
+<li>任务完成/失败后不再推送该 taskId 的消息，避免过期数据干扰</li>
+</ul>
+<h4>断线重连</h4>
+<ul>
+<li>前端实现指数退避重连：1s → 2s → 4s → 8s → 最大 30s</li>
+<li>重连后服务端推送该用户所有进行中任务的最新状态快照，前端无需刷新页面即可恢复</li>
+</ul>
+<div class="project-link">简历关联：Shoply AI Agent 模块通过 WebSocket 实时推送任务状态，支持多任务并行、断线状态恢复</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</a></li>
+      <li><a href="./go-storage-storage-oss-sdk-q-storage-adapter.html">go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</a></li>
+      <li><a href="./saa-s-jwt-rsa-session-q-jwt-vs-session.html">SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</a></li>
+      <li><a href="./json-rpc-http-api-rpc-http-q-rpc-vs-http.html">项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</a></li>
+      <li><a href="./go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

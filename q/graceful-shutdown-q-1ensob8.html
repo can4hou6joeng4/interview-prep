@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心步骤 func main() { // 1. 启动服务 srv := startServer() // 2. 监听信号 quit := make(chan os.Signal, 1) signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM) 关键点 超时保护 必须有，…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/graceful-shutdown-q-1ensob8.html">
+<meta property="og:title" content="如何设计一个优雅关机 (Graceful Shutdown) 方案？ - Go 后端面试题库">
+<meta property="og:description" content="核心步骤 func main() { // 1. 启动服务 srv := startServer() // 2. 监听信号 quit := make(chan os.Signal, 1) signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM) 关键点 超时保护 必须有，…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/graceful-shutdown-q-1ensob8.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="如何设计一个优雅关机 (Graceful Shutdown) 方案？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心步骤 func main() { // 1. 启动服务 srv := startServer() // 2. 监听信号 quit := make(chan os.Signal, 1) signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM) 关键点 超时保护 必须有，…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>如何设计一个优雅关机 (Graceful Shutdown) 方案？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>如何设计一个优雅关机 (Graceful Shutdown) 方案？</span>
+  </nav>
+
+  <article class="question">
+    <h1>如何设计一个优雅关机 (Graceful Shutdown) 方案？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>核心步骤</h4>
+<pre><code>func main() {
+    // 1. 启动服务
+    srv := startServer()
+
+    // 2. 监听信号
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    // 3. 超时保护
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    // 4. 按依赖顺序关闭（与启动顺序相反）
+    g, ctx := errgroup.WithContext(ctx)
+
+    // 4.1 先停止接收新请求
+    g.Go(func() error { return srv.ShutdownWithContext(ctx) })
+
+    // 4.2 等待异步任务完成
+    g.Go(func() error { return asynqSrv.Shutdown() })
+
+    // 4.3 关闭消息队列消费者
+    g.Go(func() error { return listener.Close() })
+
+    if err := g.Wait(); err != nil {
+        log.Error("shutdown error", err)
+    }
+
+    // 5. 最后关闭基础设施（DB/Redis）
+    db.Close()
+    rdb.Close()
+}</code></pre>
+<h4>关键点</h4>
+<ul>
+<li><b>超时保护</b>必须有，防止某组件 hang 住导致进程无法退出</li>
+<li>关闭顺序：流量入口 → 异步任务 → 消息消费 → 数据库连接</li>
+<li>健康检查端点应在 shutdown 开始时立即返回不健康，让 LB 摘掉节点</li>
+</ul>
+<div class="project-link">简历关联：go-fast 框架支持 errgroup 并发管理与优雅关机（10 秒超时保护）</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ddd-q-fi8niu.html">DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</a></li>
+      <li><a href="./go-ddd-q-10q1978.html">Go 项目如何实践 DDD？目录结构和分层怎么组织？</a></li>
+      <li><a href="./go-res-tful-q-1nhqd6a.html">Go 后端接口如何做 RESTful 设计和版本演进？</a></li>
+      <li><a href="./q-1ohx9b9.html">分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</a></li>
+      <li><a href="./q-17pttmy.html">自动化工单系统如何设计状态机、审批流、幂等和审计？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

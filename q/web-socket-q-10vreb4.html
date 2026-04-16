@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="连接管理 Hub type Hub struct { connections map[string]*Connection // userId → conn mu sync.RWMutex register chan *Connection unregister chan *Connection broadcast c…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/web-socket-q-10vreb4.html">
+<meta property="og:title" content="WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？ - Go 后端面试题库">
+<meta property="og:description" content="连接管理 Hub type Hub struct { connections map[string]*Connection // userId → conn mu sync.RWMutex register chan *Connection unregister chan *Connection broadcast c…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/web-socket-q-10vreb4.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？ - Go 后端面试题库">
+<meta name="twitter:description" content="连接管理 Hub type Hub struct { connections map[string]*Connection // userId → conn mu sync.RWMutex register chan *Connection unregister chan *Connection broadcast c…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/websocket.html">WebSocket 与实时通信</a> ›
+    <span>WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？</span>
+  </nav>
+
+  <article class="question">
+    <h1>WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>连接管理 Hub</h4>
+<pre><code>type Hub struct {
+    connections map[string]*Connection  // userId → conn
+    mu          sync.RWMutex
+    register    chan *Connection
+    unregister  chan *Connection
+    broadcast   chan Message
+}
+
+func (h *Hub) Run() {
+    for {
+        select {
+        case conn := <-h.register:
+            h.mu.Lock()
+            h.connections[conn.UserId] = conn
+            h.mu.Unlock()
+        case conn := <-h.unregister:
+            h.mu.Lock()
+            delete(h.connections, conn.UserId)
+            h.mu.Unlock()
+        case msg := <-h.broadcast:
+            h.mu.RLock()
+            for _, conn := range h.connections {
+                conn.Send(msg)
+            }
+            h.mu.RUnlock()
+        }
+    }
+}</code></pre>
+<h4>心跳保活</h4>
+<pre><code>// 服务端定期发 Ping，客户端回 Pong
+// 超过 60 秒无 Pong 则关闭连接
+conn.SetPongHandler(func(string) error {
+    conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+    return nil
+})</code></pre>
+<h4>多实例广播</h4>
+<p>多个服务实例时，用户可能连在不同实例上。通过 Redis Pub/Sub 广播消息到所有实例，各实例再推送给自己管理的连接</p>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./sse-web-socket-ai-q-1g7gty9.html">SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？</a></li>
+      <li><a href="./q-1s009sz.html">语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？</a></li>
+      <li><a href="./tcp-udp-web-socket-http-q-szt6bc.html">TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？</a></li>
+      <li><a href="./web-socket-http-web-socket-q-u0lewn.html">WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/websocket.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=7">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

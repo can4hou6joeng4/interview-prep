@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心区别 维度 虚拟机 Docker 容器 隔离级别 硬件虚拟化，每个 VM 有独立 OS 内核 OS 级隔离，共享宿主机内核 启动速度 分钟级（要启动完整 OS） 秒级甚至毫秒级 资源开销 重（每个 VM 需要独立的内核、系统进程） 轻（只有应用进程和依赖） 镜像大小 GB 级 MB 级（多阶段构建后） 安全隔离 更…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/docker-namespace-cgroup-q-1juftm.html">
+<meta property="og:title" content="Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？ - Go 后端面试题库">
+<meta property="og:description" content="核心区别 维度 虚拟机 Docker 容器 隔离级别 硬件虚拟化，每个 VM 有独立 OS 内核 OS 级隔离，共享宿主机内核 启动速度 分钟级（要启动完整 OS） 秒级甚至毫秒级 资源开销 重（每个 VM 需要独立的内核、系统进程） 轻（只有应用进程和依赖） 镜像大小 GB 级 MB 级（多阶段构建后） 安全隔离 更…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/docker-namespace-cgroup-q-1juftm.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心区别 维度 虚拟机 Docker 容器 隔离级别 硬件虚拟化，每个 VM 有独立 OS 内核 OS 级隔离，共享宿主机内核 启动速度 分钟级（要启动完整 OS） 秒级甚至毫秒级 资源开销 重（每个 VM 需要独立的内核、系统进程） 轻（只有应用进程和依赖） 镜像大小 GB 级 MB 级（多阶段构建后） 安全隔离 更…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/docker.html">Docker 与部署</a> ›
+    <span>Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>核心区别</h4>
+<table>
+<tr><th>维度</th><th>虚拟机</th><th>Docker 容器</th></tr>
+<tr><td>隔离级别</td><td>硬件虚拟化，每个 VM 有独立 OS 内核</td><td>OS 级隔离，共享宿主机内核</td></tr>
+<tr><td>启动速度</td><td>分钟级（要启动完整 OS）</td><td>秒级甚至毫秒级</td></tr>
+<tr><td>资源开销</td><td>重（每个 VM 需要独立的内核、系统进程）</td><td>轻（只有应用进程和依赖）</td></tr>
+<tr><td>镜像大小</td><td>GB 级</td><td>MB 级（多阶段构建后）</td></tr>
+<tr><td>安全隔离</td><td>更强（独立内核，攻击面小）</td><td>较弱（共享内核，存在逃逸风险）</td></tr>
+<tr><td>典型用途</td><td>不同 OS 环境、强隔离需求</td><td>微服务部署、CI/CD、快速扩缩容</td></tr>
+</table>
+<h4>Linux 两大隔离技术</h4>
+<ul>
+<li><b>namespace</b>：实现资源视图隔离。不同容器看到独立的 PID、网络栈、文件系统、用户等
+  <ul>
+  <li><code>PID namespace</code>：容器内进程 PID 从 1 开始</li>
+  <li><code>Network namespace</code>：独立网络栈、IP、端口</li>
+  <li><code>Mount namespace</code>：独立文件系统挂载点</li>
+  <li><code>UTS namespace</code>：独立主机名</li>
+  </ul>
+</li>
+<li><b>cgroup (Control Group)</b>：实现资源用量限制。防止某个容器占用过多资源
+  <ul>
+  <li>限制 CPU 使用率、内存上限、磁盘 I/O 带宽、网络带宽</li>
+  <li>K8s 的 <code>resources.limits</code> 底层就是 cgroup</li>
+  </ul>
+</li>
+</ul>
+<h4>一句话总结</h4>
+<p>namespace 让容器"看到"自己独立的世界，cgroup 让容器"用到"有限的资源。两者结合实现了轻量级隔离。</p>
+<div class="key-point">面试追问"容器比虚拟机不安全在哪"——答：共享内核意味着内核漏洞可能导致容器逃逸。生产环境通常通过 seccomp、AppArmor、只读文件系统等加固。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-dockerfile-q-7n8n2h.html">Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？</a></li>
+      <li><a href="./k8s-q-1ry7gt7.html">容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？</a></li>
+      <li><a href="./go-ci-cd-q-1h0a9vw.html">Go 项目的 CI/CD 流程一般怎么设计？</a></li>
+      <li><a href="./q-1dy8w42.html">灰度发布和金丝雀发布怎么实现？</a></li>
+      <li><a href="./aws-ec2-s3-rds-lambda-q-1snbf9s.html">AWS 核心服务有哪些？EC2、S3、RDS、Lambda 分别适合什么场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/docker.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=8">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

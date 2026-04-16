@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="架构设计 // 事件定义 type EventType string const ( BeforeOrderCreate EventType = &quot;order.before_create&quot; AfterOrderCreate EventType = &quot;order.after_create&quot; BeforePaymentPa…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/before-after-q-1yd5y53.html">
+<meta property="og:title" content="你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？ - Go 后端面试题库">
+<meta property="og:description" content="架构设计 // 事件定义 type EventType string const ( BeforeOrderCreate EventType = &quot;order.before_create&quot; AfterOrderCreate EventType = &quot;order.after_create&quot; BeforePaymentPa…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/before-after-q-1yd5y53.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？ - Go 后端面试题库">
+<meta name="twitter:description" content="架构设计 // 事件定义 type EventType string const ( BeforeOrderCreate EventType = &quot;order.before_create&quot; AfterOrderCreate EventType = &quot;order.after_create&quot; BeforePaymentPa…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？</span>
+  </nav>
+
+  <article class="question">
+    <h1>你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>架构设计</h4>
+<pre><code>// 事件定义
+type EventType string
+const (
+    BeforeOrderCreate  EventType = "order.before_create"
+    AfterOrderCreate   EventType = "order.after_create"
+    BeforePaymentPay   EventType = "payment.before_pay"
+    AfterPaymentPay    EventType = "payment.after_pay"
+    // ... 覆盖 Order/Checkout/Payment/Product CRUD
+)
+
+// 监听器接口
+type EventListener interface {
+    Handle(ctx context.Context, event Event) error
+}
+
+// 事件总线（观察者模式的中介）
+type EventBus struct {
+    mu        sync.RWMutex
+    listeners map[EventType][]EventListener
+}
+
+func (eb *EventBus) On(eventType EventType, listener EventListener) {
+    eb.mu.Lock()
+    defer eb.mu.Unlock()
+    eb.listeners[eventType] = append(eb.listeners[eventType], listener)
+}
+
+func (eb *EventBus) Emit(ctx context.Context, eventType EventType, payload interface{}) error {
+    eb.mu.RLock()
+    ls := eb.listeners[eventType]
+    eb.mu.RUnlock()
+    for _, l := range ls {
+        if err := l.Handle(ctx, Event{Type: eventType, Data: payload}); err != nil {
+            return err // Before 事件失败可中断流程
+        }
+    }
+    return nil
+}</code></pre>
+<h4>使用示例</h4>
+<pre><code>// 注册监听器 — 核心代码零侵入
+eventBus.On(AfterOrderCreate, &InventoryDeducter{})
+eventBus.On(AfterOrderCreate, &OrderNotifier{})
+eventBus.On(BeforePaymentPay, &FraudChecker{})</code></pre>
+<div class="project-link">简历关联：Before/After 生命周期事件钩子系统，覆盖 Order/Checkout/Payment/Product CRUD 全流程，业务扩展通过注册监听器实现，核心代码零侵入</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./json-rpc-g-rpc-json-rpc-q-1ad9nas.html">微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？</a></li>
+      <li><a href="./graceful-shutdown-q-1ensob8.html">如何设计一个优雅关机 (Graceful Shutdown) 方案？</a></li>
+      <li><a href="./ddd-q-fi8niu.html">DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</a></li>
+      <li><a href="./go-ddd-q-10q1978.html">Go 项目如何实践 DDD？目录结构和分层怎么组织？</a></li>
+      <li><a href="./go-res-tful-q-1nhqd6a.html">Go 后端接口如何做 RESTful 设计和版本演进？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

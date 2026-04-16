@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三个关键点 Table-Driven Tests ：把输入、输出和预期错误组织成表格，用例更清晰、扩展更方便 Mock ：把外部依赖替换掉，例如数据库、Redis、HTTP 调用，保证单元测试只测当前逻辑 覆盖率 ：用 go test -cover 看测试有没有覆盖核心路径，但不要把覆盖率当唯一目标 func Test…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-table-driven-tests-mock-q-zwrzuz.html">
+<meta property="og:title" content="Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？ - Go 后端面试题库">
+<meta property="og:description" content="三个关键点 Table-Driven Tests ：把输入、输出和预期错误组织成表格，用例更清晰、扩展更方便 Mock ：把外部依赖替换掉，例如数据库、Redis、HTTP 调用，保证单元测试只测当前逻辑 覆盖率 ：用 go test -cover 看测试有没有覆盖核心路径，但不要把覆盖率当唯一目标 func Test…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-table-driven-tests-mock-q-zwrzuz.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？ - Go 后端面试题库">
+<meta name="twitter:description" content="三个关键点 Table-Driven Tests ：把输入、输出和预期错误组织成表格，用例更清晰、扩展更方便 Mock ：把外部依赖替换掉，例如数据库、Redis、HTTP 调用，保证单元测试只测当前逻辑 覆盖率 ：用 go test -cover 看测试有没有覆盖核心路径，但不要把覆盖率当唯一目标 func Test…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/testing.html">测试与工程质量</a> ›
+    <span>Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三个关键点</h4>
+<ul>
+<li><b>Table-Driven Tests</b>：把输入、输出和预期错误组织成表格，用例更清晰、扩展更方便</li>
+<li><b>Mock</b>：把外部依赖替换掉，例如数据库、Redis、HTTP 调用，保证单元测试只测当前逻辑</li>
+<li><b>覆盖率</b>：用 <code>go test -cover</code> 看测试有没有覆盖核心路径，但不要把覆盖率当唯一目标</li>
+</ul>
+<pre><code>func TestAdd(t *testing.T) {
+    cases := []struct {
+        a, b int
+        want int
+    }{
+        {1, 2, 3},
+        {0, 0, 0},
+        {-1, 1, 0},
+    }
+    for _, tc := range cases {
+        if got := Add(tc.a, tc.b); got != tc.want {
+            t.Fatalf("got %d, want %d", got, tc.want)
+        }
+    }
+}</code></pre>
+<div class="key-point">高质量单元测试不是追求覆盖率数字，而是优先覆盖核心逻辑、边界条件和典型失败路径。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./tdd-red-green-refactor-q-ktllce.html">TDD（测试驱动开发）的流程是什么？Red-Green-Refactor 分别代表什么？</a></li>
+      <li><a href="./qps-q-izu016.html">压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？</a></li>
+      <li><a href="./go-testcontainers-q-tc1int.html">Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/testing.html">浏览本分类全部 4 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=11">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

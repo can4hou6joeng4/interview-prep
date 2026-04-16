@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="最先爆的通常不是你以为的那一层 连接层 ：长连接数、心跳风暴、网关接入能力往往最先打满 缓存热点层 ：在线人数、房间状态、排行榜、计数器等热点 key 会先出问题 队列层 ：异步统计、消息广播、日志落地一旦积压，延迟会迅速放大 数据库层 ：写放大、索引竞争、热点行更新通常是最后的硬瓶颈 容量评估不能只看 QPS 还要看…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-25fyg1.html">
+<meta property="og:title" content="“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="最先爆的通常不是你以为的那一层 连接层 ：长连接数、心跳风暴、网关接入能力往往最先打满 缓存热点层 ：在线人数、房间状态、排行榜、计数器等热点 key 会先出问题 队列层 ：异步统计、消息广播、日志落地一旦积压，延迟会迅速放大 数据库层 ：写放大、索引竞争、热点行更新通常是最后的硬瓶颈 容量评估不能只看 QPS 还要看…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-25fyg1.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="最先爆的通常不是你以为的那一层 连接层 ：长连接数、心跳风暴、网关接入能力往往最先打满 缓存热点层 ：在线人数、房间状态、排行榜、计数器等热点 key 会先出问题 队列层 ：异步统计、消息广播、日志落地一旦积压，延迟会迅速放大 数据库层 ：写放大、索引竞争、热点行更新通常是最后的硬瓶颈 容量评估不能只看 QPS 还要看…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>最先爆的通常不是你以为的那一层</h4>
+<ul>
+<li><b>连接层</b>：长连接数、心跳风暴、网关接入能力往往最先打满</li>
+<li><b>缓存热点层</b>：在线人数、房间状态、排行榜、计数器等热点 key 会先出问题</li>
+<li><b>队列层</b>：异步统计、消息广播、日志落地一旦积压，延迟会迅速放大</li>
+<li><b>数据库层</b>：写放大、索引竞争、热点行更新通常是最后的硬瓶颈</li>
+</ul>
+<h4>容量评估不能只看 QPS</h4>
+<ul>
+<li>还要看<b>并发连接数</b>、消息吞吐、P95/P99、错误率</li>
+<li>要结合 Redis 热点、队列 lag、连接池占用、慢查询数一起看</li>
+<li>要分清“入口流量大”还是“单次处理成本高”</li>
+</ul>
+<h4>更实用的方法</h4>
+<ol>
+<li>先找核心业务链路，例如进房、发消息、广告曝光回传</li>
+<li>为每一层定义关键指标和阈值</li>
+<li>用压测 + 线上监控双证据验证，而不是拍脑袋估容量</li>
+<li>最终输出“哪层先到极限、极限前怎么止损”，而不只是一个孤立数字</li>
+</ol>
+<div class="key-point">这题的高分点在于你能讲清容量建模和分层瓶颈，而不是泛泛地说“我们系统很高并发”。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./qps-tps-rt-p99-q-hc1bas.html">什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？</a></li>
+      <li><a href="./q-1sk5mxj.html">高并发系统设计的常见手段有哪些？</a></li>
+      <li><a href="./q-1n761t2.html">限流算法有哪些？令牌桶和漏桶的区别？</a></li>
+      <li><a href="./cap-base-q-1rup8vt.html">分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</a></li>
+      <li><a href="./q-1lta6ds.html">服务雪崩是什么？熔断、降级、限流怎么配合？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

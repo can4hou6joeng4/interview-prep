@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="reflect 核心 reflect.TypeOf(x) → 返回 reflect.Type ，描述类型信息（字段名、tag、方法等） reflect.ValueOf(x) → 返回 reflect.Value ，持有值的可操作副本 三大定律：(1) 接口值 → 反射对象 (2) 反射对象 → 接口值 (3) 要修改反…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-reflect-go-cache-reflect-redis-q-1dumk95.html">
+<meta property="og:title" content="Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？ - Go 后端面试题库">
+<meta property="og:description" content="reflect 核心 reflect.TypeOf(x) → 返回 reflect.Type ，描述类型信息（字段名、tag、方法等） reflect.ValueOf(x) → 返回 reflect.Value ，持有值的可操作副本 三大定律：(1) 接口值 → 反射对象 (2) 反射对象 → 接口值 (3) 要修改反…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-reflect-go-cache-reflect-redis-q-1dumk95.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？ - Go 后端面试题库">
+<meta name="twitter:description" content="reflect 核心 reflect.TypeOf(x) → 返回 reflect.Type ，描述类型信息（字段名、tag、方法等） reflect.ValueOf(x) → 返回 reflect.Value ，持有值的可操作副本 三大定律：(1) 接口值 → 反射对象 (2) 反射对象 → 接口值 (3) 要修改反…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>reflect 核心</h4>
+<ul>
+<li><code>reflect.TypeOf(x)</code> → 返回 <code>reflect.Type</code>，描述类型信息（字段名、tag、方法等）</li>
+<li><code>reflect.ValueOf(x)</code> → 返回 <code>reflect.Value</code>，持有值的可操作副本</li>
+<li>三大定律：(1) 接口值 → 反射对象 (2) 反射对象 → 接口值 (3) 要修改反射对象，值必须可设置（Elem()）</li>
+</ul>
+<h4>go-cache 中的实现思路</h4>
+<pre><code>// SetValue: Go Struct → Redis Hash
+func SetValue(key string, obj interface{}) {
+    v := reflect.ValueOf(obj)
+    t := v.Type()
+    fields := make(map[string]interface{})
+    for i := 0; i < t.NumField(); i++ {
+        field := t.Field(i)
+        tag := field.Tag.Get("redis") // 读取 redis tag
+        if tag == "" || tag == "-" { continue }
+        fields[tag] = v.Field(i).Interface()
+    }
+    // redis.HSet(key, fields)
+}
+
+// ScanValue: Redis Hash → Go Struct
+func ScanValue(key string, dest interface{}) {
+    v := reflect.ValueOf(dest).Elem() // 必须传指针
+    t := v.Type()
+    data := redis.HGetAll(key)
+    for i := 0; i < t.NumField(); i++ {
+        tag := t.Field(i).Tag.Get("redis")
+        if val, ok := data[tag]; ok {
+            // 根据 field.Kind() 做类型转换后 Set
+            v.Field(i).Set(convertedValue)
+        }
+    }
+}</code></pre>
+<div class="project-link">简历关联：go-cache 基于适配器模式实现统一缓存接口，利用 reflect 库实现 Redis Hash 与 Go Struct 自动映射</div>
+<div class="key-point">注意性能：reflect 操作比直接访问慢约 50-100 倍。生产中可通过缓存 TypeOf 结果、代码生成（go generate）等方式优化</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-defer-defer-panic-recover-q-yws6gn.html">Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</a></li>
+      <li><a href="./go-gc-stw-q-11rk16a.html">Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</a></li>
+      <li><a href="./go-sync-map-map-mutex-q-1cw0vwp.html">Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？</a></li>
+      <li><a href="./errgroup-q-7hw7o6.html">errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</a></li>
+      <li><a href="./go-plugin-so-q-1f99wc9.html">Go Plugin (.so) 热加载的原理、限制和你的实践？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

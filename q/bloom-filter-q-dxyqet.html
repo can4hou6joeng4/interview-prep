@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心思想 布隆过滤器用一个位数组和多个哈希函数表示集合。插入元素时，把多个哈希位置都置为 1；查询时只要有一个位置为 0，就一定不存在；全部为 1 则表示“可能存在”。 type Bloom struct { bits []bool } func (b *Bloom) Add(s string) { for _, id…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/bloom-filter-q-dxyqet.html">
+<meta property="og:title" content="实现一个简单的布隆过滤器（Bloom Filter） - Go 后端面试题库">
+<meta property="og:description" content="核心思想 布隆过滤器用一个位数组和多个哈希函数表示集合。插入元素时，把多个哈希位置都置为 1；查询时只要有一个位置为 0，就一定不存在；全部为 1 则表示“可能存在”。 type Bloom struct { bits []bool } func (b *Bloom) Add(s string) { for _, id…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/bloom-filter-q-dxyqet.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="实现一个简单的布隆过滤器（Bloom Filter） - Go 后端面试题库">
+<meta name="twitter:description" content="核心思想 布隆过滤器用一个位数组和多个哈希函数表示集合。插入元素时，把多个哈希位置都置为 1；查询时只要有一个位置为 0，就一定不存在；全部为 1 则表示“可能存在”。 type Bloom struct { bits []bool } func (b *Bloom) Add(s string) { for _, id…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>实现一个简单的布隆过滤器（Bloom Filter） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>实现一个简单的布隆过滤器（Bloom Filter）</span>
+  </nav>
+
+  <article class="question">
+    <h1>实现一个简单的布隆过滤器（Bloom Filter）</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>核心思想</h4>
+<p>布隆过滤器用一个位数组和多个哈希函数表示集合。插入元素时，把多个哈希位置都置为 1；查询时只要有一个位置为 0，就一定不存在；全部为 1 则表示“可能存在”。</p>
+<pre><code>type Bloom struct {
+    bits []bool
+}
+
+func (b *Bloom) Add(s string) {
+    for _, idx := range []int{hash1(s), hash2(s), hash3(s)} {
+        b.bits[idx%len(b.bits)] = true
+    }
+}
+
+func (b *Bloom) MightContain(s string) bool {
+    for _, idx := range []int{hash1(s), hash2(s), hash3(s)} {
+        if !b.bits[idx%len(b.bits)] {
+            return false
+        }
+    }
+    return true
+}</code></pre>
+<h4>特点</h4>
+<ul>
+<li>优点：空间效率高，查询快</li>
+<li>缺点：有误判，不支持精准删除</li>
+<li>常见用途：缓存穿透防护、URL 去重、黑名单预判</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-channel-select-q-15zi8zt.html">用 Go 实现生产者-消费者模型（channel + select）</a></li>
+      <li><a href="./go-skip-list-q-blkq5.html">实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</a></li>
+      <li><a href="./go-q-71dk9x.html">用 Go 实现环形链表入口检测（快慢指针）</a></li>
+      <li><a href="./go-lru-cache-q-hkgo2f.html">用 Go 实现一个并发安全的 LRU Cache</a></li>
+      <li><a href="./go-worker-pool-q-qpqv9v.html">用 Go 实现一个简单的 Worker Pool（限制并发数）</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

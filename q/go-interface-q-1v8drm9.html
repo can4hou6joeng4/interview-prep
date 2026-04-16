@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="两种底层结构 空接口 interface{} 对应 runtime.eface ： type eface struct { _type *_type // 指向类型元数据 data unsafe.Pointer // 指向实际数据 } 非空接口 对应 runtime.iface ： type iface struct…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-interface-q-1v8drm9.html">
+<meta property="og:title" content="Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？ - Go 后端面试题库">
+<meta property="og:description" content="两种底层结构 空接口 interface{} 对应 runtime.eface ： type eface struct { _type *_type // 指向类型元数据 data unsafe.Pointer // 指向实际数据 } 非空接口 对应 runtime.iface ： type iface struct…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-interface-q-1v8drm9.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？ - Go 后端面试题库">
+<meta name="twitter:description" content="两种底层结构 空接口 interface{} 对应 runtime.eface ： type eface struct { _type *_type // 指向类型元数据 data unsafe.Pointer // 指向实际数据 } 非空接口 对应 runtime.iface ： type iface struct…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>两种底层结构</h4>
+<p><b>空接口</b> <code>interface{}</code> 对应 <code>runtime.eface</code>：</p>
+<pre><code>type eface struct {
+    _type *_type         // 指向类型元数据
+    data  unsafe.Pointer // 指向实际数据
+}</code></pre>
+<p><b>非空接口</b>对应 <code>runtime.iface</code>：</p>
+<pre><code>type iface struct {
+    tab  *itab           // 类型信息 + 方法表
+    data unsafe.Pointer  // 指向实际数据
+}</code></pre>
+<h4>itab 结构</h4>
+<pre><code>type itab struct {
+    inter *interfacetype // 接口类型
+    _type *_type         // 实际类型
+    hash  uint32         // 类型哈希，用于快速判断
+    fun   [1]uintptr     // 方法表（变长数组）
+}</code></pre>
+<h4>关键点</h4>
+<ul>
+<li>itab 会被缓存到全局的 <code>itabTable</code> 哈希表中，同一对 (接口类型, 实际类型) 只计算一次</li>
+<li>接口赋值时，如果值类型小于等于指针大小，直接存在 data 字段；否则堆上分配后存指针</li>
+<li>类型断言 <code>v.(T)</code> 的本质是比较 itab 中的 <code>_type</code> 是否匹配</li>
+</ul>
+<div class="key-point">面试陷阱：<code>var p *int = nil; var i interface{} = p</code> 此时 <code>i != nil</code>，因为 iface 的 tab 不为 nil（存了 *int 的类型信息）</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-reflect-go-cache-reflect-redis-q-1dumk95.html">Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</a></li>
+      <li><a href="./go-defer-defer-panic-recover-q-yws6gn.html">Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</a></li>
+      <li><a href="./go-gc-stw-q-11rk16a.html">Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</a></li>
+      <li><a href="./go-sync-map-map-mutex-q-1cw0vwp.html">Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？</a></li>
+      <li><a href="./errgroup-q-7hw7o6.html">errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

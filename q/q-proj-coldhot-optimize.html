@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="问题 原方案每日一次性迁移所有冷数据，数据量大时长事务导致 DB IO 冲击。 两阶段优化 每日播种（Seed） ：只标记新进入冷区的 1 天数据为待迁移 分钟级微批续跑（Tick） ：每分钟执行，每次最多 2 批 × 100 条，单 tick ≤ 3 秒 关键参数 BatchSize = 100 // 每批 100…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-proj-coldhot-optimize.html">
+<meta property="og:title" content="冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？ - Go 后端面试题库">
+<meta property="og:description" content="问题 原方案每日一次性迁移所有冷数据，数据量大时长事务导致 DB IO 冲击。 两阶段优化 每日播种（Seed） ：只标记新进入冷区的 1 天数据为待迁移 分钟级微批续跑（Tick） ：每分钟执行，每次最多 2 批 × 100 条，单 tick ≤ 3 秒 关键参数 BatchSize = 100 // 每批 100…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-proj-coldhot-optimize.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？ - Go 后端面试题库">
+<meta name="twitter:description" content="问题 原方案每日一次性迁移所有冷数据，数据量大时长事务导致 DB IO 冲击。 两阶段优化 每日播种（Seed） ：只标记新进入冷区的 1 天数据为待迁移 分钟级微批续跑（Tick） ：每分钟执行，每次最多 2 批 × 100 条，单 tick ≤ 3 秒 关键参数 BatchSize = 100 // 每批 100…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</span>
+  </nav>
+
+  <article class="question">
+    <h1>冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>问题</h4>
+<p>原方案每日一次性迁移所有冷数据，数据量大时长事务导致 DB IO 冲击。</p>
+<h4>两阶段优化</h4>
+<ol>
+<li><b>每日播种（Seed）</b>：只标记新进入冷区的 1 天数据为待迁移</li>
+<li><b>分钟级微批续跑（Tick）</b>：每分钟执行，每次最多 2 批 × 100 条，单 tick ≤ 3 秒</li>
+</ol>
+<h4>关键参数</h4>
+<pre><code>BatchSize       = 100    // 每批 100 条
+MaxBatchPerTick = 2      // 每 tick 最多 2 批
+MaxTickDuration = 3s     // 单 tick 时长上限
+MinuteLockTTL   = 20s    // Tick 分布式锁
+SeedLockTTL     = 30s    // Seed 分布式锁</code></pre>
+<h4>断点续跑</h4>
+<p>进度存 Redis，进程异常退出 → 锁自动过期 → 下一分钟从断点续跑。</p>
+<div class="key-point">核心思想：大 IO 打散成涓流，"尖峰"变"均匀"</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</a></li>
+      <li><a href="./saa-s-q-proj-recovery.html">营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</a></li>
+      <li><a href="./star-q-proj-star-behavior.html">行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</a></li>
+      <li><a href="./ai-claude-code-cursor-codex-q-u76ayt.html">AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</a></li>
+      <li><a href="./ai-ai-q-wjtvi3.html">AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

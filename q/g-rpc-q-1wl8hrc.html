@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="四种模式 Unary ：一问一答，最常见，适合普通接口调用 Server Streaming ：客户端发一次请求，服务端持续返回多条消息，适合日志流、价格流、进度流 Client Streaming ：客户端持续上传多条消息，服务端最终返回一次结果，适合批量上报或分片上传 Bidirectional Streaming…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/g-rpc-q-1wl8hrc.html">
+<meta property="og:title" content="gRPC 的四种通信模式是什么？分别适合什么场景？ - Go 后端面试题库">
+<meta property="og:description" content="四种模式 Unary ：一问一答，最常见，适合普通接口调用 Server Streaming ：客户端发一次请求，服务端持续返回多条消息，适合日志流、价格流、进度流 Client Streaming ：客户端持续上传多条消息，服务端最终返回一次结果，适合批量上报或分片上传 Bidirectional Streaming…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/g-rpc-q-1wl8hrc.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="gRPC 的四种通信模式是什么？分别适合什么场景？ - Go 后端面试题库">
+<meta name="twitter:description" content="四种模式 Unary ：一问一答，最常见，适合普通接口调用 Server Streaming ：客户端发一次请求，服务端持续返回多条消息，适合日志流、价格流、进度流 Client Streaming ：客户端持续上传多条消息，服务端最终返回一次结果，适合批量上报或分片上传 Bidirectional Streaming…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>gRPC 的四种通信模式是什么？分别适合什么场景？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>gRPC 的四种通信模式是什么？分别适合什么场景？</span>
+  </nav>
+
+  <article class="question">
+    <h1>gRPC 的四种通信模式是什么？分别适合什么场景？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>四种模式</h4>
+<ul>
+<li><b>Unary</b>：一问一答，最常见，适合普通接口调用</li>
+<li><b>Server Streaming</b>：客户端发一次请求，服务端持续返回多条消息，适合日志流、价格流、进度流</li>
+<li><b>Client Streaming</b>：客户端持续上传多条消息，服务端最终返回一次结果，适合批量上报或分片上传</li>
+<li><b>Bidirectional Streaming</b>：双向都能持续发送消息，适合聊天、协同编辑、实时控制</li>
+</ul>
+<h4>怎么答更像工程师</h4>
+<p>不要只背定义，最好顺手补一句：gRPC 基于 HTTP/2，一个连接上可以并行承载多个 Stream，所以流式调用的成本比轮询低很多。</p>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./protobuf-json-q-1154leh.html">Protobuf 的编码原理是什么？为什么通常比 JSON 更快？</a></li>
+      <li><a href="./g-rpc-http-q-1f937c9.html">gRPC 的拦截器怎么用？和 HTTP 中间件有什么对应关系？</a></li>
+      <li><a href="./g-rpc-q-qbpll5.html">gRPC 的负载均衡方案有哪些？客户端负载和代理负载怎么选？</a></li>
+      <li><a href="./metrics-logs-traces-q-1omm89g.html">可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？</a></li>
+      <li><a href="./slo-sli-sla-q-oa37fy.html">SLO、SLI、SLA 分别是什么？如何在系统里落地？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

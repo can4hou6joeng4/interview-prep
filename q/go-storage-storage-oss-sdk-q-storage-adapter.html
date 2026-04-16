@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么不直接写死 OSS SDK 环境差异 ：开发环境用本地磁盘，测试环境用 MinIO，生产环境用阿里云 OSS 或 AWS S3。写死 SDK 意味着每个环境都要配置真实的云存储账号 云厂商切换 ：SaaS 出海场景下可能从阿里云迁到 AWS，如果业务代码直接依赖阿里云 SDK，迁移成本极高 测试困难 ：单元测试中…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-storage-storage-oss-sdk-q-storage-adapter.html">
+<meta property="og:title" content="go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？ - Go 后端面试题库">
+<meta property="og:description" content="为什么不直接写死 OSS SDK 环境差异 ：开发环境用本地磁盘，测试环境用 MinIO，生产环境用阿里云 OSS 或 AWS S3。写死 SDK 意味着每个环境都要配置真实的云存储账号 云厂商切换 ：SaaS 出海场景下可能从阿里云迁到 AWS，如果业务代码直接依赖阿里云 SDK，迁移成本极高 测试困难 ：单元测试中…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-storage-storage-oss-sdk-q-storage-adapter.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么不直接写死 OSS SDK 环境差异 ：开发环境用本地磁盘，测试环境用 MinIO，生产环境用阿里云 OSS 或 AWS S3。写死 SDK 意味着每个环境都要配置真实的云存储账号 云厂商切换 ：SaaS 出海场景下可能从阿里云迁到 AWS，如果业务代码直接依赖阿里云 SDK，迁移成本极高 测试困难 ：单元测试中…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>为什么不直接写死 OSS SDK</h4>
+<ul>
+<li><b>环境差异</b>：开发环境用本地磁盘，测试环境用 MinIO，生产环境用阿里云 OSS 或 AWS S3。写死 SDK 意味着每个环境都要配置真实的云存储账号</li>
+<li><b>云厂商切换</b>：SaaS 出海场景下可能从阿里云迁到 AWS，如果业务代码直接依赖阿里云 SDK，迁移成本极高</li>
+<li><b>测试困难</b>：单元测试中无法 mock 真实的 OSS 操作</li>
+</ul>
+<h4>适配器模式的设计</h4>
+<pre><code>type Storage interface {
+    Put(key string, r io.Reader) error
+    Get(key string) (io.ReadCloser, error)
+    Delete(key string) error
+    ChunkInit(name string, size int64) (string, error)
+    ChunkPart(uploadId string, partNum int, r io.ReadSeeker) error
+    ChunkComplete(uploadId string) (string, error)
+}</code></pre>
+<ul>
+<li>Local 实现：读写本地文件系统，分片上传用临时目录存放分片</li>
+<li>OSS 实现：封装阿里云 SDK，分片上传对接 MultipartUpload API</li>
+<li>业务代码只依赖 Storage 接口，通过配置切换具体实现</li>
+</ul>
+<h4>什么时候不该抽象</h4>
+<ul>
+<li>如果项目确定只用一个云厂商、没有本地开发需求，直接用 SDK 更简单</li>
+<li>过度抽象的代价：接口设计要覆盖不同厂商的能力差集，某些厂商特有功能（如 OSS 的图片处理）无法通过统一接口暴露</li>
+</ul>
+<div class="key-point">面试追问"适配器模式的代价是什么"——答：最小公约数问题。接口只能定义所有实现都支持的操作，厂商特有能力需要类型断言或额外接口。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./saa-s-jwt-rsa-session-q-jwt-vs-session.html">SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</a></li>
+      <li><a href="./json-rpc-http-api-rpc-http-q-rpc-vs-http.html">项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</a></li>
+      <li><a href="./go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</a></li>
+      <li><a href="./redis-string-hash-set-q-redis-structures.html">项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</a></li>
+      <li><a href="./q-1x4gxxf.html">「游客订单归户」是什么？购物车串单问题怎么解决的？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

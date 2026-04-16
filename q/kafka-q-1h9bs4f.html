@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Kafka 的顺序保证 分区内有序 ：单个 Partition 内的消息严格有序（追加写入） 跨分区无序 ：不同 Partition 之间没有顺序保证 需要顺序的场景怎么做 // 方案一：同一个 Key 的消息发到同一个 Partition producer.Produce(&amp;kafka.Message{ TopicP…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/kafka-q-1h9bs4f.html">
+<meta property="og:title" content="Kafka 如何保证消息顺序性？全局有序和分区有序的区别？ - Go 后端面试题库">
+<meta property="og:description" content="Kafka 的顺序保证 分区内有序 ：单个 Partition 内的消息严格有序（追加写入） 跨分区无序 ：不同 Partition 之间没有顺序保证 需要顺序的场景怎么做 // 方案一：同一个 Key 的消息发到同一个 Partition producer.Produce(&amp;kafka.Message{ TopicP…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/kafka-q-1h9bs4f.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kafka 如何保证消息顺序性？全局有序和分区有序的区别？ - Go 后端面试题库">
+<meta name="twitter:description" content="Kafka 的顺序保证 分区内有序 ：单个 Partition 内的消息严格有序（追加写入） 跨分区无序 ：不同 Partition 之间没有顺序保证 需要顺序的场景怎么做 // 方案一：同一个 Key 的消息发到同一个 Partition producer.Produce(&amp;kafka.Message{ TopicP…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Kafka 如何保证消息顺序性？全局有序和分区有序的区别？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kafka.html">Kafka 消息队列</a> ›
+    <span>Kafka 如何保证消息顺序性？全局有序和分区有序的区别？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Kafka 如何保证消息顺序性？全局有序和分区有序的区别？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>Kafka 的顺序保证</h4>
+<ul>
+<li><b>分区内有序</b>：单个 Partition 内的消息严格有序（追加写入）</li>
+<li><b>跨分区无序</b>：不同 Partition 之间没有顺序保证</li>
+</ul>
+<h4>需要顺序的场景怎么做</h4>
+<pre><code>// 方案一：同一个 Key 的消息发到同一个 Partition
+producer.Produce(&kafka.Message{
+    TopicPartition: kafka.TopicPartition{Topic: &topic},
+    Key:   []byte(orderId),   // 用 orderId 做 Key
+    Value: payload,
+})
+// Kafka 对 Key 做 hash % partitionCount，相同 Key 固定到同一 Partition
+
+// 方案二：全局有序（极端场景）
+// Topic 只设 1 个 Partition（牺牲并行度，不推荐）</code></pre>
+<h4>顺序消费注意</h4>
+<ul>
+<li>Consumer 内不能用多线程并行处理同一个 Partition 的消息（否则乱序）</li>
+<li>如需并行：按 Key 分组，相同 Key 的消息由同一个 goroutine 处理</li>
+</ul>
+<div class="key-point">岗位关联：腾讯赛事平台、百度广告平台都重度依赖 Kafka 做事件驱动，订单/支付/广告投放事件必须保证分区有序</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./kafka-redis-asynq-q-1e0b4eb.html">Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？</a></li>
+      <li><a href="./q-1vkbj6o.html">延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？</a></li>
+      <li><a href="./redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-partition-q-w5vcxz.html">Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-q-13n8aa.html">Kafka 如何保证消息不丢失？Producer / Broker / Consumer 三端分别怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kafka.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=12">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

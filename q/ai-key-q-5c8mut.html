@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么需要统一管理 企业接入多个 AI 模型（OpenAI/Claude/国产大模型），如果每个业务自己对接，会出现：Key 散落各处无法审计、成本无法管控、模型切换需要改代码、缺乏统一的限流和监控。 核心能力 统一接入层 ：对外暴露标准化 API（通常兼容 OpenAI 格式），内部转发到不同模型提供商。业务方不需要…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-key-q-5c8mut.html">
+<meta property="og:title" content="企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="为什么需要统一管理 企业接入多个 AI 模型（OpenAI/Claude/国产大模型），如果每个业务自己对接，会出现：Key 散落各处无法审计、成本无法管控、模型切换需要改代码、缺乏统一的限流和监控。 核心能力 统一接入层 ：对外暴露标准化 API（通常兼容 OpenAI 格式），内部转发到不同模型提供商。业务方不需要…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-key-q-5c8mut.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么需要统一管理 企业接入多个 AI 模型（OpenAI/Claude/国产大模型），如果每个业务自己对接，会出现：Key 散落各处无法审计、成本无法管控、模型切换需要改代码、缺乏统一的限流和监控。 核心能力 统一接入层 ：对外暴露标准化 API（通常兼容 OpenAI 格式），内部转发到不同模型提供商。业务方不需要…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么需要统一管理</h4>
+<p>企业接入多个 AI 模型（OpenAI/Claude/国产大模型），如果每个业务自己对接，会出现：Key 散落各处无法审计、成本无法管控、模型切换需要改代码、缺乏统一的限流和监控。</p>
+<h4>核心能力</h4>
+<ul>
+<li><b>统一接入层</b>：对外暴露标准化 API（通常兼容 OpenAI 格式），内部转发到不同模型提供商。业务方不需要关心底层用的是哪个模型</li>
+<li><b>Key 集中管控</b>：所有 API Key 集中存储和轮转，业务方通过内部 token 认证，不直接持有外部 Key</li>
+<li><b>多模型路由</b>：按场景（翻译/生成/摘要）、成本（便宜模型优先 + 复杂任务用强模型）、可用性（某个模型超时自动 fallback）动态路由</li>
+<li><b>成本控制</b>：按团队/项目设置 token 配额和预算告警，统计每次调用的 token 消耗</li>
+<li><b>可观测性</b>：记录每次调用的模型、耗时、token 数、错误率，接入监控和告警</li>
+</ul>
+<h4>两种架构模式</h4>
+<ul>
+<li><b>项目内嵌式</b>：在业务服务中直接封装模型调用模块，适合单一项目</li>
+<li><b>平台网关式</b>：独立部署 AI 网关服务，所有业务统一接入，适合多团队多项目</li>
+</ul>
+<div class="project-link">简历关联：你有 AI Agent 后端落地经验，理解模型调用链路。面试时可以结合你的 WebSocket 实时状态推送 + 异步任务编排来说明 AI 模块怎么和后端系统集成</div>
+<div class="key-point">面试新趋势：企业不是要你训练模型，而是看你能不能管理模型调用。这个角度比"会用 LangChain"更贴近实际岗位需求。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./qps-q-tdwoih.html">你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</a></li>
+      <li><a href="./q-proj-coldhot-optimize.html">冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</a></li>
+      <li><a href="./saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</a></li>
+      <li><a href="./saa-s-q-proj-recovery.html">营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</a></li>
+      <li><a href="./star-q-proj-star-behavior.html">行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心原理 Protobuf 使用字段编号而不是字段名，减少了冗余文本 整包采用二进制编码，常见整数使用 Varint 变长编码 消息按 tag + value 的方式组织，解码时可以快速按字段号路由 为什么比 JSON 快 体积更小，网络传输成本更低 省去了 JSON 文本解析和字段名匹配的成本 字段类型在 schem…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/protobuf-json-q-1154leh.html">
+<meta property="og:title" content="Protobuf 的编码原理是什么？为什么通常比 JSON 更快？ - Go 后端面试题库">
+<meta property="og:description" content="核心原理 Protobuf 使用字段编号而不是字段名，减少了冗余文本 整包采用二进制编码，常见整数使用 Varint 变长编码 消息按 tag + value 的方式组织，解码时可以快速按字段号路由 为什么比 JSON 快 体积更小，网络传输成本更低 省去了 JSON 文本解析和字段名匹配的成本 字段类型在 schem…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/protobuf-json-q-1154leh.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Protobuf 的编码原理是什么？为什么通常比 JSON 更快？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心原理 Protobuf 使用字段编号而不是字段名，减少了冗余文本 整包采用二进制编码，常见整数使用 Varint 变长编码 消息按 tag + value 的方式组织，解码时可以快速按字段号路由 为什么比 JSON 快 体积更小，网络传输成本更低 省去了 JSON 文本解析和字段名匹配的成本 字段类型在 schem…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Protobuf 的编码原理是什么？为什么通常比 JSON 更快？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>Protobuf 的编码原理是什么？为什么通常比 JSON 更快？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Protobuf 的编码原理是什么？为什么通常比 JSON 更快？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>核心原理</h4>
+<ul>
+<li>Protobuf 使用字段编号而不是字段名，减少了冗余文本</li>
+<li>整包采用二进制编码，常见整数使用 <code>Varint</code> 变长编码</li>
+<li>消息按 tag + value 的方式组织，解码时可以快速按字段号路由</li>
+</ul>
+<h4>为什么比 JSON 快</h4>
+<ul>
+<li>体积更小，网络传输成本更低</li>
+<li>省去了 JSON 文本解析和字段名匹配的成本</li>
+<li>字段类型在 schema 中已确定，反序列化更直接</li>
+</ul>
+<div class="key-point">工程上常见结论是：Protobuf 不是“永远最快”，但在 RPC 和内部服务通信里，通常比 JSON 更省带宽也更稳定。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./g-rpc-http-q-1f937c9.html">gRPC 的拦截器怎么用？和 HTTP 中间件有什么对应关系？</a></li>
+      <li><a href="./g-rpc-q-qbpll5.html">gRPC 的负载均衡方案有哪些？客户端负载和代理负载怎么选？</a></li>
+      <li><a href="./metrics-logs-traces-q-1omm89g.html">可观测性的三支柱是什么？Metrics、Logs、Traces 分别解决什么问题？</a></li>
+      <li><a href="./slo-sli-sla-q-oa37fy.html">SLO、SLI、SLA 分别是什么？如何在系统里落地？</a></li>
+      <li><a href="./prometheus-grafana-go-q-dmidpx.html">Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

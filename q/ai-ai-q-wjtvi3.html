@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="AI 驱动开发 ≠ 让 AI 写所有代码 AI 驱动开发是一种 人机协作的工作方式 ：人负责需求理解、架构决策、质量把关；AI 负责代码生成、模式识别、重复劳动。 典型工作流（以功能开发为例） 需求理解 ：用 AI 帮忙梳理需求文档，生成技术方案大纲，列出需要修改的文件和接口 架构设计 ：人做关键决策（数据模型、接口设…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-ai-q-wjtvi3.html">
+<meta property="og:title" content="AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？ - Go 后端面试题库">
+<meta property="og:description" content="AI 驱动开发 ≠ 让 AI 写所有代码 AI 驱动开发是一种 人机协作的工作方式 ：人负责需求理解、架构决策、质量把关；AI 负责代码生成、模式识别、重复劳动。 典型工作流（以功能开发为例） 需求理解 ：用 AI 帮忙梳理需求文档，生成技术方案大纲，列出需要修改的文件和接口 架构设计 ：人做关键决策（数据模型、接口设…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-ai-q-wjtvi3.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？ - Go 后端面试题库">
+<meta name="twitter:description" content="AI 驱动开发 ≠ 让 AI 写所有代码 AI 驱动开发是一种 人机协作的工作方式 ：人负责需求理解、架构决策、质量把关；AI 负责代码生成、模式识别、重复劳动。 典型工作流（以功能开发为例） 需求理解 ：用 AI 帮忙梳理需求文档，生成技术方案大纲，列出需要修改的文件和接口 架构设计 ：人做关键决策（数据模型、接口设…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>AI 驱动开发 ≠ 让 AI 写所有代码</h4>
+<p>AI 驱动开发是一种<b>人机协作的工作方式</b>：人负责需求理解、架构决策、质量把关；AI 负责代码生成、模式识别、重复劳动。</p>
+<h4>典型工作流（以功能开发为例）</h4>
+<ol>
+<li><b>需求理解</b>：用 AI 帮忙梳理需求文档，生成技术方案大纲，列出需要修改的文件和接口</li>
+<li><b>架构设计</b>：人做关键决策（数据模型、接口设计、技术选型），AI 辅助画图或生成设计文档</li>
+<li><b>代码实现</b>：AI 生成初始代码框架（路由、模型、基础 CRUD），人审查并补充业务逻辑</li>
+<li><b>测试编写</b>：AI 根据实现代码生成单元测试和集成测试用例</li>
+<li><b>代码审查</b>：AI 做第一轮审查（风格、安全、性能），人做最终审查</li>
+<li><b>Debug</b>：遇到问题时，把错误上下文给 AI 分析，快速定位根因</li>
+</ol>
+<h4>提效的关键不是工具，是 Prompt 质量</h4>
+<ul>
+<li><b>给足上下文</b>：不是说"帮我写个接口"，而是"这是现有的 Order 模型和路由结构，我需要新增一个退款接口，要求幂等、记日志、支持 PayPal 和 Stripe 两个通道"</li>
+<li><b>分步骤拆</b>：复杂功能拆成小步骤，每步让 AI 做一件事，逐步推进</li>
+<li><b>给约束条件</b>：代码风格、框架版本、错误处理方式、命名规范——约束越明确，输出越可用</li>
+<li><b>让 AI 解释</b>：生成代码后让它解释为什么这么写，判断它的理解是否正确</li>
+</ul>
+<h4>常见误区</h4>
+<ul>
+<li>❌ 完全信任 AI 输出，不做审查</li>
+<li>❌ 让 AI 一次性写整个模块（上下文太大，质量下降）</li>
+<li>❌ 只用 AI 写新代码，不用它做重构和测试（后者提效更大）</li>
+</ul>
+<div class="key-point">面试时的核心信号：你不是"会按按钮"，而是"知道什么时候该用 AI、什么时候不该，以及怎么让 AI 的输出质量更高"。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./python-go-java-saa-s-q-7zioa5.html">Python、Go、Java 各自适合什么后端场景？出海 SaaS 技术栈怎么选？</a></li>
+      <li><a href="./llm-api-open-ai-claude-q-16opd4.html">后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？</a></li>
+      <li><a href="./next-js-api-q-xm41mo.html">全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？</a></li>
+      <li><a href="./visitor-id-q-vid-design.html">系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？</a></li>
+      <li><a href="./saa-s-q-stat-pipeline.html">电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

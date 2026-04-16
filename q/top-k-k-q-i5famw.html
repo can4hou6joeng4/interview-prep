@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="思路 维护一个大小为 k 的小顶堆。遍历所有元素时，如果当前值大于堆顶，就替换堆顶并重新下沉。遍历结束后，堆里保留的就是前 K 大元素。 type MinHeap []int func topK(nums []int, k int) []int { h := &amp;MinHeap{} heap.Init(h) for _,…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/top-k-k-q-i5famw.html">
+<meta property="og:title" content="实现 Top K 问题（海量数据中找前 K 大的元素） - Go 后端面试题库">
+<meta property="og:description" content="思路 维护一个大小为 k 的小顶堆。遍历所有元素时，如果当前值大于堆顶，就替换堆顶并重新下沉。遍历结束后，堆里保留的就是前 K 大元素。 type MinHeap []int func topK(nums []int, k int) []int { h := &amp;MinHeap{} heap.Init(h) for _,…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/top-k-k-q-i5famw.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="实现 Top K 问题（海量数据中找前 K 大的元素） - Go 后端面试题库">
+<meta name="twitter:description" content="思路 维护一个大小为 k 的小顶堆。遍历所有元素时，如果当前值大于堆顶，就替换堆顶并重新下沉。遍历结束后，堆里保留的就是前 K 大元素。 type MinHeap []int func topK(nums []int, k int) []int { h := &amp;MinHeap{} heap.Init(h) for _,…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>实现 Top K 问题（海量数据中找前 K 大的元素） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>实现 Top K 问题（海量数据中找前 K 大的元素）</span>
+  </nav>
+
+  <article class="question">
+    <h1>实现 Top K 问题（海量数据中找前 K 大的元素）</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>思路</h4>
+<p>维护一个大小为 <code>k</code> 的小顶堆。遍历所有元素时，如果当前值大于堆顶，就替换堆顶并重新下沉。遍历结束后，堆里保留的就是前 K 大元素。</p>
+<pre><code>type MinHeap []int
+
+func topK(nums []int, k int) []int {
+    h := &MinHeap{}
+    heap.Init(h)
+    for _, num := range nums {
+        if h.Len() < k {
+            heap.Push(h, num)
+            continue
+        }
+        if num > (*h)[0] {
+            heap.Pop(h)
+            heap.Push(h, num)
+        }
+    }
+    return *h
+}</code></pre>
+<div class="key-point">时间复杂度 <code>O(n log k)</code>，空间复杂度 <code>O(k)</code>，这是面试里最标准的 Top K 解法。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./bloom-filter-q-dxyqet.html">实现一个简单的布隆过滤器（Bloom Filter）</a></li>
+      <li><a href="./go-channel-select-q-15zi8zt.html">用 Go 实现生产者-消费者模型（channel + select）</a></li>
+      <li><a href="./go-skip-list-q-blkq5.html">实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</a></li>
+      <li><a href="./go-q-71dk9x.html">用 Go 实现环形链表入口检测（快慢指针）</a></li>
+      <li><a href="./go-lru-cache-q-hkgo2f.html">用 Go 实现一个并发安全的 LRU Cache</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

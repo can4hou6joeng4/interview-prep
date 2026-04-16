@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先别把“网络框架”理解成谁 benchmark 更高 网络框架选型先看业务边界：你的协议形态、生态依赖、团队维护成本和观测能力，往往比单机 QPS 更重要。 三类常见选择 net/http ：Go 标准库，生态最完整，和中间件、监控、pprof、反向代理配合自然，适合绝大多数 HTTP API 和内部服务 fastht…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-net-http-fasthttp-gnet-q-sut1qe.html">
+<meta property="og:title" content="Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？ - Go 后端面试题库">
+<meta property="og:description" content="先别把“网络框架”理解成谁 benchmark 更高 网络框架选型先看业务边界：你的协议形态、生态依赖、团队维护成本和观测能力，往往比单机 QPS 更重要。 三类常见选择 net/http ：Go 标准库，生态最完整，和中间件、监控、pprof、反向代理配合自然，适合绝大多数 HTTP API 和内部服务 fastht…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-net-http-fasthttp-gnet-q-sut1qe.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？ - Go 后端面试题库">
+<meta name="twitter:description" content="先别把“网络框架”理解成谁 benchmark 更高 网络框架选型先看业务边界：你的协议形态、生态依赖、团队维护成本和观测能力，往往比单机 QPS 更重要。 三类常见选择 net/http ：Go 标准库，生态最完整，和中间件、监控、pprof、反向代理配合自然，适合绝大多数 HTTP API 和内部服务 fastht…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先别把“网络框架”理解成谁 benchmark 更高</h4>
+<p>网络框架选型先看业务边界：你的协议形态、生态依赖、团队维护成本和观测能力，往往比单机 QPS 更重要。</p>
+<h4>三类常见选择</h4>
+<ul>
+<li><b><code>net/http</code></b>：Go 标准库，生态最完整，和中间件、监控、pprof、反向代理配合自然，适合绝大多数 HTTP API 和内部服务</li>
+<li><b><code>fasthttp</code></b>：更激进地减少分配和对象开销，适合对延迟非常敏感、接口模型相对简单的场景，但和标准库 <code>http.Handler</code> 生态不完全兼容</li>
+<li><b><code>gnet</code></b>：事件驱动模型，更贴近底层网络编程，适合自定义协议、长连接网关、代理层、接入层，不是拿来直接替代所有 Web 服务的</li>
+</ul>
+<h4>怎么做选型判断</h4>
+<ul>
+<li><b>普通业务 API</b>：优先 <code>net/http</code>，够稳、够通用、维护成本最低</li>
+<li><b>高吞吐 HTTP 网关</b>：如果确认瓶颈就在 HTTP 栈和对象分配，可以评估 <code>fasthttp</code></li>
+<li><b>连接型或自定义协议服务</b>：如长连接接入层、代理、IM 网关，才更值得看 <code>gnet</code> 一类事件驱动网络框架</li>
+</ul>
+<div class="key-point">面试里高质量回答不是说某个网络框架“最快”，而是你能说明：协议形态、生态兼容、可观测性和团队维护成本，决定了框架选型。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./gmp-i-o-netpoller-hand-off-q-wfdrom.html">GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</a></li>
+      <li><a href="./go-q-u7zuhe.html">Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</a></li>
+      <li><a href="./goroutine-q-ha99tv.html">Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</a></li>
+      <li><a href="./java-go-q-3jsw8b.html">从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</a></li>
+      <li><a href="./go-java-goroutine-vs-channel-vs-q-dbi34y.html">Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="B+ 树特点 所有数据存储在 叶子节点 ，非叶子节点只存索引键值 叶子节点之间通过 双向链表 连接，天然支持范围查询 树的高度通常 3-4 层，亿级数据也只需 3-4 次 IO 为什么不用 B 树 B 树的非叶子节点也存数据，导致每个节点能容纳的 key 更少，树更高，IO 次数更多 B 树不支持高效的范围扫描（需要中…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/inno-db-b-b-q-wxlgi4.html">
+<meta property="og:title" content="InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？ - Go 后端面试题库">
+<meta property="og:description" content="B+ 树特点 所有数据存储在 叶子节点 ，非叶子节点只存索引键值 叶子节点之间通过 双向链表 连接，天然支持范围查询 树的高度通常 3-4 层，亿级数据也只需 3-4 次 IO 为什么不用 B 树 B 树的非叶子节点也存数据，导致每个节点能容纳的 key 更少，树更高，IO 次数更多 B 树不支持高效的范围扫描（需要中…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/inno-db-b-b-q-wxlgi4.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？ - Go 后端面试题库">
+<meta name="twitter:description" content="B+ 树特点 所有数据存储在 叶子节点 ，非叶子节点只存索引键值 叶子节点之间通过 双向链表 连接，天然支持范围查询 树的高度通常 3-4 层，亿级数据也只需 3-4 次 IO 为什么不用 B 树 B 树的非叶子节点也存数据，导致每个节点能容纳的 key 更少，树更高，IO 次数更多 B 树不支持高效的范围扫描（需要中…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</span>
+  </nav>
+
+  <article class="question">
+    <h1>InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>B+ 树特点</h4>
+<ul>
+<li>所有数据存储在<b>叶子节点</b>，非叶子节点只存索引键值</li>
+<li>叶子节点之间通过<b>双向链表</b>连接，天然支持范围查询</li>
+<li>树的高度通常 3-4 层，亿级数据也只需 3-4 次 IO</li>
+</ul>
+<h4>为什么不用 B 树</h4>
+<ul>
+<li>B 树的非叶子节点也存数据，导致每个节点能容纳的 key 更少，树更高，IO 次数更多</li>
+<li>B 树不支持高效的范围扫描（需要中序遍历回溯）</li>
+</ul>
+<h4>为什么不用 Hash</h4>
+<ul>
+<li>Hash 不支持范围查询（<code>WHERE age > 18</code>）</li>
+<li>不支持排序</li>
+<li>不支持最左前缀匹配</li>
+<li>存在哈希冲突</li>
+</ul>
+<h4>聚簇索引 vs 非聚簇索引</h4>
+<ul>
+<li><b>聚簇索引</b>（主键）：叶子节点存储完整行数据</li>
+<li><b>非聚簇索引</b>（二级索引）：叶子节点存储主键值，需要<b>回表</b>查询完整数据</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-sqoeth.html">你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</a></li>
+      <li><a href="./my-sql-acid-redo-log-undo-q-m41whe.html">MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？</a></li>
+      <li><a href="./saa-s-gorm-q-fe9pel.html">多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？</a></li>
+      <li><a href="./my-sql-q-1gxiy1s.html">MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？</a></li>
+      <li><a href="./inno-db-my-isam-count-q-qa08h2.html">InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

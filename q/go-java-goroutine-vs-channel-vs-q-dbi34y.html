@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="并发原语对比 维度 Java Go 基本并发单元 Thread（OS 线程），或 Virtual Thread（Java 21+） goroutine（用户态轻量级线程） 创建开销 线程 ~1MB 栈，创建涉及内核态 goroutine ~2KB 栈，纯用户态创建 并发数量级 线程池通常几百~几千 goroutine…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-java-goroutine-vs-channel-vs-q-dbi34y.html">
+<meta property="og:title" content="Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？ - Go 后端面试题库">
+<meta property="og:description" content="并发原语对比 维度 Java Go 基本并发单元 Thread（OS 线程），或 Virtual Thread（Java 21+） goroutine（用户态轻量级线程） 创建开销 线程 ~1MB 栈，创建涉及内核态 goroutine ~2KB 栈，纯用户态创建 并发数量级 线程池通常几百~几千 goroutine…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-java-goroutine-vs-channel-vs-q-dbi34y.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？ - Go 后端面试题库">
+<meta name="twitter:description" content="并发原语对比 维度 Java Go 基本并发单元 Thread（OS 线程），或 Virtual Thread（Java 21+） goroutine（用户态轻量级线程） 创建开销 线程 ~1MB 栈，创建涉及内核态 goroutine ~2KB 栈，纯用户态创建 并发数量级 线程池通常几百~几千 goroutine…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>并发原语对比</h4>
+<table>
+<tr><th>维度</th><th>Java</th><th>Go</th></tr>
+<tr><td>基本并发单元</td><td>Thread（OS 线程），或 Virtual Thread（Java 21+）</td><td>goroutine（用户态轻量级线程）</td></tr>
+<tr><td>创建开销</td><td>线程 ~1MB 栈，创建涉及内核态</td><td>goroutine ~2KB 栈，纯用户态创建</td></tr>
+<tr><td>并发数量级</td><td>线程池通常几百~几千</td><td>goroutine 轻松几十万</td></tr>
+<tr><td>通信方式</td><td>共享内存 + 锁（synchronized/ReentrantLock）</td><td>优先 channel 通信，也支持 sync.Mutex</td></tr>
+<tr><td>并发安全集合</td><td>ConcurrentHashMap / CopyOnWriteArrayList</td><td>sync.Map / 普通 map + mutex</td></tr>
+<tr><td>异步编程</td><td>CompletableFuture / Reactor</td><td>goroutine + channel 天然异步</td></tr>
+</table>
+<h4>核心理念差异</h4>
+<ul>
+<li><b>Java</b>：共享内存 + 锁保护 → 需要小心死锁、竞态条件，代码复杂度随并发量上升</li>
+<li><b>Go</b>："Don't communicate by sharing memory, share memory by communicating" → channel 传递数据所有权，减少锁的使用</li>
+</ul>
+<h4>Java 21 Virtual Thread 的影响</h4>
+<p>Java 21 引入虚拟线程，概念上接近 goroutine——轻量、大量创建、用户态调度。但 Go 的 channel + select 多路复用在语言层面集成更深，而 Java 虚拟线程仍然依赖传统的 synchronized/Lock 做同步。</p>
+<h4>实际项目中的体感</h4>
+<p>在 Java 项目中做并发通常靠线程池 + Future + 加锁；在 Go 项目中同样的功能用 goroutine + channel + errgroup 更简洁直观。比如框架的 18 步初始化链，用 errgroup 几行代码就能实现"串行有依赖 + 并行无依赖"的两阶段模型。</p>
+<div class="key-point">如果被追问"Java Virtual Thread 出来后 Go 的并发优势还在吗"——答：虚拟线程缩小了差距，但 Go 的 channel/select 语言级集成、GMP 调度成熟度、以及整体部署轻量性仍是优势。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-java-go-error-try-catch-q-ueisf2.html">Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</a></li>
+      <li><a href="./go-java-gc-q-5cwrb2.html">Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</a></li>
+      <li><a href="./goroutine-gmp-g-m-p-q-q1rk0k.html">Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？</a></li>
+      <li><a href="./go-channel-channel-q-1uwipet.html">Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</a></li>
+      <li><a href="./go-interface-q-1v8drm9.html">Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="排查步骤 查看 Consumer Lag： kafka-consumer-groups.sh --describe --group mygroup 确认是否是消费逻辑慢（DB 操作、外部 API 调用等） 确认 Partition 数量是否足够 解决方案 增加 Partition + Consumer ：Consume…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/kafka-consumer-q-rmp1qo.html">
+<meta property="og:title" content="Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？ - Go 后端面试题库">
+<meta property="og:description" content="排查步骤 查看 Consumer Lag： kafka-consumer-groups.sh --describe --group mygroup 确认是否是消费逻辑慢（DB 操作、外部 API 调用等） 确认 Partition 数量是否足够 解决方案 增加 Partition + Consumer ：Consume…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/kafka-consumer-q-rmp1qo.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？ - Go 后端面试题库">
+<meta name="twitter:description" content="排查步骤 查看 Consumer Lag： kafka-consumer-groups.sh --describe --group mygroup 确认是否是消费逻辑慢（DB 操作、外部 API 调用等） 确认 Partition 数量是否足够 解决方案 增加 Partition + Consumer ：Consume…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kafka.html">Kafka 消息队列</a> ›
+    <span>Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Kafka 消息积压怎么处理？Consumer 消费太慢怎么办？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>排查步骤</h4>
+<ol>
+<li>查看 Consumer Lag：<code>kafka-consumer-groups.sh --describe --group mygroup</code></li>
+<li>确认是否是消费逻辑慢（DB 操作、外部 API 调用等）</li>
+<li>确认 Partition 数量是否足够</li>
+</ol>
+<h4>解决方案</h4>
+<ul>
+<li><b>增加 Partition + Consumer</b>：Consumer 数量不能超过 Partition 数（超过的会空闲）</li>
+<li><b>消费端批量处理</b>：批量写入 DB 而非逐条插入</li>
+<li><b>异步消费</b>：Consumer 接收后投入本地队列，Worker Pool 并行处理</li>
+<li><b>临时扩容</b>：新建一个 Topic（更多 Partition），用转发 Consumer 把积压消息转发过去，扩大消费并行度</li>
+</ul>
+<pre><code>// Go 消费端并行处理
+func consume(msg *kafka.Message) {
+    // 投入 Worker Pool 而非同步处理
+    pool.Submit(func() {
+        process(msg)
+        consumer.CommitMessage(msg)
+    })
+}</code></pre>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./kafka-q-1h9bs4f.html">Kafka 如何保证消息顺序性？全局有序和分区有序的区别？</a></li>
+      <li><a href="./kafka-redis-asynq-q-1e0b4eb.html">Kafka 与 Redis 消息队列 (Asynq) 的区别？各自适用场景？</a></li>
+      <li><a href="./q-1vkbj6o.html">延迟队列、重试队列、死信队列分别解决什么问题？如何避免消息重试风暴？</a></li>
+      <li><a href="./redis-list-kafka-rabbit-mq-asynq-q-p7xed0.html">为什么业务消息队列通常不用 Redis List，而会选 Kafka / RabbitMQ / Asynq？</a></li>
+      <li><a href="./kafka-producer-broker-consumer-partition-q-w5vcxz.html">Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kafka.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=12">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

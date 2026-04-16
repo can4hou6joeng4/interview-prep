@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先分清两个对象 工单本身 ：描述一次变更申请，关注提交、审批、执行和结果 资源本身 ：真正被操作的对象，如机器、实例、权限、域名，不要和工单揉成一张表 一个常见状态机 draft → pending → approved → executing → success └────────→ rejected executi…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-17pttmy.html">
+<meta property="og:title" content="自动化工单系统如何设计状态机、审批流、幂等和审计？ - Go 后端面试题库">
+<meta property="og:description" content="先分清两个对象 工单本身 ：描述一次变更申请，关注提交、审批、执行和结果 资源本身 ：真正被操作的对象，如机器、实例、权限、域名，不要和工单揉成一张表 一个常见状态机 draft → pending → approved → executing → success └────────→ rejected executi…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-17pttmy.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="自动化工单系统如何设计状态机、审批流、幂等和审计？ - Go 后端面试题库">
+<meta name="twitter:description" content="先分清两个对象 工单本身 ：描述一次变更申请，关注提交、审批、执行和结果 资源本身 ：真正被操作的对象，如机器、实例、权限、域名，不要和工单揉成一张表 一个常见状态机 draft → pending → approved → executing → success └────────→ rejected executi…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>自动化工单系统如何设计状态机、审批流、幂等和审计？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>自动化工单系统如何设计状态机、审批流、幂等和审计？</span>
+  </nav>
+
+  <article class="question">
+    <h1>自动化工单系统如何设计状态机、审批流、幂等和审计？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先分清两个对象</h4>
+<ul>
+<li><b>工单本身</b>：描述一次变更申请，关注提交、审批、执行和结果</li>
+<li><b>资源本身</b>：真正被操作的对象，如机器、实例、权限、域名，不要和工单揉成一张表</li>
+</ul>
+<h4>一个常见状态机</h4>
+<pre><code>draft → pending → approved → executing → success
+                 └────────→ rejected
+executing ───────→ failed / cancelled</code></pre>
+<ul>
+<li><b>draft</b>：草稿，尚未正式发起</li>
+<li><b>pending</b>：等待审批</li>
+<li><b>approved</b>：审批通过，等待执行</li>
+<li><b>executing</b>：执行中</li>
+<li><b>success / failed / cancelled</b>：终态</li>
+</ul>
+<h4>审批流怎么做</h4>
+<ul>
+<li>审批人和执行人要解耦，避免同一个人自己提自己批</li>
+<li>复杂流程支持按组织、资源类型、风险等级动态决定审批链</li>
+<li>审批动作要记录操作者、时间、意见和变更快照</li>
+</ul>
+<h4>幂等和审计</h4>
+<ul>
+<li>提交工单时最好有幂等键，避免前端重试产生重复工单</li>
+<li>执行阶段同样要幂等，防止重复点击“执行”导致多次下发</li>
+<li>每次状态变更都写审计日志，必要时保留请求参数和执行结果快照</li>
+</ul>
+<div class="key-point">这题真正拉开差距的是：你能说清工单系统不是“多一张单据表”，而是“资源变更流程 + 审批约束 + 可追责审计”的组合。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-5ortqw.html">资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</a></li>
+      <li><a href="./go-php-plugin-mode-static-mode-q-arch-dual-engine.html">Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</a></li>
+      <li><a href="./checkout-payment-before-after-mutex-rw-q-arch-event-hooks.html">Checkout/Payment 的 Before/After 事件钩子怎么设计的？为什么用 Mutex 而不是 RWMutex？</a></li>
+      <li><a href="./go-q-dp1bas.html">常见的设计模式有哪几大类？Go 里最常用的是哪些？</a></li>
+      <li><a href="./q-159zveo.html">你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先区分两个概念 不可重复读 ：同一行数据被其他事务 UPDATE，两次读结果不同 幻读 ：同一条件查询，第二次多出或少了几行（其他事务 INSERT/DELETE） 快照读 vs 当前读 快照读 （普通 SELECT）：通过 MVCC （ReadView + undo log 版本链）读取事务开始时的快照。其他事务新插…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/inno-db-mvcc-next-key-lock-q-usbl7u.html">
+<meta property="og:title" content="InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？ - Go 后端面试题库">
+<meta property="og:description" content="先区分两个概念 不可重复读 ：同一行数据被其他事务 UPDATE，两次读结果不同 幻读 ：同一条件查询，第二次多出或少了几行（其他事务 INSERT/DELETE） 快照读 vs 当前读 快照读 （普通 SELECT）：通过 MVCC （ReadView + undo log 版本链）读取事务开始时的快照。其他事务新插…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/inno-db-mvcc-next-key-lock-q-usbl7u.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？ - Go 后端面试题库">
+<meta name="twitter:description" content="先区分两个概念 不可重复读 ：同一行数据被其他事务 UPDATE，两次读结果不同 幻读 ：同一条件查询，第二次多出或少了几行（其他事务 INSERT/DELETE） 快照读 vs 当前读 快照读 （普通 SELECT）：通过 MVCC （ReadView + undo log 版本链）读取事务开始时的快照。其他事务新插…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？</span>
+  </nav>
+
+  <article class="question">
+    <h1>InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先区分两个概念</h4>
+<ul>
+<li><b>不可重复读</b>：同一行数据被其他事务 UPDATE，两次读结果不同</li>
+<li><b>幻读</b>：同一条件查询，第二次多出或少了几行（其他事务 INSERT/DELETE）</li>
+</ul>
+<h4>快照读 vs 当前读</h4>
+<ul>
+<li><b>快照读</b>（普通 SELECT）：通过 <b>MVCC</b>（ReadView + undo log 版本链）读取事务开始时的快照。其他事务新插入的行对当前事务不可见，天然避免幻读</li>
+<li><b>当前读</b>（SELECT ... FOR UPDATE / INSERT / UPDATE / DELETE）：读取最新已提交数据，通过 <b>Next-Key Lock</b>（记录锁 + 间隙锁）锁住查询范围，阻止其他事务在范围内插入新行</li>
+</ul>
+<h4>Next-Key Lock 怎么防幻读</h4>
+<pre><code>-- 事务 A
+SELECT * FROM orders WHERE amount > 100 FOR UPDATE;
+-- 锁住 amount > 100 的所有已有记录（Record Lock）
+-- 同时锁住 (100, +∞) 的间隙（Gap Lock）
+-- 事务 B 想 INSERT amount=150 → 被间隙锁阻塞</code></pre>
+<h4>一个常见误区</h4>
+<p>"可重复读不能防幻读，只有串行化才行"——这在 SQL 标准里是对的，但 <b>InnoDB 的可重复读通过 MVCC + Next-Key Lock 在绝大多数场景下已经解决了幻读</b>。只有极少数边界场景（如同一事务内先快照读再当前读）可能看到不一致。</p>
+<div class="key-point">面试时最好说清：快照读靠 MVCC 天然防幻读，当前读靠 Next-Key Lock 锁范围防幻读。两种机制配合，而不是只有一种。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-yq4cwq.html">分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？</a></li>
+      <li><a href="./inno-db-b-b-q-wxlgi4.html">InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</a></li>
+      <li><a href="./q-sqoeth.html">你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</a></li>
+      <li><a href="./my-sql-acid-redo-log-undo-q-m41whe.html">MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？</a></li>
+      <li><a href="./saa-s-gorm-q-fe9pel.html">多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

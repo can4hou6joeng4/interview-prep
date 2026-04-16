@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三者核心对比 etcd ：Go 编写，Raft 共识算法，强一致性，Watch API + Lease 租约。单二进制部署简单，K8s 内置使用 ZooKeeper ：Java 编写，ZAB 协议，强一致性。功能成熟但部署重（依赖 JVM），临时节点 + Watcher 做服务发现 Consul ：Go 编写，Raft…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/etcd-zoo-keeper-consul-etcd-watch-q-9kpxmf.html">
+<meta property="og:title" content="etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？ - Go 后端面试题库">
+<meta property="og:description" content="三者核心对比 etcd ：Go 编写，Raft 共识算法，强一致性，Watch API + Lease 租约。单二进制部署简单，K8s 内置使用 ZooKeeper ：Java 编写，ZAB 协议，强一致性。功能成熟但部署重（依赖 JVM），临时节点 + Watcher 做服务发现 Consul ：Go 编写，Raft…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/etcd-zoo-keeper-consul-etcd-watch-q-9kpxmf.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？ - Go 后端面试题库">
+<meta name="twitter:description" content="三者核心对比 etcd ：Go 编写，Raft 共识算法，强一致性，Watch API + Lease 租约。单二进制部署简单，K8s 内置使用 ZooKeeper ：Java 编写，ZAB 协议，强一致性。功能成熟但部署重（依赖 JVM），临时节点 + Watcher 做服务发现 Consul ：Go 编写，Raft…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？</span>
+  </nav>
+
+  <article class="question">
+    <h1>etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三者核心对比</h4>
+<ul>
+<li><b>etcd</b>：Go 编写，Raft 共识算法，强一致性，Watch API + Lease 租约。单二进制部署简单，K8s 内置使用</li>
+<li><b>ZooKeeper</b>：Java 编写，ZAB 协议，强一致性。功能成熟但部署重（依赖 JVM），临时节点 + Watcher 做服务发现</li>
+<li><b>Consul</b>：Go 编写，Raft 共识，内置服务发现 + 健康检查 + KV + Service Mesh。功能最全但概念多</li>
+</ul>
+<h4>选型依据</h4>
+<ul>
+<li><b>已有 K8s 生态</b>：优先 etcd，天然集成</li>
+<li><b>需要全套服务网格</b>：考虑 Consul</li>
+<li><b>Java 技术栈 / 已有 ZK 运维经验</b>：继续用 ZooKeeper</li>
+<li><b>只需配置中心 + 服务发现</b>：etcd 最轻量</li>
+</ul>
+<h4>etcd Watch + Lease 服务注册流程</h4>
+<ol>
+<li>服务启动时，创建一个 Lease（设 TTL=10s），拿到 LeaseID</li>
+<li>将服务信息写入 etcd，Key 绑定 LeaseID：<code>PUT /services/user/instance-1 --lease=xxx</code></li>
+<li>服务持续发送 KeepAlive 续约，保持 Lease 不过期</li>
+<li>服务挂了 → 停止续约 → Lease 到期 → etcd 自动删除 Key</li>
+<li>消费端通过 <code>Watch /services/user/</code> 前缀，实时感知实例上下线</li>
+</ol>
+<div class="key-point">面试追问"为什么不用 Redis 做服务发现"：Redis 不保证强一致性，网络分区时可能出现脑裂。etcd/ZK 基于共识算法，在一致性上有协议级保证。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1drhjo5.html">微服务的服务发现有哪些方式？注册中心的作用？</a></li>
+      <li><a href="./open-telemetry-q-agdyxq.html">分布式链路追踪是什么？OpenTelemetry 怎么用？</a></li>
+      <li><a href="./saga-q-1yahdcj.html">微服务中如何处理分布式事务？Saga 模式是什么？</a></li>
+      <li><a href="./g-rpc-q-1wl8hrc.html">gRPC 的四种通信模式是什么？分别适合什么场景？</a></li>
+      <li><a href="./protobuf-json-q-1154leh.html">Protobuf 的编码原理是什么？为什么通常比 JSON 更快？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

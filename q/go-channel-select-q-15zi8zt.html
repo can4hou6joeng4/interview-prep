@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="func main() { ctx, cancel := context.WithCancel(context.Background()) defer cancel() queue := make(chan int, 16) var wg sync.WaitGroup // producer wg.Add(1) go…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-channel-select-q-15zi8zt.html">
+<meta property="og:title" content="用 Go 实现生产者-消费者模型（channel + select） - Go 后端面试题库">
+<meta property="og:description" content="func main() { ctx, cancel := context.WithCancel(context.Background()) defer cancel() queue := make(chan int, 16) var wg sync.WaitGroup // producer wg.Add(1) go…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-channel-select-q-15zi8zt.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="用 Go 实现生产者-消费者模型（channel + select） - Go 后端面试题库">
+<meta name="twitter:description" content="func main() { ctx, cancel := context.WithCancel(context.Background()) defer cancel() queue := make(chan int, 16) var wg sync.WaitGroup // producer wg.Add(1) go…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>用 Go 实现生产者-消费者模型（channel + select） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>用 Go 实现生产者-消费者模型（channel + select）</span>
+  </nav>
+
+  <article class="question">
+    <h1>用 Go 实现生产者-消费者模型（channel + select）</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<pre><code>func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    queue := make(chan int, 16)
+    var wg sync.WaitGroup
+
+    // producer
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        for i := 0; i < 100; i++ {
+            select {
+            case queue <- i:
+            case <-ctx.Done():
+                return
+            }
+        }
+        close(queue)
+    }()
+
+    // consumers
+    for i := 0; i < 3; i++ {
+        wg.Add(1)
+        go func(worker int) {
+            defer wg.Done()
+            for {
+                select {
+                case v, ok := <-queue:
+                    if !ok {
+                        return
+                    }
+                    fmt.Println(worker, v)
+                case <-ctx.Done():
+                    return
+                }
+            }
+        }(i)
+    }
+
+    wg.Wait()
+}</code></pre>
+<div class="key-point">这题别只写 happy path，最好带上 <code>close(channel)</code>、<code>context</code> 和优雅退出，面试官会更认可。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-skip-list-q-blkq5.html">实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</a></li>
+      <li><a href="./go-q-71dk9x.html">用 Go 实现环形链表入口检测（快慢指针）</a></li>
+      <li><a href="./go-lru-cache-q-hkgo2f.html">用 Go 实现一个并发安全的 LRU Cache</a></li>
+      <li><a href="./go-worker-pool-q-qpqv9v.html">用 Go 实现一个简单的 Worker Pool（限制并发数）</a></li>
+      <li><a href="./go-singleflight-q-chozb9.html">用 Go 实现 singleflight（合并并发请求）</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

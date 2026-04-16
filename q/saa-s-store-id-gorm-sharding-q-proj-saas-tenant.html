@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="逻辑隔离 vs 物理隔离 物理隔离（每租户一个库）的问题：连接池爆炸、schema 变更逐库执行、成本高。 逻辑隔离通过 store_id + GORM 中间件自动注入 WHERE store_id = ? 。 自定义 Sharding 替代 gorm.io/sharding 的原因： 官方插件 AutoMigrate…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">
+<meta property="og:title" content="SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？ - Go 后端面试题库">
+<meta property="og:description" content="逻辑隔离 vs 物理隔离 物理隔离（每租户一个库）的问题：连接池爆炸、schema 变更逐库执行、成本高。 逻辑隔离通过 store_id + GORM 中间件自动注入 WHERE store_id = ? 。 自定义 Sharding 替代 gorm.io/sharding 的原因： 官方插件 AutoMigrate…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？ - Go 后端面试题库">
+<meta name="twitter:description" content="逻辑隔离 vs 物理隔离 物理隔离（每租户一个库）的问题：连接池爆炸、schema 变更逐库执行、成本高。 逻辑隔离通过 store_id + GORM 中间件自动注入 WHERE store_id = ? 。 自定义 Sharding 替代 gorm.io/sharding 的原因： 官方插件 AutoMigrate…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</span>
+  </nav>
+
+  <article class="question">
+    <h1>SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>逻辑隔离 vs 物理隔离</h4>
+<p>物理隔离（每租户一个库）的问题：连接池爆炸、schema 变更逐库执行、成本高。</p>
+<p>逻辑隔离通过 <code>store_id</code> + GORM 中间件自动注入 <code>WHERE store_id = ?</code>。</p>
+<h4>自定义 Sharding</h4>
+<p>替代 <code>gorm.io/sharding</code> 的原因：</p>
+<ul>
+<li>官方插件 AutoMigrate 时 Schema 注册导致<b>空指针</b></li>
+<li>对 <code>store_id = 0</code> 全局表异常</li>
+</ul>
+<p>自定义版本：分片基于 store_id、兼容 AutoMigrate、全局表白名单跳过。</p>
+<div class="key-point">推荐：基础逻辑隔离 + 高流量表 Sharding + 大客户可选物理隔离</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./saa-s-q-proj-recovery.html">营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</a></li>
+      <li><a href="./star-q-proj-star-behavior.html">行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</a></li>
+      <li><a href="./ai-claude-code-cursor-codex-q-u76ayt.html">AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</a></li>
+      <li><a href="./ai-ai-q-wjtvi3.html">AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</a></li>
+      <li><a href="./python-go-java-saa-s-q-7zioa5.html">Python、Go、Java 各自适合什么后端场景？出海 SaaS 技术栈怎么选？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

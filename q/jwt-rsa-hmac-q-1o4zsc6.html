@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="JWT 结构 Header.Payload.Signature （Base64URL 编码） HMAC vs RSA HMAC (HS256) ：对称加密，签发和验证使用同一个密钥。适合单体应用 RSA (RS256) ：非对称加密，私钥签发、公钥验证。适合微服务（各服务只需公钥即可验证） 微服务场景选 RSA 的原因…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/jwt-rsa-hmac-q-1o4zsc6.html">
+<meta property="og:title" content="JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？ - Go 后端面试题库">
+<meta property="og:description" content="JWT 结构 Header.Payload.Signature （Base64URL 编码） HMAC vs RSA HMAC (HS256) ：对称加密，签发和验证使用同一个密钥。适合单体应用 RSA (RS256) ：非对称加密，私钥签发、公钥验证。适合微服务（各服务只需公钥即可验证） 微服务场景选 RSA 的原因…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/jwt-rsa-hmac-q-1o4zsc6.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？ - Go 后端面试题库">
+<meta name="twitter:description" content="JWT 结构 Header.Payload.Signature （Base64URL 编码） HMAC vs RSA HMAC (HS256) ：对称加密，签发和验证使用同一个密钥。适合单体应用 RSA (RS256) ：非对称加密，私钥签发、公钥验证。适合微服务（各服务只需公钥即可验证） 微服务场景选 RSA 的原因…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/security.html">安全防护</a> ›
+    <span>JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？</span>
+  </nav>
+
+  <article class="question">
+    <h1>JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>JWT 结构</h4>
+<p><code>Header.Payload.Signature</code>（Base64URL 编码）</p>
+<h4>HMAC vs RSA</h4>
+<ul>
+<li><b>HMAC (HS256)</b>：对称加密，签发和验证使用同一个密钥。适合单体应用</li>
+<li><b>RSA (RS256)</b>：非对称加密，私钥签发、公钥验证。适合微服务（各服务只需公钥即可验证）</li>
+</ul>
+<h4>微服务场景选 RSA 的原因</h4>
+<pre><code>// Auth Service（持有私钥）
+token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+signedToken, _ := token.SignedString(privateKey)
+
+// 其他 Service（只需公钥验证）
+token, _ := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+    return publicKey, nil  // 公钥泄露不影响安全
+})</code></pre>
+<ul>
+<li>私钥只在 Auth Service，其他 17 个服务不需要接触私钥</li>
+<li>公钥可以公开分发，降低密钥管理复杂度</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./waf-q-2zizcr.html">你的自研 WAF 中间件是怎么做访客风险分析的？</a></li>
+      <li><a href="./aes-cbc-rsa-rsa-q-1fg3w7k.html">AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？</a></li>
+      <li><a href="./waf-q-sec-waf-score.html">WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？</a></li>
+      <li><a href="./cookie-q-sec-ratelimit-cookie.html">频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/security.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=6">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

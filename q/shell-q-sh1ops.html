@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="后端工程师常用的 Shell 场景 日志分析 ： grep + awk + sort + uniq -c 快速统计错误分布、慢请求 Top N 批量操作 ：批量重启服务、批量更新配置、批量清理过期文件 健康检查 ：定时检测端口、进程、磁盘空间，异常时发告警 部署脚本 ：编译、打包、推送、滚动重启的自动化串联 实用示例…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/shell-q-sh1ops.html">
+<meta property="og:title" content="Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？ - Go 后端面试题库">
+<meta property="og:description" content="后端工程师常用的 Shell 场景 日志分析 ： grep + awk + sort + uniq -c 快速统计错误分布、慢请求 Top N 批量操作 ：批量重启服务、批量更新配置、批量清理过期文件 健康检查 ：定时检测端口、进程、磁盘空间，异常时发告警 部署脚本 ：编译、打包、推送、滚动重启的自动化串联 实用示例…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/shell-q-sh1ops.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？ - Go 后端面试题库">
+<meta name="twitter:description" content="后端工程师常用的 Shell 场景 日志分析 ： grep + awk + sort + uniq -c 快速统计错误分布、慢请求 Top N 批量操作 ：批量重启服务、批量更新配置、批量清理过期文件 健康检查 ：定时检测端口、进程、磁盘空间，异常时发告警 部署脚本 ：编译、打包、推送、滚动重启的自动化串联 实用示例…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/linux.html">Linux 基础</a> ›
+    <span>Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>后端工程师常用的 Shell 场景</h4>
+<ul>
+<li><b>日志分析</b>：<code>grep + awk + sort + uniq -c</code> 快速统计错误分布、慢请求 Top N</li>
+<li><b>批量操作</b>：批量重启服务、批量更新配置、批量清理过期文件</li>
+<li><b>健康检查</b>：定时检测端口、进程、磁盘空间，异常时发告警</li>
+<li><b>部署脚本</b>：编译、打包、推送、滚动重启的自动化串联</li>
+</ul>
+<h4>实用示例</h4>
+<pre><code># 统计最近 1 小时 5xx 错误的 Top 10 接口
+grep '$(date +%H):' access.log | awk '$9 >= 500 {print $7}' | sort | uniq -c | sort -rn | head -10
+
+# 批量检查多台机器的服务状态
+for host in $(cat hosts.txt); do
+  ssh $host 'systemctl is-active myservice' 2>/dev/null || echo "$host: DOWN"
+done
+
+# 清理 7 天前的日志
+find /var/log/app/ -name '*.log' -mtime +7 -exec rm -f {} \;</code></pre>
+<h4>写 Shell 脚本的工程习惯</h4>
+<ul>
+<li>开头加 <code>set -euo pipefail</code>，遇错即停，未定义变量报错</li>
+<li>关键操作前做 dry-run 或加确认提示</li>
+<li>日志输出带时间戳，方便事后排查</li>
+</ul>
+<div class="key-point">面试时别只说\"会用 grep\"，能举一个你实际写过的脚本场景（比如日志分析、批量部署），说清输入输出和用到的命令组合。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-code-review-q-cr1rev.html">Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？</a></li>
+      <li><a href="./linux-cpu-q-1jr6c9a.html">常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？</a></li>
+      <li><a href="./go-pprof-q-152su1v.html">Go 服务内存泄漏怎么排查？pprof 怎么用？</a></li>
+      <li><a href="./linux-too-many-open-files-q-1vd8czs.html">Linux 文件描述符是什么？Too many open files 怎么解决？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/linux.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=18">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

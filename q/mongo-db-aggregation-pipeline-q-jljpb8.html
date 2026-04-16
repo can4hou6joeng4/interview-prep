@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="聚合管道 类似 Unix 管道，文档依次通过多个 阶段 (Stage) ，每个阶段对文档做一种变换 db.orders.aggregate([ { $match: { status: &quot;paid&quot; } }, // WHERE { $group: { // GROUP BY _id: &quot;$storeId&quot;, totalA…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-aggregation-pipeline-q-jljpb8.html">
+<meta property="og:title" content="MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？ - Go 后端面试题库">
+<meta property="og:description" content="聚合管道 类似 Unix 管道，文档依次通过多个 阶段 (Stage) ，每个阶段对文档做一种变换 db.orders.aggregate([ { $match: { status: &quot;paid&quot; } }, // WHERE { $group: { // GROUP BY _id: &quot;$storeId&quot;, totalA…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-aggregation-pipeline-q-jljpb8.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？ - Go 后端面试题库">
+<meta name="twitter:description" content="聚合管道 类似 Unix 管道，文档依次通过多个 阶段 (Stage) ，每个阶段对文档做一种变换 db.orders.aggregate([ { $match: { status: &quot;paid&quot; } }, // WHERE { $group: { // GROUP BY _id: &quot;$storeId&quot;, totalA…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mongodb.html">MongoDB</a> ›
+    <span>MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？</span>
+  </nav>
+
+  <article class="question">
+    <h1>MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>聚合管道</h4>
+<p>类似 Unix 管道，文档依次通过多个<b>阶段 (Stage)</b>，每个阶段对文档做一种变换</p>
+<pre><code>db.orders.aggregate([
+    { $match: { status: "paid" } },              // WHERE
+    { $group: {                                    // GROUP BY
+        _id: "$storeId",
+        totalAmount: { $sum: "$amount" },
+        count: { $sum: 1 }
+    }},
+    { $sort: { totalAmount: -1 } },               // ORDER BY
+    { $limit: 10 },                                // LIMIT
+    { $lookup: {                                   // LEFT JOIN
+        from: "stores",
+        localField: "_id",
+        foreignField: "_id",
+        as: "store"
+    }},
+    { $project: {                                  // SELECT
+        storeName: { $arrayElemAt: ["$store.name", 0] },
+        totalAmount: 1,
+        count: 1
+    }}
+])</code></pre>
+<h4>常用阶段</h4>
+<ul>
+<li><code>$match</code>：过滤（尽量放前面，利用索引）</li>
+<li><code>$group</code>：分组聚合（sum/avg/count/max/min）</li>
+<li><code>$sort</code> / <code>$limit</code> / <code>$skip</code>：排序分页</li>
+<li><code>$lookup</code>：类似 LEFT JOIN（跨集合关联）</li>
+<li><code>$unwind</code>：展开数组（一条文档变多条）</li>
+<li><code>$project</code> / <code>$addFields</code>：字段选择/计算</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./mongo-db-my-sql-q-ikzhl1.html">MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？</a></li>
+      <li><a href="./my-sql-redis-mongo-db-q-l2i20y.html">时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？</a></li>
+      <li><a href="./mongo-db-q-mg1shr.html">MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？</a></li>
+      <li><a href="./mongo-db-my-sql-mongo-db-q-gay2ec.html">MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？</a></li>
+      <li><a href="./mongo-db-my-sql-q-m6ivnq.html">MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mongodb.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=15">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

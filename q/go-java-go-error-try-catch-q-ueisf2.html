@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="两种错误处理模型 Java ：异常机制（try-catch-finally），分 Checked Exception 和 Unchecked Exception。错误沿调用栈向上抛出，可以在任意层捕获 Go ：函数返回值（ value, error ），错误作为普通返回值显式处理。 panic/recover 只用于真…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-java-go-error-try-catch-q-ueisf2.html">
+<meta property="og:title" content="Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？ - Go 后端面试题库">
+<meta property="og:description" content="两种错误处理模型 Java ：异常机制（try-catch-finally），分 Checked Exception 和 Unchecked Exception。错误沿调用栈向上抛出，可以在任意层捕获 Go ：函数返回值（ value, error ），错误作为普通返回值显式处理。 panic/recover 只用于真…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-java-go-error-try-catch-q-ueisf2.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？ - Go 后端面试题库">
+<meta name="twitter:description" content="两种错误处理模型 Java ：异常机制（try-catch-finally），分 Checked Exception 和 Unchecked Exception。错误沿调用栈向上抛出，可以在任意层捕获 Go ：函数返回值（ value, error ），错误作为普通返回值显式处理。 panic/recover 只用于真…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>两种错误处理模型</h4>
+<ul>
+<li><b>Java</b>：异常机制（try-catch-finally），分 Checked Exception 和 Unchecked Exception。错误沿调用栈向上抛出，可以在任意层捕获</li>
+<li><b>Go</b>：函数返回值（<code>value, error</code>），错误作为普通返回值显式处理。<code>panic/recover</code> 只用于真正不可恢复的异常</li>
+</ul>
+<h4>Go 为什么这样设计</h4>
+<ul>
+<li><b>显式优于隐式</b>：每个可能出错的调用点都要求你写 <code>if err != nil</code>，逼你思考这个错误该怎么处理</li>
+<li><b>避免异常滥用</b>：Java 中经常看到用异常做流程控制（如 NumberFormatException），性能差且语义不清</li>
+<li><b>更可预测的控制流</b>：函数签名就能看出会不会出错，不像 Java 可能在任何地方抛出 RuntimeException</li>
+</ul>
+<h4>Go 错误处理的痛点</h4>
+<ul>
+<li><code>if err != nil</code> 写得太多，代码啰嗦——这是社区最常见的抱怨</li>
+<li>缺少堆栈信息，需要 <code>fmt.Errorf("xxx: %w", err)</code> 手动包装或用 <code>pkg/errors</code></li>
+<li>没有 finally 对应物，靠 <code>defer</code> 来做资源清理</li>
+</ul>
+<h4>Go 1.13+ 的改进</h4>
+<pre><code>// 错误包装
+return fmt.Errorf("query user failed: %w", err)
+// 错误断言
+if errors.Is(err, sql.ErrNoRows) { ... }
+// 错误类型提取
+var myErr *MyError
+if errors.As(err, &myErr) { ... }</code></pre>
+<div class="key-point">面试时可以对比着说：Java 的异常更方便但容易被滥用，Go 的 error 更显式但写起来啰嗦。各有取舍，不是谁绝对更好。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-java-gc-q-5cwrb2.html">Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</a></li>
+      <li><a href="./goroutine-gmp-g-m-p-q-q1rk0k.html">Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？</a></li>
+      <li><a href="./go-channel-channel-q-1uwipet.html">Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</a></li>
+      <li><a href="./go-interface-q-1v8drm9.html">Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</a></li>
+      <li><a href="./go-reflect-go-cache-reflect-redis-q-1dumk95.html">Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

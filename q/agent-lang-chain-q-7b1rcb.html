@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="不要把框架选型答成“哪个更火” LangChain ：生态成熟、组件齐全、上手快，适合快速搭原型或中小规模 Agent 编排 轻量编排框架 ：抽象更少、启动更轻、定制更灵活，适合你已经知道核心流程、不想被重框架绑住的场景 自研流程 ：适合核心链路已经非常明确，且你需要强控制、强观测、强定制的时候 真实取舍点 LangC…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/agent-lang-chain-q-7b1rcb.html">
+<meta property="og:title" content="Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？ - Go 后端面试题库">
+<meta property="og:description" content="不要把框架选型答成“哪个更火” LangChain ：生态成熟、组件齐全、上手快，适合快速搭原型或中小规模 Agent 编排 轻量编排框架 ：抽象更少、启动更轻、定制更灵活，适合你已经知道核心流程、不想被重框架绑住的场景 自研流程 ：适合核心链路已经非常明确，且你需要强控制、强观测、强定制的时候 真实取舍点 LangC…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/agent-lang-chain-q-7b1rcb.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="不要把框架选型答成“哪个更火” LangChain ：生态成熟、组件齐全、上手快，适合快速搭原型或中小规模 Agent 编排 轻量编排框架 ：抽象更少、启动更轻、定制更灵活，适合你已经知道核心流程、不想被重框架绑住的场景 自研流程 ：适合核心链路已经非常明确，且你需要强控制、强观测、强定制的时候 真实取舍点 LangC…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>不要把框架选型答成“哪个更火”</h4>
+<ul>
+<li><b>LangChain</b>：生态成熟、组件齐全、上手快，适合快速搭原型或中小规模 Agent 编排</li>
+<li><b>轻量编排框架</b>：抽象更少、启动更轻、定制更灵活，适合你已经知道核心流程、不想被重框架绑住的场景</li>
+<li><b>自研流程</b>：适合核心链路已经非常明确，且你需要强控制、强观测、强定制的时候</li>
+</ul>
+<h4>真实取舍点</h4>
+<ul>
+<li>LangChain 的优势是快，但缺点往往是抽象层多、链路重、问题定位绕</li>
+<li>轻量方案更适合生产长期维护，但前提是团队对 Agent 流程有足够清晰的建模</li>
+<li>自研不代表“更高级”，而是你愿意承担更多基础设施和演进成本</li>
+</ul>
+<h4>怎么答得更像工程师</h4>
+<p>一个高质量回答要落到业务：POC 阶段可能先用 LangChain 快速验证，等链路稳定后，把核心流程收敛成自研或轻量编排层，只保留真正需要的插件能力。</p>
+<div class="key-point">面试官真正想听的是你理解框架 trade-off，而不是会背某个框架的 API。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-agent-q-1s90v9j.html">AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？</a></li>
+      <li><a href="./re-act-co-t-to-t-q-zff9w4.html">ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？</a></li>
+      <li><a href="./ai-agent-q-1vy0rvs.html">面向企业客服的 AI Agent 怎么做分层架构、记忆设计和幻觉防控？</a></li>
+      <li><a href="./ai-q-ai1etl.html">AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？</a></li>
+      <li><a href="./redis-rehash-q-rd1int.html">Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="pprof 排查流程 // 1. 引入 pprof import _ &quot;net/http/pprof&quot; go http.ListenAndServe(&quot;:6060&quot;, nil) // 2. 查看堆内存分配 go tool pprof http://localhost:6060/debug/pprof/heap // 3…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-pprof-q-152su1v.html">
+<meta property="og:title" content="Go 服务内存泄漏怎么排查？pprof 怎么用？ - Go 后端面试题库">
+<meta property="og:description" content="pprof 排查流程 // 1. 引入 pprof import _ &quot;net/http/pprof&quot; go http.ListenAndServe(&quot;:6060&quot;, nil) // 2. 查看堆内存分配 go tool pprof http://localhost:6060/debug/pprof/heap // 3…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-pprof-q-152su1v.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 服务内存泄漏怎么排查？pprof 怎么用？ - Go 后端面试题库">
+<meta name="twitter:description" content="pprof 排查流程 // 1. 引入 pprof import _ &quot;net/http/pprof&quot; go http.ListenAndServe(&quot;:6060&quot;, nil) // 2. 查看堆内存分配 go tool pprof http://localhost:6060/debug/pprof/heap // 3…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 服务内存泄漏怎么排查？pprof 怎么用？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/linux.html">Linux 基础</a> ›
+    <span>Go 服务内存泄漏怎么排查？pprof 怎么用？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 服务内存泄漏怎么排查？pprof 怎么用？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>pprof 排查流程</h4>
+<pre><code>// 1. 引入 pprof
+import _ "net/http/pprof"
+go http.ListenAndServe(":6060", nil)
+
+// 2. 查看堆内存分配
+go tool pprof http://localhost:6060/debug/pprof/heap
+
+// 3. 常用命令
+(pprof) top 10          // 内存分配 Top 10 函数
+(pprof) list funcName   // 查看具体函数的分配详情
+(pprof) web             // 生成调用图（需要 graphviz）
+
+// 4. 对比两个时间点的堆快照
+go tool pprof -base heap1.out heap2.out  // 查看增量
+
+// 5. Goroutine 泄漏
+go tool pprof http://localhost:6060/debug/pprof/goroutine
+// goroutine 数量持续增长 → 泄漏</code></pre>
+<h4>常见 Go 内存泄漏原因</h4>
+<ul>
+<li><b>Goroutine 泄漏</b>：channel 无人读/写导致 goroutine 永远阻塞（最常见）</li>
+<li><b>未关闭的资源</b>：HTTP response body、DB rows、文件句柄未 Close()</li>
+<li><b>全局 map 无限增长</b>：如缓存没有淘汰策略</li>
+<li><b>time.After 在循环中</b>：每次创建新的 Timer 未被 GC</li>
+<li><b>slice 引用大数组</b>：<code>s := bigSlice[:2]</code> 仍引用底层大数组</li>
+</ul>
+<div class="key-point">面试时可以结合项目：你的 WAF 中间件访客队列如果消费者挂了，channel 满后会阻塞生产者 goroutine → 需要带 default 或 select+timeout 防护</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./linux-too-many-open-files-q-1vd8czs.html">Linux 文件描述符是什么？Too many open files 怎么解决？</a></li>
+      <li><a href="./shell-q-sh1ops.html">Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？</a></li>
+      <li><a href="./go-code-review-q-cr1rev.html">Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？</a></li>
+      <li><a href="./linux-cpu-q-1jr6c9a.html">常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/linux.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=18">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

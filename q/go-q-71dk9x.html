@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="题目 给定一个链表，判断是否有环，如果有环则返回环的入口节点。 思路：快慢指针两步走 判断是否有环 ：快指针每次走 2 步，慢指针每次走 1 步。如果有环，快慢指针一定会在环内相遇；如果无环，快指针会先遇到 nil 找环入口 ：相遇后，把一个指针移回头节点，两个指针都改为每次走 1 步，再次相遇的节点就是环入口 数学证…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-q-71dk9x.html">
+<meta property="og:title" content="用 Go 实现环形链表入口检测（快慢指针） - Go 后端面试题库">
+<meta property="og:description" content="题目 给定一个链表，判断是否有环，如果有环则返回环的入口节点。 思路：快慢指针两步走 判断是否有环 ：快指针每次走 2 步，慢指针每次走 1 步。如果有环，快慢指针一定会在环内相遇；如果无环，快指针会先遇到 nil 找环入口 ：相遇后，把一个指针移回头节点，两个指针都改为每次走 1 步，再次相遇的节点就是环入口 数学证…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-q-71dk9x.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="用 Go 实现环形链表入口检测（快慢指针） - Go 后端面试题库">
+<meta name="twitter:description" content="题目 给定一个链表，判断是否有环，如果有环则返回环的入口节点。 思路：快慢指针两步走 判断是否有环 ：快指针每次走 2 步，慢指针每次走 1 步。如果有环，快慢指针一定会在环内相遇；如果无环，快指针会先遇到 nil 找环入口 ：相遇后，把一个指针移回头节点，两个指针都改为每次走 1 步，再次相遇的节点就是环入口 数学证…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>用 Go 实现环形链表入口检测（快慢指针） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>用 Go 实现环形链表入口检测（快慢指针）</span>
+  </nav>
+
+  <article class="question">
+    <h1>用 Go 实现环形链表入口检测（快慢指针）</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>题目</h4>
+<p>给定一个链表，判断是否有环，如果有环则返回环的入口节点。</p>
+<h4>思路：快慢指针两步走</h4>
+<ol>
+<li><b>判断是否有环</b>：快指针每次走 2 步，慢指针每次走 1 步。如果有环，快慢指针一定会在环内相遇；如果无环，快指针会先遇到 nil</li>
+<li><b>找环入口</b>：相遇后，把一个指针移回头节点，两个指针都改为每次走 1 步，再次相遇的节点就是环入口</li>
+</ol>
+<h4>数学证明</h4>
+<p>设头到入口距离为 a，入口到相遇点距离为 b，环长为 c。相遇时慢指针走了 a+b，快指针走了 a+b+nc。因为快指针速度是慢指针 2 倍：2(a+b) = a+b+nc → a = nc-b。所以从头走 a 步 = 从相遇点走 nc-b 步，都到达入口。</p>
+<h4>Go 实现</h4>
+<pre><code>type ListNode struct {
+    Val  int
+    Next *ListNode
+}
+
+func detectCycle(head *ListNode) *ListNode {
+    slow, fast := head, head
+    for fast != nil && fast.Next != nil {
+        slow = slow.Next
+        fast = fast.Next.Next
+        if slow == fast { // 有环，找入口
+            p := head
+            for p != slow {
+                p = p.Next
+                slow = slow.Next
+            }
+            return p
+        }
+    }
+    return nil // 无环
+}</code></pre>
+<p>时间 O(n)，空间 O(1)。</p>
+<div class="key-point">这是 LeetCode 142 原题，Go 后端面试手撕高频题。能说清数学推导是加分项。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-lru-cache-q-hkgo2f.html">用 Go 实现一个并发安全的 LRU Cache</a></li>
+      <li><a href="./go-worker-pool-q-qpqv9v.html">用 Go 实现一个简单的 Worker Pool（限制并发数）</a></li>
+      <li><a href="./go-singleflight-q-chozb9.html">用 Go 实现 singleflight（合并并发请求）</a></li>
+      <li><a href="./top-k-k-q-i5famw.html">实现 Top K 问题（海量数据中找前 K 大的元素）</a></li>
+      <li><a href="./bloom-filter-q-dxyqet.html">实现一个简单的布隆过滤器（Bloom Filter）</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

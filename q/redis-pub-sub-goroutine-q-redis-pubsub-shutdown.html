@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="问题 PubSub 订阅是 长驻 goroutine ，进程直接退出会丢消息。 优雅关机机制 启动时注册 context.Context + cancel 函数 每个订阅 goroutine 启动时 PubSubAdd() （WaitGroup.Add） 退出信号 → cancel() → goroutine 通过 s…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">
+<meta property="og:title" content="Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？ - Go 后端面试题库">
+<meta property="og:description" content="问题 PubSub 订阅是 长驻 goroutine ，进程直接退出会丢消息。 优雅关机机制 启动时注册 context.Context + cancel 函数 每个订阅 goroutine 启动时 PubSubAdd() （WaitGroup.Add） 退出信号 → cancel() → goroutine 通过 s…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？ - Go 后端面试题库">
+<meta name="twitter:description" content="问题 PubSub 订阅是 长驻 goroutine ，进程直接退出会丢消息。 优雅关机机制 启动时注册 context.Context + cancel 函数 每个订阅 goroutine 启动时 PubSubAdd() （WaitGroup.Add） 退出信号 → cancel() → goroutine 通过 s…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>问题</h4>
+<p>PubSub 订阅是<b>长驻 goroutine</b>，进程直接退出会丢消息。</p>
+<h4>优雅关机机制</h4>
+<ol>
+<li>启动时注册 <code>context.Context</code> + <code>cancel</code> 函数</li>
+<li>每个订阅 goroutine 启动时 <code>PubSubAdd()</code>（WaitGroup.Add）</li>
+<li>退出信号 → <code>cancel()</code> → goroutine 通过 <code>select { case <-ctx.Done() }</code> 退出</li>
+<li>主进程 <code>PubSubWait()</code> 等待所有 goroutine，超时保护兜底</li>
+</ol>
+<pre><code>go func() {
+    defer PubSubDone()
+    pubsub := client.Subscribe(ctx, chanNames...)
+    defer pubsub.Close()
+    for {
+        select {
+        case <-ctx.Done(): return
+        case msg := <-ch: handle(msg)
+        }
+    }
+}()</code></pre>
+<div class="key-point">经典组合：Context（生命周期） + WaitGroup（等待退出） + 超时保护（兜底）</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-q-1d6l2fz.html">Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</a></li>
+      <li><a href="./redis-rdb-aof-q-1glhos9.html">Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？</a></li>
+      <li><a href="./q-6ie2jz.html">缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？</a></li>
+      <li><a href="./asynq-q-18vz82y.html">Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？</a></li>
+      <li><a href="./redis-q-x046rc.html">Redis 分布式锁怎么实现？有什么陷阱？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

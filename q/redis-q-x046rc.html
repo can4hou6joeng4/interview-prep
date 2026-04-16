@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="基本实现 // 加锁：SET key value NX EX seconds ok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second) // 解锁：Lua 脚本保证原子性（判断 + 删除） const unlockScript = ` if redis.c…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-q-x046rc.html">
+<meta property="og:title" content="Redis 分布式锁怎么实现？有什么陷阱？ - Go 后端面试题库">
+<meta property="og:description" content="基本实现 // 加锁：SET key value NX EX seconds ok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second) // 解锁：Lua 脚本保证原子性（判断 + 删除） const unlockScript = ` if redis.c…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-q-x046rc.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Redis 分布式锁怎么实现？有什么陷阱？ - Go 后端面试题库">
+<meta name="twitter:description" content="基本实现 // 加锁：SET key value NX EX seconds ok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second) // 解锁：Lua 脚本保证原子性（判断 + 删除） const unlockScript = ` if redis.c…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Redis 分布式锁怎么实现？有什么陷阱？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>Redis 分布式锁怎么实现？有什么陷阱？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Redis 分布式锁怎么实现？有什么陷阱？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>基本实现</h4>
+<pre><code>// 加锁：SET key value NX EX seconds
+ok := redis.SetNX(ctx, lockKey, uniqueValue, 10*time.Second)
+
+// 解锁：Lua 脚本保证原子性（判断 + 删除）
+const unlockScript = `
+if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+else
+    return 0
+end`</code></pre>
+<h4>核心陷阱</h4>
+<ul>
+<li><b>锁过期但业务未完成</b>：A 持锁超时 → 锁自动释放 → B 获得锁 → A 完成后误删 B 的锁。解决：uniqueValue（UUID）+ Lua 原子判删</li>
+<li><b>主从切换丢锁</b>：master 加锁后未同步到 slave 就挂了，slave 提升为 master 后锁丢失。解决：<b>RedLock</b>（多节点过半数加锁）</li>
+<li><b>锁续期</b>：业务耗时不确定时需要看门狗机制（如 Redisson），定期续期</li>
+</ul>
+<div class="key-point">面试必答陷阱：锁的过期时间必须大于业务执行时间，否则锁自动释放后别人拿到锁，两个进程同时操作。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1l47aze.html">缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？</a></li>
+      <li><a href="./redis-q-sheogy.html">Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？</a></li>
+      <li><a href="./redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</a></li>
+      <li><a href="./redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</a></li>
+      <li><a href="./redis-q-1d6l2fz.html">Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

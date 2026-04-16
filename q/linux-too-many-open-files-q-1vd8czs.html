@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="文件描述符 (fd) Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd） 0 ：stdin | 1 ：stdout | 2 ：stderr 每个进程有 fd 上限（默认 1024） Too many open files 排查 # 查看当前进程打开的 fd 数 ls /proc/…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/linux-too-many-open-files-q-1vd8czs.html">
+<meta property="og:title" content="Linux 文件描述符是什么？Too many open files 怎么解决？ - Go 后端面试题库">
+<meta property="og:description" content="文件描述符 (fd) Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd） 0 ：stdin | 1 ：stdout | 2 ：stderr 每个进程有 fd 上限（默认 1024） Too many open files 排查 # 查看当前进程打开的 fd 数 ls /proc/…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/linux-too-many-open-files-q-1vd8czs.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Linux 文件描述符是什么？Too many open files 怎么解决？ - Go 后端面试题库">
+<meta name="twitter:description" content="文件描述符 (fd) Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd） 0 ：stdin | 1 ：stdout | 2 ：stderr 每个进程有 fd 上限（默认 1024） Too many open files 排查 # 查看当前进程打开的 fd 数 ls /proc/…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Linux 文件描述符是什么？Too many open files 怎么解决？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/linux.html">Linux 基础</a> ›
+    <span>Linux 文件描述符是什么？Too many open files 怎么解决？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Linux 文件描述符是什么？Too many open files 怎么解决？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>文件描述符 (fd)</h4>
+<p>Linux 中一切皆文件。每个进程打开的文件、socket、管道等都有一个整数编号（fd）</p>
+<ul>
+<li><code>0</code>：stdin | <code>1</code>：stdout | <code>2</code>：stderr</li>
+<li>每个进程有 fd 上限（默认 1024）</li>
+</ul>
+<h4>Too many open files 排查</h4>
+<pre><code># 查看当前进程打开的 fd 数
+ls /proc/PID/fd | wc -l
+
+# 查看进程的 fd 限制
+cat /proc/PID/limits | grep "open files"
+
+# 查看系统级限制
+cat /proc/sys/fs/file-max
+
+# 解决方案
+# 1. 临时调整
+ulimit -n 65535
+
+# 2. 永久调整 (/etc/security/limits.conf)
+* soft nofile 65535
+* hard nofile 65535
+
+# 3. systemd 服务
+[Service]
+LimitNOFILE=65535</code></pre>
+<h4>根本原因</h4>
+<p>通常不是真的需要这么多 fd，而是代码有资源泄漏：</p>
+<ul>
+<li>HTTP 响应 Body 未 <code>resp.Body.Close()</code></li>
+<li>数据库连接未释放</li>
+<li>文件打开后未关闭</li>
+</ul>
+<div class="key-point">Go 中养成习惯：<code>defer resp.Body.Close()</code>、<code>defer rows.Close()</code>、<code>defer f.Close()</code></div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./shell-q-sh1ops.html">Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？</a></li>
+      <li><a href="./go-code-review-q-cr1rev.html">Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？</a></li>
+      <li><a href="./linux-cpu-q-1jr6c9a.html">常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？</a></li>
+      <li><a href="./go-pprof-q-152su1v.html">Go 服务内存泄漏怎么排查？pprof 怎么用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/linux.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=18">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么要转 这个问题面试官一定会问，因为你的简历有明确的 Java→Go 迁移轨迹。回答要诚恳且有技术判断，不能只说&quot;Go 更火&quot;。 Go 相比 Java 的优势 并发模型更轻量 ：goroutine 初始栈 2KB，Java 线程默认 1MB。同样的机器 Go 能轻松跑几十万 goroutine，Java 线程池通常…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/java-go-q-3jsw8b.html">
+<meta property="og:title" content="从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？ - Go 后端面试题库">
+<meta property="og:description" content="为什么要转 这个问题面试官一定会问，因为你的简历有明确的 Java→Go 迁移轨迹。回答要诚恳且有技术判断，不能只说&quot;Go 更火&quot;。 Go 相比 Java 的优势 并发模型更轻量 ：goroutine 初始栈 2KB，Java 线程默认 1MB。同样的机器 Go 能轻松跑几十万 goroutine，Java 线程池通常…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/java-go-q-3jsw8b.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么要转 这个问题面试官一定会问，因为你的简历有明确的 Java→Go 迁移轨迹。回答要诚恳且有技术判断，不能只说&quot;Go 更火&quot;。 Go 相比 Java 的优势 并发模型更轻量 ：goroutine 初始栈 2KB，Java 线程默认 1MB。同样的机器 Go 能轻松跑几十万 goroutine，Java 线程池通常…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</span>
+  </nav>
+
+  <article class="question">
+    <h1>从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么要转</h4>
+<p>这个问题面试官一定会问，因为你的简历有明确的 Java→Go 迁移轨迹。回答要诚恳且有技术判断，不能只说"Go 更火"。</p>
+<h4>Go 相比 Java 的优势</h4>
+<ul>
+<li><b>并发模型更轻量</b>：goroutine 初始栈 2KB，Java 线程默认 1MB。同样的机器 Go 能轻松跑几十万 goroutine，Java 线程池通常几百到几千</li>
+<li><b>编译部署简单</b>：Go 编译成单一静态二进制，不需要 JVM，Docker 镜像可以做到几十 MB；Java 需要打包 JAR + JVM 环境，镜像动辄几百 MB</li>
+<li><b>启动速度快</b>：Go 服务毫秒级启动，适合 K8s 弹性扩缩容；Java 有 JVM 预热、类加载开销，冷启动慢</li>
+<li><b>内存占用低</b>：没有 JVM 的堆外开销，适合多实例微服务部署</li>
+<li><b>语法简洁</b>：没有继承、没有泛型滥用（Go 1.18 后有限泛型），代码风格统一（gofmt 强制格式化）</li>
+</ul>
+<h4>Java 相比 Go 的优势</h4>
+<ul>
+<li><b>生态更成熟</b>：Spring 全家桶、Hibernate、各种中间件客户端，企业级方案经过数十年验证</li>
+<li><b>OOP 表达力更强</b>：继承、接口默认方法、注解处理器、AOP 切面，适合大型复杂业务建模</li>
+<li><b>JVM 调优空间大</b>：G1/ZGC 等 GC 算法可精细调优，Go 的 GC 调优手段相对有限</li>
+<li><b>IDE 支持更好</b>：重构、代码导航、调试体验 Java 生态领先</li>
+<li><b>泛型和类型系统更完整</b>：Java 泛型虽然有擦除问题，但表达力远超 Go 的有限泛型</li>
+</ul>
+<h4>你的实际转型经历怎么讲</h4>
+<p>结合简历：在佑安做仓储系统用 Spring Boot + MyBatis-Plus + Activiti7，后来转到快勤做跨境电商 SaaS 用 Go + Fiber + GORM。转型动机：跨境电商 SaaS 需要高并发、多租户、轻量部署，Go 的并发模型和部署优势更匹配这种场景。</p>
+<div class="project-link">简历关联：佑安土木（Java/Spring Boot）→ 快勤技术（Go/Fiber），有从 Java 到 Go 的技术栈迁移实践</div>
+<div class="key-point">不要贬低 Java 来抬高 Go，面试官可能就是 Java 背景。正确的表达是"根据业务场景选择更合适的工具"。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-java-goroutine-vs-channel-vs-q-dbi34y.html">Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</a></li>
+      <li><a href="./go-java-go-error-try-catch-q-ueisf2.html">Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</a></li>
+      <li><a href="./go-java-gc-q-5cwrb2.html">Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</a></li>
+      <li><a href="./goroutine-gmp-g-m-p-q-q1rk0k.html">Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？</a></li>
+      <li><a href="./go-channel-channel-q-1uwipet.html">Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>
