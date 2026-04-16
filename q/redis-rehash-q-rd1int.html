@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="渐进式 Rehash Redis 的 dict 使用两个哈希表（ht[0] 和 ht[1]），扩容时不会一次性迁移所有 key 每次读写操作顺带迁移一部分（分摊到每次命令），避免长时间阻塞 rehash 期间，查询先查 ht[0]，miss 再查 ht[1]；写入直接写 ht[1] 过期策略 惰性删除 ：访问 key…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-rehash-q-rd1int.html">
+<meta property="og:title" content="Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？ - Go 后端面试题库">
+<meta property="og:description" content="渐进式 Rehash Redis 的 dict 使用两个哈希表（ht[0] 和 ht[1]），扩容时不会一次性迁移所有 key 每次读写操作顺带迁移一部分（分摊到每次命令），避免长时间阻塞 rehash 期间，查询先查 ht[0]，miss 再查 ht[1]；写入直接写 ht[1] 过期策略 惰性删除 ：访问 key…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-rehash-q-rd1int.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？ - Go 后端面试题库">
+<meta name="twitter:description" content="渐进式 Rehash Redis 的 dict 使用两个哈希表（ht[0] 和 ht[1]），扩容时不会一次性迁移所有 key 每次读写操作顺带迁移一部分（分摊到每次命令），避免长时间阻塞 rehash 期间，查询先查 ht[0]，miss 再查 ht[1]；写入直接写 ht[1] 过期策略 惰性删除 ：访问 key…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      
+    </p>
+    <section class="answer">
+<h4>渐进式 Rehash</h4>
+<ul>
+<li>Redis 的 dict 使用两个哈希表（ht[0] 和 ht[1]），扩容时不会一次性迁移所有 key</li>
+<li>每次读写操作顺带迁移一部分（分摊到每次命令），避免长时间阻塞</li>
+<li>rehash 期间，查询先查 ht[0]，miss 再查 ht[1]；写入直接写 ht[1]</li>
+</ul>
+<h4>过期策略</h4>
+<ul>
+<li><b>惰性删除</b>：访问 key 时检查是否过期，过期才删——省 CPU 但可能有内存浪费</li>
+<li><b>定期删除</b>：每 100ms 随机抽查一批 key，删除已过期的——平衡 CPU 和内存</li>
+<li>两种策略配合使用，既不会漏删太多，也不会占太多 CPU</li>
+</ul>
+<h4>内存淘汰策略</h4>
+<ul>
+<li><code>noeviction</code>：内存满了直接报错（默认）</li>
+<li><code>allkeys-lru</code>：在所有 key 中淘汰最近最少使用的</li>
+<li><code>volatile-lru</code>：只在有过期时间的 key 中做 LRU 淘汰</li>
+<li><code>allkeys-lfu</code>：基于访问频率淘汰（Redis 4.0+），比 LRU 更准确</li>
+<li><code>volatile-ttl</code>：优先淘汰 TTL 最短的 key</li>
+</ul>
+<h4>其他值得了解的内部机制</h4>
+<ul>
+<li><b>SDS（Simple Dynamic String）</b>：预分配 + 惰性释放，避免频繁内存分配</li>
+<li><b>ziplist → listpack</b>：小数据量时的紧凑编码，省内存</li>
+<li><b>IO 多路复用</b>：单线程 + epoll 事件循环处理所有连接</li>
+</ul>
+<div class="key-point">这题在外企面试中很常见——不是问你会不会用 SET/GET，而是看你理不理解 Redis 为什么快、内存怎么管、扩容怎么做到不阻塞。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-ssr-node-js-q-5gq8ts.html">为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？</a></li>
+      <li><a href="./builder-q-a0qyy2.html">积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？</a></li>
+      <li><a href="./ai-key-q-5c8mut.html">企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？</a></li>
+      <li><a href="./qps-q-tdwoih.html">你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</a></li>
+      <li><a href="./q-proj-coldhot-optimize.html">冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

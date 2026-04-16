@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三种阻塞，三条路径 这是 GMP 面试追问的深水区。很多人能说出 G/M/P 的概念，但一追到&quot;阻塞时调度器怎么处理&quot;就断了。核心区别在于：阻塞发生在用户态还是内核态，决定了 P 要不要解绑 M。 场景一：网络 I/O（conn.Read 等） Go 把所有网络操作封装成 非阻塞模式 ，底层走 netpoller （L…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/gmp-i-o-netpoller-hand-off-q-wfdrom.html">
+<meta property="og:title" content="GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？ - Go 后端面试题库">
+<meta property="og:description" content="三种阻塞，三条路径 这是 GMP 面试追问的深水区。很多人能说出 G/M/P 的概念，但一追到&quot;阻塞时调度器怎么处理&quot;就断了。核心区别在于：阻塞发生在用户态还是内核态，决定了 P 要不要解绑 M。 场景一：网络 I/O（conn.Read 等） Go 把所有网络操作封装成 非阻塞模式 ，底层走 netpoller （L…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/gmp-i-o-netpoller-hand-off-q-wfdrom.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？ - Go 后端面试题库">
+<meta name="twitter:description" content="三种阻塞，三条路径 这是 GMP 面试追问的深水区。很多人能说出 G/M/P 的概念，但一追到&quot;阻塞时调度器怎么处理&quot;就断了。核心区别在于：阻塞发生在用户态还是内核态，决定了 P 要不要解绑 M。 场景一：网络 I/O（conn.Read 等） Go 把所有网络操作封装成 非阻塞模式 ，底层走 netpoller （L…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</span>
+  </nav>
+
+  <article class="question">
+    <h1>GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三种阻塞，三条路径</h4>
+<p>这是 GMP 面试追问的深水区。很多人能说出 G/M/P 的概念，但一追到"阻塞时调度器怎么处理"就断了。核心区别在于：阻塞发生在用户态还是内核态，决定了 P 要不要解绑 M。</p>
+<h4>场景一：网络 I/O（conn.Read 等）</h4>
+<ul>
+<li>Go 把所有网络操作封装成<b>非阻塞模式</b>，底层走 <b>netpoller</b>（Linux 用 epoll，macOS 用 kqueue）</li>
+<li>G 发起读操作 → 数据未就绪 → G 被标记为等待，放入 netpoller 的等待队列</li>
+<li>G 与 M、P <b>解绑</b>，P 立即取下一个 G 继续执行</li>
+<li>当数据到达，netpoller 唤醒 G，放回某个 P 的本地队列</li>
+<li><b>结果</b>：没有系统调用阻塞，没有线程切换，最高效</li>
+</ul>
+<h4>场景二：阻塞系统调用（文件 I/O、CGO 等）</h4>
+<ul>
+<li>无法用非阻塞模式，G 会真正阻塞在内核态</li>
+<li>当前 M（设为 M1）带着 G 进入内核等待，G 状态变为 <code>_Gsyscall</code></li>
+<li>P 与 M1 <b>解绑</b>，P 去找另一个空闲 M（M2）；没有空闲 M 则新建一个</li>
+<li>P 绑定 M2 继续调度其他 G</li>
+<li>系统调用完成后，G 被唤醒，尝试重新获取一个 P：有空闲 P 则绑定继续；没有则放入全局队列</li>
+<li>这就是 <b>hand off 机制</b>：P 不等慢系统调用，立即转移给其他 M</li>
+</ul>
+<h4>场景三：用户态阻塞（mutex.Lock 竞争失败、channel 阻塞）</h4>
+<ul>
+<li>不涉及内核，G 被挂到锁或 channel 的等待队列，状态变为 <code>_Gwaiting</code></li>
+<li>G 与 M、P 解绑，P 取下一个 G 执行</li>
+<li>当锁释放或 channel 可读写，G 被唤醒，放回 P 的本地队列</li>
+</ul>
+<div class="key-point">面试话术：网络 I/O 走 netpoller 不阻塞线程；系统调用走 hand off，P 立即换 M；mutex/channel 是用户态挂起。三种场景 P 都不会闲着，这就是 Go 高并发的底层逻辑。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-q-u7zuhe.html">Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</a></li>
+      <li><a href="./goroutine-q-ha99tv.html">Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</a></li>
+      <li><a href="./java-go-q-3jsw8b.html">从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</a></li>
+      <li><a href="./go-java-goroutine-vs-channel-vs-q-dbi34y.html">Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</a></li>
+      <li><a href="./go-java-go-error-try-catch-q-ueisf2.html">Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么要关心逃逸分析 Go 编译器会自动决定变量分配在栈还是堆。栈分配随函数返回自动释放，不需要 GC；堆分配需要 GC 回收，开销更大。逃逸分析就是编译器判断&quot;这个变量的生命周期是否超出当前函数&quot;的过程。 常见逃逸场景 返回局部变量的指针 ： func f() *int { x := 1; return &amp;x } ，…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-q-u7zuhe.html">
+<meta property="og:title" content="Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？ - Go 后端面试题库">
+<meta property="og:description" content="为什么要关心逃逸分析 Go 编译器会自动决定变量分配在栈还是堆。栈分配随函数返回自动释放，不需要 GC；堆分配需要 GC 回收，开销更大。逃逸分析就是编译器判断&quot;这个变量的生命周期是否超出当前函数&quot;的过程。 常见逃逸场景 返回局部变量的指针 ： func f() *int { x := 1; return &amp;x } ，…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-q-u7zuhe.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么要关心逃逸分析 Go 编译器会自动决定变量分配在栈还是堆。栈分配随函数返回自动释放，不需要 GC；堆分配需要 GC 回收，开销更大。逃逸分析就是编译器判断&quot;这个变量的生命周期是否超出当前函数&quot;的过程。 常见逃逸场景 返回局部变量的指针 ： func f() *int { x := 1; return &amp;x } ，…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么要关心逃逸分析</h4>
+<p>Go 编译器会自动决定变量分配在栈还是堆。栈分配随函数返回自动释放，不需要 GC；堆分配需要 GC 回收，开销更大。逃逸分析就是编译器判断"这个变量的生命周期是否超出当前函数"的过程。</p>
+<h4>常见逃逸场景</h4>
+<ul>
+<li><b>返回局部变量的指针</b>：<code>func f() *int { x := 1; return &x }</code>，x 必须逃逸到堆</li>
+<li><b>闭包引用外部变量</b>：闭包捕获的变量生命周期被延长</li>
+<li><b>interface{} 参数</b>：<code>fmt.Println(x)</code> 中 x 会被装箱逃逸</li>
+<li><b>动态大小的 slice/map</b>：<code>make([]int, n)</code>，n 是变量时编译期无法确定大小</li>
+<li><b>大对象</b>：超出栈帧大小限制的对象</li>
+<li><b>发送指针到 channel</b>：编译器无法确定接收方的生命周期</li>
+</ul>
+<h4>怎么检查</h4>
+<pre><code>go build -gcflags="-m" main.go
+# 输出哪些变量 "escapes to heap"</code></pre>
+<h4>工程意义</h4>
+<ul>
+<li>减少逃逸 → 减少堆分配 → 减少 GC 压力 → 降低延迟</li>
+<li>高频调用的函数里，尽量避免返回指针、减少 interface{} 传参、预分配 slice</li>
+<li>配合 <code>sync.Pool</code> 复用对象，进一步降低分配开销</li>
+</ul>
+<div class="key-point">面试加分：能说出"用 <code>-gcflags='-m'</code> 检查逃逸"并举一个实际优化案例（如把返回指针改为值返回），就比只背概念强很多。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./goroutine-q-ha99tv.html">Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</a></li>
+      <li><a href="./java-go-q-3jsw8b.html">从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</a></li>
+      <li><a href="./go-java-goroutine-vs-channel-vs-q-dbi34y.html">Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</a></li>
+      <li><a href="./go-java-go-error-try-catch-q-ueisf2.html">Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</a></li>
+      <li><a href="./go-java-gc-q-5cwrb2.html">Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

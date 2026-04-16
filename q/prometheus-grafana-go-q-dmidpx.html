@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="典型链路 Go 服务暴露 /metrics → Prometheus 定时抓取 → Grafana 负责可视化和告警。 import &quot;github.com/prometheus/client_golang/prometheus&quot; import &quot;github.com/prometheus/client_golang/…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/prometheus-grafana-go-q-dmidpx.html">
+<meta property="og:title" content="Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？ - Go 后端面试题库">
+<meta property="og:description" content="典型链路 Go 服务暴露 /metrics → Prometheus 定时抓取 → Grafana 负责可视化和告警。 import &quot;github.com/prometheus/client_golang/prometheus&quot; import &quot;github.com/prometheus/client_golang/…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/prometheus-grafana-go-q-dmidpx.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？ - Go 后端面试题库">
+<meta name="twitter:description" content="典型链路 Go 服务暴露 /metrics → Prometheus 定时抓取 → Grafana 负责可视化和告警。 import &quot;github.com/prometheus/client_golang/prometheus&quot; import &quot;github.com/prometheus/client_golang/…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Prometheus + Grafana 监控体系怎么搭建？Go 服务如何暴露指标？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>典型链路</h4>
+<p>Go 服务暴露 <code>/metrics</code> → Prometheus 定时抓取 → Grafana 负责可视化和告警。</p>
+<pre><code>import "github.com/prometheus/client_golang/prometheus"
+import "github.com/prometheus/client_golang/prometheus/promhttp"
+
+var requestTotal = prometheus.NewCounterVec(
+    prometheus.CounterOpts{
+        Name: "http_requests_total",
+        Help: "Total HTTP requests",
+    },
+    []string{"path", "method", "status"},
+)
+
+func main() {
+    prometheus.MustRegister(requestTotal)
+    http.Handle("/metrics", promhttp.Handler())
+    http.ListenAndServe(":9090", nil)
+}</code></pre>
+<h4>建议监控哪些</h4>
+<ul>
+<li>请求量、错误率、延迟分位数</li>
+<li>goroutine 数、GC、内存、CPU</li>
+<li>DB/Redis 连接池、命中率、超时数</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./g-rpc-q-108dns7.html">gRPC 的底层实现依赖哪些协议和机制？</a></li>
+      <li><a href="./metrics-trace-q-ixcscv.html">从告警触发到回滚止损，如何把 Metrics、日志、Trace、灰度发布串成一个排障闭环？</a></li>
+      <li><a href="./q-1anj48l.html">配置中心的分层覆盖怎么设计？环境、租户、主题、运行时配置冲突时谁优先？</a></li>
+      <li><a href="./etcd-zoo-keeper-consul-etcd-watch-q-9kpxmf.html">etcd、ZooKeeper、Consul 怎么选？etcd 的 Watch + Lease 怎么做服务注册发现？</a></li>
+      <li><a href="./q-1drhjo5.html">微服务的服务发现有哪些方式？注册中心的作用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

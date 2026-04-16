@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="什么是粘包/拆包 TCP 是 字节流 协议（非消息边界协议），发送方的多条消息可能被合并成一个包（粘包），或一条消息被拆成多个包（拆包） // 发送 &quot;Hello&quot; 和 &quot;World&quot; // 可能收到： &quot;HelloWorld&quot; // 粘包 &quot;Hel&quot; + &quot;loWorld&quot; // 拆包+粘包 &quot;Hello&quot; + &quot;W…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/tcp-q-1k8jhph.html">
+<meta property="og:title" content="TCP 粘包/拆包是什么？怎么解决？ - Go 后端面试题库">
+<meta property="og:description" content="什么是粘包/拆包 TCP 是 字节流 协议（非消息边界协议），发送方的多条消息可能被合并成一个包（粘包），或一条消息被拆成多个包（拆包） // 发送 &quot;Hello&quot; 和 &quot;World&quot; // 可能收到： &quot;HelloWorld&quot; // 粘包 &quot;Hel&quot; + &quot;loWorld&quot; // 拆包+粘包 &quot;Hello&quot; + &quot;W…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/tcp-q-1k8jhph.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TCP 粘包/拆包是什么？怎么解决？ - Go 后端面试题库">
+<meta name="twitter:description" content="什么是粘包/拆包 TCP 是 字节流 协议（非消息边界协议），发送方的多条消息可能被合并成一个包（粘包），或一条消息被拆成多个包（拆包） // 发送 &quot;Hello&quot; 和 &quot;World&quot; // 可能收到： &quot;HelloWorld&quot; // 粘包 &quot;Hel&quot; + &quot;loWorld&quot; // 拆包+粘包 &quot;Hello&quot; + &quot;W…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>TCP 粘包/拆包是什么？怎么解决？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/network.html">计算机网络</a> ›
+    <span>TCP 粘包/拆包是什么？怎么解决？</span>
+  </nav>
+
+  <article class="question">
+    <h1>TCP 粘包/拆包是什么？怎么解决？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>什么是粘包/拆包</h4>
+<p>TCP 是<b>字节流</b>协议（非消息边界协议），发送方的多条消息可能被合并成一个包（粘包），或一条消息被拆成多个包（拆包）</p>
+<pre><code>// 发送 "Hello" 和 "World"
+// 可能收到：
+"HelloWorld"        // 粘包
+"Hel" + "loWorld"   // 拆包+粘包
+"Hello" + "World"   // 正常</code></pre>
+<h4>解决方案</h4>
+<ul>
+<li><b>固定长度</b>：每条消息固定 N 字节，不足补零（简单但浪费）</li>
+<li><b>分隔符</b>：用特殊字符分割（如 <code>\n</code>、<code>\r\n</code>），HTTP/1.1 即如此</li>
+<li><b>长度前缀 (TLV)</b>：消息头包含消息体长度，最常用</li>
+</ul>
+<pre><code>// 长度前缀方案（Go 实现）
+// 写入
+func writeMessage(conn net.Conn, data []byte) error {
+    header := make([]byte, 4)
+    binary.BigEndian.PutUint32(header, uint32(len(data)))
+    conn.Write(header)   // 先写 4 字节长度
+    conn.Write(data)     // 再写消息体
+    return nil
+}
+
+// 读取
+func readMessage(conn net.Conn) ([]byte, error) {
+    header := make([]byte, 4)
+    io.ReadFull(conn, header)
+    length := binary.BigEndian.Uint32(header)
+    data := make([]byte, length)
+    io.ReadFull(conn, data)
+    return data, nil
+}</code></pre>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./url-q-fv9so3.html">从浏览器输入 URL 到页面显示，发生了什么？（网络全链路）</a></li>
+      <li><a href="./tcp-q-1d7q686.html">TCP 的拥塞控制算法是什么？慢启动、拥塞避免、快重传、快恢复分别在做什么？</a></li>
+      <li><a href="./q-1chyr79.html">弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？</a></li>
+      <li><a href="./http-stream-g-rpc-q-uka9s5.html">HTTP/2 的 Stream 多路复用在 gRPC 中是怎么体现的？</a></li>
+      <li><a href="./tcp-q-1a3g4ml.html">TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/network.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=13">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

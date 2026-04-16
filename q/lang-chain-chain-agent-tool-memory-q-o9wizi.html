@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="四个核心概念 Chain ：把多个步骤串起来，例如“用户输入 → 检索上下文 → 组装 Prompt → 调模型” Agent ：让模型自己决定下一步调用哪个 Tool 或走哪条链路 Tool ：模型可调用的外部能力，比如搜索、数据库查询、计算器、HTTP API Memory ：对话或任务上下文的记忆层，用来保留历史…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/lang-chain-chain-agent-tool-memory-q-o9wizi.html">
+<meta property="og:title" content="LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？ - Go 后端面试题库">
+<meta property="og:description" content="四个核心概念 Chain ：把多个步骤串起来，例如“用户输入 → 检索上下文 → 组装 Prompt → 调模型” Agent ：让模型自己决定下一步调用哪个 Tool 或走哪条链路 Tool ：模型可调用的外部能力，比如搜索、数据库查询、计算器、HTTP API Memory ：对话或任务上下文的记忆层，用来保留历史…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/lang-chain-chain-agent-tool-memory-q-o9wizi.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？ - Go 后端面试题库">
+<meta name="twitter:description" content="四个核心概念 Chain ：把多个步骤串起来，例如“用户输入 → 检索上下文 → 组装 Prompt → 调模型” Agent ：让模型自己决定下一步调用哪个 Tool 或走哪条链路 Tool ：模型可调用的外部能力，比如搜索、数据库查询、计算器、HTTP API Memory ：对话或任务上下文的记忆层，用来保留历史…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？</span>
+  </nav>
+
+  <article class="question">
+    <h1>LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>四个核心概念</h4>
+<ul>
+<li><b>Chain</b>：把多个步骤串起来，例如“用户输入 → 检索上下文 → 组装 Prompt → 调模型”</li>
+<li><b>Agent</b>：让模型自己决定下一步调用哪个 Tool 或走哪条链路</li>
+<li><b>Tool</b>：模型可调用的外部能力，比如搜索、数据库查询、计算器、HTTP API</li>
+<li><b>Memory</b>：对话或任务上下文的记忆层，用来保留历史信息</li>
+</ul>
+<h4>怎么区分</h4>
+<p>Chain 是固定流程，Agent 是动态决策；Tool 是能力接口，Memory 是上下文状态。</p>
+<div class="project-link">简历关联：如果你已经做过 AI Agent 模块，这题要体现你知道“框架概念”背后对应的是任务编排、工具调用和上下文管理。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-leyruw.html">跨境电商独立站的核心技术挑战有哪些？</a></li>
+      <li><a href="./agent-lang-chain-q-7b1rcb.html">Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？</a></li>
+      <li><a href="./ai-agent-q-1s90v9j.html">AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？</a></li>
+      <li><a href="./re-act-co-t-to-t-q-zff9w4.html">ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？</a></li>
+      <li><a href="./ai-agent-q-1vy0rvs.html">面向企业客服的 AI Agent 怎么做分层架构、记忆设计和幻觉防控？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

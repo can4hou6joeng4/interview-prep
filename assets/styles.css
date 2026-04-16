@@ -754,3 +754,179 @@ button:focus:not(:focus-visible){outline:none}
 	.mk-btn{width:100%;justify-content:center}
 	.mk-review li{flex-direction:column;align-items:flex-start}
 }
+
+/* ══════════════════════════════════════════
+   SEO 独立页（题目详情 / 分类聚合）
+   复用 Neo-Brutalism token，不硬编码颜色
+   ══════════════════════════════════════════ */
+
+.detail,
+.category{
+	max-width:920px;
+	margin:0 auto;
+	padding:32px 24px 80px;
+}
+
+.detail .breadcrumb,
+.category .breadcrumb{
+	font-size:14px;
+	margin-bottom:24px;
+	color:var(--text2);
+}
+.detail .breadcrumb a,
+.category .breadcrumb a{
+	color:var(--text);
+	font-weight:600;
+	text-decoration:none;
+	border-bottom:2px solid var(--border);
+}
+.detail .breadcrumb a:hover,
+.category .breadcrumb a:hover{
+	background:var(--yellow);
+}
+
+.detail .question h1,
+.category .cat-header h1{
+	font-size:32px;
+	line-height:1.25;
+	margin:0 0 16px;
+	color:var(--text);
+}
+
+.detail .meta,
+.category .summary{
+	margin:0 0 28px;
+	display:flex;
+	flex-wrap:wrap;
+	gap:8px;
+	font-size:14px;
+	color:var(--text2);
+}
+
+.badge{
+	display:inline-block;
+	padding:4px 10px;
+	border:2px solid var(--border);
+	box-shadow:var(--shadow-sm);
+	font-weight:700;
+	font-size:12px;
+	letter-spacing:.02em;
+	background:var(--surface);
+	color:var(--text);
+}
+.badge-easy{background:var(--green-bg)}
+.badge-medium{background:var(--orange-bg)}
+.badge-hard{background:var(--red-bg)}
+.badge-tag{background:var(--cyan-bg)}
+
+.detail .answer{
+	background:var(--surface);
+	border:var(--bw) solid var(--border);
+	box-shadow:var(--shadow-lg);
+	padding:24px 28px;
+	margin:0 0 32px;
+}
+.detail .answer h4{
+	margin-top:20px;
+	margin-bottom:8px;
+	font-size:16px;
+	color:var(--text);
+}
+.detail .answer h4:first-child{margin-top:0}
+.detail .answer ul,
+.detail .answer ol{padding-left:22px}
+.detail .answer pre{
+	overflow-x:auto;
+	background:var(--chrome);
+	border:2px solid var(--border);
+	padding:12px 14px;
+	font-family:'JetBrains Mono',monospace;
+	font-size:13px;
+	margin:12px 0;
+}
+.detail .answer code{font-family:'JetBrains Mono',monospace}
+.detail .answer .key-point{
+	margin-top:16px;
+	padding:12px 16px;
+	background:var(--yellow);
+	border:2px solid var(--border);
+	font-size:14px;
+}
+.detail .answer .project-link{
+	margin-top:16px;
+	padding:12px 16px;
+	background:var(--cyan-bg);
+	border:2px solid var(--border);
+	font-size:14px;
+}
+
+.detail .related{
+	margin-top:40px;
+	padding:20px 24px;
+	border:var(--bw) solid var(--border);
+	box-shadow:var(--shadow-lg);
+	background:var(--bg2);
+}
+.detail .related h2{
+	margin:0 0 12px;
+	font-size:18px;
+	color:var(--text);
+}
+.detail .related ul{margin:0;padding-left:20px}
+.detail .related a{
+	color:var(--text);
+	text-decoration:none;
+	border-bottom:2px solid var(--border);
+}
+.detail .related a:hover{background:var(--yellow)}
+
+.category .list h2{
+	margin:32px 0 12px;
+	font-size:20px;
+	color:var(--text);
+}
+.cat-list{
+	padding-left:24px;
+	line-height:1.8;
+}
+.cat-list a{
+	color:var(--text);
+	text-decoration:none;
+	border-bottom:2px solid var(--border);
+}
+.cat-list a:hover{background:var(--yellow)}
+
+.cta{
+	display:flex;
+	flex-wrap:wrap;
+	gap:12px;
+	margin:40px 0 24px;
+}
+.cta-btn{
+	display:inline-block;
+	padding:12px 20px;
+	border:var(--bw) solid var(--border);
+	box-shadow:var(--shadow);
+	background:var(--surface);
+	color:var(--text);
+	font-weight:700;
+	text-decoration:none;
+	transition:transform 80ms ease,box-shadow 80ms ease;
+}
+.cta-btn:hover{
+	transform:translate(2px,2px);
+	box-shadow:var(--shadow-sm);
+	background:var(--yellow);
+}
+
+.detail .ft,
+.category .ft{
+	margin-top:40px;
+	font-size:13px;
+	color:var(--text3);
+}
+.detail .ft a,
+.category .ft a{
+	color:var(--text);
+	font-weight:600;
+}

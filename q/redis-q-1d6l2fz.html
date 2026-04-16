@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="数据类型 → 编码 String ：int（纯整数）/ embstr（≤44字节）/ raw（&gt;44字节） List ：listpack（Redis 7.0+，元素少且小）/ quicklist Hash ：listpack（field 数 ≤ 128 且 value ≤ 64B）/ hashtable Set ：in…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-q-1d6l2fz.html">
+<meta property="og:title" content="Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？ - Go 后端面试题库">
+<meta property="og:description" content="数据类型 → 编码 String ：int（纯整数）/ embstr（≤44字节）/ raw（&gt;44字节） List ：listpack（Redis 7.0+，元素少且小）/ quicklist Hash ：listpack（field 数 ≤ 128 且 value ≤ 64B）/ hashtable Set ：in…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-q-1d6l2fz.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？ - Go 后端面试题库">
+<meta name="twitter:description" content="数据类型 → 编码 String ：int（纯整数）/ embstr（≤44字节）/ raw（&gt;44字节） List ：listpack（Redis 7.0+，元素少且小）/ quicklist Hash ：listpack（field 数 ≤ 128 且 value ≤ 64B）/ hashtable Set ：in…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>数据类型 → 编码</h4>
+<ul>
+<li><b>String</b>：int（纯整数）/ embstr（≤44字节）/ raw（>44字节）</li>
+<li><b>List</b>：listpack（Redis 7.0+，元素少且小）/ quicklist</li>
+<li><b>Hash</b>：listpack（field 数 ≤ 128 且 value ≤ 64B）/ hashtable</li>
+<li><b>Set</b>：intset（全整数且 ≤ 512 个）/ hashtable</li>
+<li><b>ZSet</b>：listpack（≤ 128 个元素且 ≤ 64B）/ skiplist + hashtable</li>
+</ul>
+<h4>编码转换触发</h4>
+<p>当元素数量或大小超过阈值时<b>自动且不可逆</b>地从紧凑编码转为通用编码。阈值可通过配置调整：</p>
+<pre><code>hash-max-listpack-entries 128
+hash-max-listpack-value 64
+zset-max-listpack-entries 128
+zset-max-listpack-value 64</code></pre>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-rdb-aof-q-1glhos9.html">Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？</a></li>
+      <li><a href="./q-6ie2jz.html">缓存穿透、缓存击穿、缓存雪崩分别是什么？怎么解决？</a></li>
+      <li><a href="./asynq-q-18vz82y.html">Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？</a></li>
+      <li><a href="./redis-q-x046rc.html">Redis 分布式锁怎么实现？有什么陷阱？</a></li>
+      <li><a href="./q-1l47aze.html">缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

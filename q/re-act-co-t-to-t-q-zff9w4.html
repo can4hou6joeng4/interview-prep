@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三个方法各自适合什么 CoT (Chain-of-Thought) ：适合让模型按步骤解释推理过程，适用于中等复杂度问题 ReAct ：适合需要一边思考一边调用工具的任务，比如检索、查询、执行动作 ToT (Tree-of-Thought) ：适合需要探索多条候选路径再选最优解的复杂规划问题 为什么线上不一定选最强的…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/re-act-co-t-to-t-q-zff9w4.html">
+<meta property="og:title" content="ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？ - Go 后端面试题库">
+<meta property="og:description" content="三个方法各自适合什么 CoT (Chain-of-Thought) ：适合让模型按步骤解释推理过程，适用于中等复杂度问题 ReAct ：适合需要一边思考一边调用工具的任务，比如检索、查询、执行动作 ToT (Tree-of-Thought) ：适合需要探索多条候选路径再选最优解的复杂规划问题 为什么线上不一定选最强的…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/re-act-co-t-to-t-q-zff9w4.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？ - Go 后端面试题库">
+<meta name="twitter:description" content="三个方法各自适合什么 CoT (Chain-of-Thought) ：适合让模型按步骤解释推理过程，适用于中等复杂度问题 ReAct ：适合需要一边思考一边调用工具的任务，比如检索、查询、执行动作 ToT (Tree-of-Thought) ：适合需要探索多条候选路径再选最优解的复杂规划问题 为什么线上不一定选最强的…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？</span>
+  </nav>
+
+  <article class="question">
+    <h1>ReAct、CoT、ToT 这些规划方法怎么选？线上效果和成本怎么权衡？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三个方法各自适合什么</h4>
+<ul>
+<li><b>CoT (Chain-of-Thought)</b>：适合让模型按步骤解释推理过程，适用于中等复杂度问题</li>
+<li><b>ReAct</b>：适合需要一边思考一边调用工具的任务，比如检索、查询、执行动作</li>
+<li><b>ToT (Tree-of-Thought)</b>：适合需要探索多条候选路径再选最优解的复杂规划问题</li>
+</ul>
+<h4>为什么线上不一定选最强的</h4>
+<ul>
+<li>CoT 相对稳定，成本可控，适合大部分中等复杂任务</li>
+<li>ReAct 在线上最常见，因为它兼顾了推理和工具调用</li>
+<li>ToT 效果可能更好，但 token 成本、延迟和实现复杂度都会明显上升</li>
+</ul>
+<h4>怎么答出 trade-off</h4>
+<p>高质量回答不只是背概念，而是说：我试过哪些方法，准确率提升多少、成本增加多少、最终为什么选择某种方案在线上落地。</p>
+<div class="key-point">如果你能补一句“线上先看稳定性和成本，再看理论最优”，会比单纯背方法名更像做过生产系统。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-agent-q-1vy0rvs.html">面向企业客服的 AI Agent 怎么做分层架构、记忆设计和幻觉防控？</a></li>
+      <li><a href="./ai-q-ai1etl.html">AI 训练数据的清洗管道怎么设计？后端工程师在里面负责什么？</a></li>
+      <li><a href="./redis-rehash-q-rd1int.html">Redis 的内部实现机制有哪些值得深入了解的？渐进式 rehash、过期策略、内存淘汰怎么讲？</a></li>
+      <li><a href="./go-ssr-node-js-q-5gq8ts.html">为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？</a></li>
+      <li><a href="./builder-q-a0qyy2.html">积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="动态阈值频率限制 Redis INCR + EXPIRE 滑动窗口，关键是 动态阈值 ： 正常请求：softLimit = 60/10s，hardLimit = 120/10s 前序 Score ≥ 30（已有嫌疑）：收紧到 10/10s 和 30/10s visitor hash = MD5(IP + UA + Ac…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/cookie-q-sec-ratelimit-cookie.html">
+<meta property="og:title" content="频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？ - Go 后端面试题库">
+<meta property="og:description" content="动态阈值频率限制 Redis INCR + EXPIRE 滑动窗口，关键是 动态阈值 ： 正常请求：softLimit = 60/10s，hardLimit = 120/10s 前序 Score ≥ 30（已有嫌疑）：收紧到 10/10s 和 30/10s visitor hash = MD5(IP + UA + Ac…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/cookie-q-sec-ratelimit-cookie.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？ - Go 后端面试题库">
+<meta name="twitter:description" content="动态阈值频率限制 Redis INCR + EXPIRE 滑动窗口，关键是 动态阈值 ： 正常请求：softLimit = 60/10s，hardLimit = 120/10s 前序 Score ≥ 30（已有嫌疑）：收紧到 10/10s 和 30/10s visitor hash = MD5(IP + UA + Ac…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/security.html">安全防护</a> ›
+    <span>频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？</span>
+  </nav>
+
+  <article class="question">
+    <h1>频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>动态阈值频率限制</h4>
+<p>Redis INCR + EXPIRE 滑动窗口，关键是<b>动态阈值</b>：</p>
+<ul>
+<li>正常请求：softLimit = 60/10s，hardLimit = 120/10s</li>
+<li>前序 Score ≥ 30（已有嫌疑）：收紧到 10/10s 和 30/10s</li>
+</ul>
+<p>visitor hash = MD5(IP + UA + Accept-Language)，同设备同浏览器一个计数器。</p>
+<h4>无 Cookie 检测设计</h4>
+<ul>
+<li><b>只检测主文档请求</b>（Sec-Fetch-Dest: document），过滤图片/CSS</li>
+<li><b>带 Cookie 立即重置</b>（Redis DEL），给真人自证机会</li>
+<li><b>阶梯式加分</b>：3次(+15) → 5次(+50) → 10次(+80)</li>
+<li><b>30 分钟过期</b>：应对慢速爬虫</li>
+</ul>
+<div class="key-point">核心：只对 HTML 文档请求计数，不对 API 或静态资源计数，避免误杀</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./jwt-rsa-hmac-q-1o4zsc6.html">JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？</a></li>
+      <li><a href="./waf-q-2zizcr.html">你的自研 WAF 中间件是怎么做访客风险分析的？</a></li>
+      <li><a href="./aes-cbc-rsa-rsa-q-1fg3w7k.html">AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？</a></li>
+      <li><a href="./waf-q-sec-waf-score.html">WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/security.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=6">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

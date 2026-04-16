@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Deployment 滚动更新策略 spec: strategy: type: RollingUpdate rollingUpdate: maxSurge: 1 # 最多多创建 1 个 Pod maxUnavailable: 0 # 不允许有不可用的 Pod（零停机） minReadySeconds: 10 # Pod…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/k8s-q-fzaiml.html">
+<meta property="og:title" content="K8s 滚动更新的策略？如何实现零停机部署？ - Go 后端面试题库">
+<meta property="og:description" content="Deployment 滚动更新策略 spec: strategy: type: RollingUpdate rollingUpdate: maxSurge: 1 # 最多多创建 1 个 Pod maxUnavailable: 0 # 不允许有不可用的 Pod（零停机） minReadySeconds: 10 # Pod…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/k8s-q-fzaiml.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="K8s 滚动更新的策略？如何实现零停机部署？ - Go 后端面试题库">
+<meta name="twitter:description" content="Deployment 滚动更新策略 spec: strategy: type: RollingUpdate rollingUpdate: maxSurge: 1 # 最多多创建 1 个 Pod maxUnavailable: 0 # 不允许有不可用的 Pod（零停机） minReadySeconds: 10 # Pod…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>K8s 滚动更新的策略？如何实现零停机部署？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kubernetes.html">Kubernetes 深入</a> ›
+    <span>K8s 滚动更新的策略？如何实现零停机部署？</span>
+  </nav>
+
+  <article class="question">
+    <h1>K8s 滚动更新的策略？如何实现零停机部署？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span><span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>Deployment 滚动更新策略</h4>
+<pre><code>spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # 最多多创建 1 个 Pod
+      maxUnavailable: 0  # 不允许有不可用的 Pod（零停机）
+  minReadySeconds: 10    # Pod Ready 后等 10 秒才算可用</code></pre>
+<h4>零停机部署要点</h4>
+<ol>
+<li><b>maxUnavailable: 0</b>：新 Pod Ready 后才销毁旧 Pod</li>
+<li><b>readinessProbe</b>：应用完全启动后才接收流量</li>
+<li><b>preStop hook + sleep</b>：给 kube-proxy 时间更新 iptables 规则</li>
+<li><b>优雅关机</b>：收到 SIGTERM 后处理完在途请求再退出</li>
+<li><b>PDB (PodDisruptionBudget)</b>：限制同时不可用的 Pod 数量</li>
+</ol>
+<pre><code># PDB：确保至少 2 个 Pod 可用
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels: { app: myapp }</code></pre>
+<div class="project-link">简历关联：你的 go-fast 框架的 10 秒超时优雅关机 + errgroup 并行关闭，正是零停机部署的应用端实现</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./k8s-crd-operator-kubebuilder-q-1khb0gx.html">什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？</a></li>
+      <li><a href="./operator-reconcile-q-wpeuxb.html">Operator 的 Reconcile 循环是什么？为什么它必须保证幂等？</a></li>
+      <li><a href="./gpu-k8s-q-e20dxe.html">GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？</a></li>
+      <li><a href="./k8s-master-node-q-1x5mfm2.html">K8s 的核心架构？Master 和 Node 各有哪些组件？</a></li>
+      <li><a href="./pod-init-q-dlfiam.html">Pod 的生命周期？init 容器、就绪探针、存活探针的作用？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kubernetes.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=14">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

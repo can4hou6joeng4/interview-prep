@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么不用自增 ID 安全性 ：自增 ID 可被外部推测订单量和业务规模，竞品可以通过连续下单估算日单量 分库分表 ：多租户 Sharding 场景下，不同分片的自增 ID 会冲突 业务语义 ：订单号通常需要包含时间、渠道等业务信息，纯数字自增无法承载 常见生成方案对比 方案 优点 缺点 适用场景 UUID v4 全局…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/id-q-orderid-design.html">
+<meta property="og:title" content="订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？ - Go 后端面试题库">
+<meta property="og:description" content="为什么不用自增 ID 安全性 ：自增 ID 可被外部推测订单量和业务规模，竞品可以通过连续下单估算日单量 分库分表 ：多租户 Sharding 场景下，不同分片的自增 ID 会冲突 业务语义 ：订单号通常需要包含时间、渠道等业务信息，纯数字自增无法承载 常见生成方案对比 方案 优点 缺点 适用场景 UUID v4 全局…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/id-q-orderid-design.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么不用自增 ID 安全性 ：自增 ID 可被外部推测订单量和业务规模，竞品可以通过连续下单估算日单量 分库分表 ：多租户 Sharding 场景下，不同分片的自增 ID 会冲突 业务语义 ：订单号通常需要包含时间、渠道等业务信息，纯数字自增无法承载 常见生成方案对比 方案 优点 缺点 适用场景 UUID v4 全局…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？</span>
+  </nav>
+
+  <article class="question">
+    <h1>订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么不用自增 ID</h4>
+<ul>
+<li><b>安全性</b>：自增 ID 可被外部推测订单量和业务规模，竞品可以通过连续下单估算日单量</li>
+<li><b>分库分表</b>：多租户 Sharding 场景下，不同分片的自增 ID 会冲突</li>
+<li><b>业务语义</b>：订单号通常需要包含时间、渠道等业务信息，纯数字自增无法承载</li>
+</ul>
+<h4>常见生成方案对比</h4>
+<table>
+<tr><th>方案</th><th>优点</th><th>缺点</th><th>适用场景</th></tr>
+<tr><td>UUID v4</td><td>全局唯一、无中心依赖</td><td>无序、索引性能差、不可读</td><td>内部关联 ID</td></tr>
+<tr><td>Snowflake</td><td>有序、高性能、可分布式</td><td>依赖时钟、需要 worker ID 分配</td><td>高并发订单号</td></tr>
+<tr><td>前缀+时间+随机</td><td>可读、含业务语义</td><td>需处理并发冲突</td><td>对外展示的单号</td></tr>
+</table>
+<h4>项目中的实践</h4>
+<ul>
+<li><b>订单号</b>：时间戳前缀 + 店铺标识 + 随机后缀，保证可读且全局唯一</li>
+<li><b>交易号（Trade ID）</b>：每次支付尝试生成独立 Trade ID，同一个 Checkout 可能产生多条 Trade 记录（用户切换支付方式或重试），每条 Trade 是独立的支付凭证</li>
+<li><b>幂等保证</b>：支付网关用 Checkout ID 做幂等 key，同一个 Checkout 不会重复扣款</li>
+</ul>
+<div class="key-point">面试加分：能说清订单号（面向用户展示）和交易号（面向支付网关对账）的区别，说明你理解支付链路的完整模型。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./checkout-id-trade-id-webhook-q-idempotent-design.html">支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</a></li>
+      <li><a href="./decimal-vs-vs-float-q-currency-storage.html">多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</a></li>
+      <li><a href="./ai-agent-web-socket-q-ws-design.html">AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</a></li>
+      <li><a href="./asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</a></li>
+      <li><a href="./go-storage-storage-oss-sdk-q-storage-adapter.html">go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

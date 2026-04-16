@@ -26,15 +26,32 @@ jobs:
           test -f assets/app.js
           test -f scripts/validate-data.mjs
           test -f scripts/validate-site.mjs
+          test -f scripts/slug.mjs
+          test -f scripts/build-pages.mjs
+          test -f scripts/validate-pages.mjs
           test -f assets/social-preview.png
 
       - name: Validate browser scripts
         run: |
           node --check assets/data.js
           node --check assets/app.js
+          node --check scripts/slug.mjs
+          node --check scripts/build-pages.mjs
+          node --check scripts/validate-pages.mjs
 
       - name: Validate question dataset
         run: node scripts/validate-data.mjs
 
+      - name: Run slug unit tests
+        run: node scripts/_slug.test.mjs
+
       - name: Validate site metadata and repository summaries
         run: node scripts/validate-site.mjs
+
+      - name: Validate generated pages match data source
+        run: node scripts/validate-pages.mjs
+
+      - name: Ensure build-pages output is in sync
+        run: |
+          node scripts/build-pages.mjs
+          git diff --exit-code q/ c/ sitemap.xml

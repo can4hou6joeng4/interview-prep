@@ -2,6 +2,21 @@
 
 本文件记录仓库中对用户可见、对仓库质量有明显影响的更新。
 
+## 2026-04-17
+
+### Added
+
+- 新增题目独立页（`q/*.html`，共 203 页）与分类聚合页（`c/*.html`，共 19 页），全部静态生成，便于搜索引擎独立索引长尾流量。
+- 新增 `scripts/slug.mjs`、`scripts/build-pages.mjs`、`scripts/validate-pages.mjs` 三个零依赖脚本，覆盖 slug 生成、页面构建、生成物校验三个环节。
+- `sitemap.xml` 从 3 条 URL 扩充到 225 条，覆盖首页、学习页、模拟面试页、19 个分类页和 203 个题目页。
+
+### Changed
+
+- `assets/data.js` 每个分类新增 slug 字段；`scripts/validate-data.mjs` 新增 slug 必填、格式与唯一性校验。
+- `scripts/check-fast.sh` 追加 slug 单测与生成物校验，提交前自动拦截回归。
+- GitHub Actions 在现有校验之后追加生成物同步性检查，会拒绝「改了 data.js 但没重新 build」的提交。
+- `assets/styles.css` 复用既有 Neo-Brutalism token 补齐独立页所需的面包屑、难度徽章、答案区、相关题和主行动按钮样式。
+
 ## 2026-04-13
 
 ### Improved

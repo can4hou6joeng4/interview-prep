@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="六大核心手段 缓存 ：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级 异步 ：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计 限流 ：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1sk5mxj.html">
+<meta property="og:title" content="高并发系统设计的常见手段有哪些？ - Go 后端面试题库">
+<meta property="og:description" content="六大核心手段 缓存 ：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级 异步 ：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计 限流 ：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1sk5mxj.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="高并发系统设计的常见手段有哪些？ - Go 后端面试题库">
+<meta name="twitter:description" content="六大核心手段 缓存 ：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级 异步 ：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计 限流 ：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>高并发系统设计的常见手段有哪些？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>高并发系统设计的常见手段有哪些？</span>
+  </nav>
+
+  <article class="question">
+    <h1>高并发系统设计的常见手段有哪些？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span><span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>六大核心手段</h4>
+<ul>
+<li><b>缓存</b>：多级缓存（本地 → Redis → DB），减少 DB 压力。你的 go-cache 适配器模式支持 Redis/Badger/File 三级</li>
+<li><b>异步</b>：非核心逻辑异步化（消息队列/任务队列）。你的 Asynq 营销召回就是异步设计</li>
+<li><b>限流</b>：令牌桶 / 漏桶 / 滑动窗口。你的 WAF 中间件就实现了高频访问防护</li>
+<li><b>分库分表</b>：水平拆分降低单库压力。你的多租户 SaaS 按 StoreId 分片</li>
+<li><b>池化</b>：连接池（DB/Redis/HTTP）、goroutine 池。你的连接池根据 CPU/内存动态计算</li>
+<li><b>读写分离</b>：主库写、从库读，分担读压力</li>
+</ul>
+<h4>架构层面</h4>
+<ul>
+<li><b>微服务拆分</b>：独立扩缩容高负载服务</li>
+<li><b>CDN + 静态资源</b>：减少服务端压力</li>
+<li><b>数据库索引优化</b>：你在 UUFind 项目中的实践</li>
+</ul>
+<div class="project-link">简历关联：你的项目几乎覆盖了所有高并发手段 — 面试时可以逐个对应到具体实现</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1n761t2.html">限流算法有哪些？令牌桶和漏桶的区别？</a></li>
+      <li><a href="./cap-base-q-1rup8vt.html">分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</a></li>
+      <li><a href="./q-1lta6ds.html">服务雪崩是什么？熔断、降级、限流怎么配合？</a></li>
+      <li><a href="./go-pprof-trace-benchmark-q-94lt8t.html">Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</a></li>
+      <li><a href="./q-6ao1y7.html">性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

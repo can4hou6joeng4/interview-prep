@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三者定位对比 维度 Asynq Kafka RabbitMQ 底层依赖 Redis 独立集群 独立集群 核心能力 延迟任务、定时任务、重试 高吞吐流式消息、消费组 灵活路由、消息确认 运维成本 极低（复用 Redis） 高（ZK/KRaft + Broker 集群） 中（Erlang 运维门槛） 适用规模 万级任务/天…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">
+<meta property="og:title" content="营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？ - Go 后端面试题库">
+<meta property="og:description" content="三者定位对比 维度 Asynq Kafka RabbitMQ 底层依赖 Redis 独立集群 独立集群 核心能力 延迟任务、定时任务、重试 高吞吐流式消息、消费组 灵活路由、消息确认 运维成本 极低（复用 Redis） 高（ZK/KRaft + Broker 集群） 中（Erlang 运维门槛） 适用规模 万级任务/天…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？ - Go 后端面试题库">
+<meta name="twitter:description" content="三者定位对比 维度 Asynq Kafka RabbitMQ 底层依赖 Redis 独立集群 独立集群 核心能力 延迟任务、定时任务、重试 高吞吐流式消息、消费组 灵活路由、消息确认 运维成本 极低（复用 Redis） 高（ZK/KRaft + Broker 集群） 中（Erlang 运维门槛） 适用规模 万级任务/天…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</span>
+  </nav>
+
+  <article class="question">
+    <h1>营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三者定位对比</h4>
+<table>
+<tr><th>维度</th><th>Asynq</th><th>Kafka</th><th>RabbitMQ</th></tr>
+<tr><td>底层依赖</td><td>Redis</td><td>独立集群</td><td>独立集群</td></tr>
+<tr><td>核心能力</td><td>延迟任务、定时任务、重试</td><td>高吞吐流式消息、消费组</td><td>灵活路由、消息确认</td></tr>
+<tr><td>运维成本</td><td>极低（复用 Redis）</td><td>高（ZK/KRaft + Broker 集群）</td><td>中（Erlang 运维门槛）</td></tr>
+<tr><td>适用规模</td><td>万级任务/天</td><td>百万级消息/秒</td><td>十万级消息/秒</td></tr>
+<tr><td>延迟任务</td><td>原生支持</td><td>不原生支持，需额外实现</td><td>通过 TTL + DLX 实现</td></tr>
+</table>
+<h4>项目中选 Asynq 的理由</h4>
+<ul>
+<li><b>场景匹配</b>：营销召回的核心需求是延迟任务（加购后 10 分钟触发），Asynq 原生支持，Kafka 需要额外开发</li>
+<li><b>运维成本</b>：系统已经依赖 Redis，Asynq 零额外基础设施。引入 Kafka 需要维护独立集群，SaaS 初期投入产出不合理</li>
+<li><b>任务量级</b>：召回邮件每天几千到几万封，远未到 Kafka 的适用场景</li>
+</ul>
+<h4>什么时候该切换</h4>
+<ul>
+<li>任务量突破 Redis 单机承载（通常百万级/天）时，考虑迁移到 Kafka</li>
+<li>需要消息回溯、多消费组、精确一次语义时，Kafka 更合适</li>
+<li>需要复杂路由规则（如按国家、语言分发）时，RabbitMQ 的 Exchange 模型更灵活</li>
+</ul>
+<div class="key-point">面试核心：不是"Kafka 比 Asynq 高级"，而是在当前业务规模和团队能力下，哪个方案的投入产出比最高。过度设计和设计不足一样是问题。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-storage-storage-oss-sdk-q-storage-adapter.html">go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</a></li>
+      <li><a href="./saa-s-jwt-rsa-session-q-jwt-vs-session.html">SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</a></li>
+      <li><a href="./json-rpc-http-api-rpc-http-q-rpc-vs-http.html">项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</a></li>
+      <li><a href="./go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</a></li>
+      <li><a href="./redis-string-hash-set-q-redis-structures.html">项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

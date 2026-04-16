@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="最常见方案：Cache Aside 读 ：先查缓存，miss 再查数据库，然后回填缓存 写 ：先更新数据库，提交成功后删除缓存，而不是先更新缓存 // 推荐写路径 func UpdateUser(ctx context.Context, id int64, patch UserPatch) error { if err…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1l47aze.html">
+<meta property="og:title" content="缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？ - Go 后端面试题库">
+<meta property="og:description" content="最常见方案：Cache Aside 读 ：先查缓存，miss 再查数据库，然后回填缓存 写 ：先更新数据库，提交成功后删除缓存，而不是先更新缓存 // 推荐写路径 func UpdateUser(ctx context.Context, id int64, patch UserPatch) error { if err…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1l47aze.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？ - Go 后端面试题库">
+<meta name="twitter:description" content="最常见方案：Cache Aside 读 ：先查缓存，miss 再查数据库，然后回填缓存 写 ：先更新数据库，提交成功后删除缓存，而不是先更新缓存 // 推荐写路径 func UpdateUser(ctx context.Context, id int64, patch UserPatch) error { if err…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？</span>
+  </nav>
+
+  <article class="question">
+    <h1>缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>最常见方案：Cache Aside</h4>
+<ul>
+<li><b>读</b>：先查缓存，miss 再查数据库，然后回填缓存</li>
+<li><b>写</b>：先更新数据库，提交成功后删除缓存，而不是先更新缓存</li>
+</ul>
+<pre><code>// 推荐写路径
+func UpdateUser(ctx context.Context, id int64, patch UserPatch) error {
+    if err := db.WithTx(ctx, func(tx *sql.Tx) error {
+        return repo.UpdateUser(tx, id, patch)
+    }); err != nil {
+        return err
+    }
+    return cache.Del(ctx, fmt.Sprintf("user:%d", id))
+}</code></pre>
+<h4>为什么不是“更新 DB + 更新缓存”</h4>
+<ul>
+<li>两个写操作跨系统，天然不是一个事务，任何一步失败都会留下脏数据</li>
+<li>并发场景下还会出现旧值回写覆盖新值的问题</li>
+</ul>
+<h4>延迟双删为什么不是银弹</h4>
+<ul>
+<li>做法：更新 DB 后立即删一次缓存，等待几十到几百毫秒后再删一次</li>
+<li>它只能降低“并发读把旧值重新写回缓存”的概率，不能严格保证一致</li>
+<li>读延迟、主从复制延迟、消息堆积都可能让“第二次删除”仍然踩不准时机</li>
+</ul>
+<h4>更稳妥的工程做法</h4>
+<ul>
+<li>以数据库为准，写后删缓存</li>
+<li>给缓存设置 TTL，避免脏数据无限期存在</li>
+<li>用 Binlog/CDC 或 MQ 做异步修复和批量失效</li>
+<li>对极高一致性场景，考虑版本号、读写穿透或直接放弃缓存</li>
+</ul>
+<div class="key-point">面试里不要把“延迟双删”答成标准答案，重点是说明：它只是 best effort，真正核心是以 DB 为准 + 删除缓存 + 异步修复。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-q-sheogy.html">Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？</a></li>
+      <li><a href="./redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</a></li>
+      <li><a href="./redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</a></li>
+      <li><a href="./redis-q-1d6l2fz.html">Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？</a></li>
+      <li><a href="./redis-rdb-aof-q-1glhos9.html">Redis 持久化 RDB 和 AOF 的区别？混合持久化是什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

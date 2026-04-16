@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么选 Go 做 SSR 性能 ：Go 的并发模型天然适合高并发 SSR，不需要 Node.js 的 cluster 管理 部署简单 ：单一 Go 二进制包含所有能力，不需要额外维护 Node.js 进程 资源消耗低 ：SaaS 场景下多个租户共享进程，Go 的内存占用远低于 Node.js 主题系统核心模块 The…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-ssr-node-js-q-5gq8ts.html">
+<meta property="og:title" content="为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？ - Go 后端面试题库">
+<meta property="og:description" content="为什么选 Go 做 SSR 性能 ：Go 的并发模型天然适合高并发 SSR，不需要 Node.js 的 cluster 管理 部署简单 ：单一 Go 二进制包含所有能力，不需要额外维护 Node.js 进程 资源消耗低 ：SaaS 场景下多个租户共享进程，Go 的内存占用远低于 Node.js 主题系统核心模块 The…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-ssr-node-js-q-5gq8ts.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么选 Go 做 SSR 性能 ：Go 的并发模型天然适合高并发 SSR，不需要 Node.js 的 cluster 管理 部署简单 ：单一 Go 二进制包含所有能力，不需要额外维护 Node.js 进程 资源消耗低 ：SaaS 场景下多个租户共享进程，Go 的内存占用远低于 Node.js 主题系统核心模块 The…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？</span>
+  </nav>
+
+  <article class="question">
+    <h1>为什么用 Go 做 SSR 而不是 Node.js？主题系统的核心模块和缓存怎么设计？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>为什么选 Go 做 SSR</h4>
+<ul>
+<li><b>性能</b>：Go 的并发模型天然适合高并发 SSR，不需要 Node.js 的 cluster 管理</li>
+<li><b>部署简单</b>：单一 Go 二进制包含所有能力，不需要额外维护 Node.js 进程</li>
+<li><b>资源消耗低</b>：SaaS 场景下多个租户共享进程，Go 的内存占用远低于 Node.js</li>
+</ul>
+<h4>主题系统核心模块</h4>
+<ul>
+<li><b>Theme（主题管理）</b>：主题 CRUD、文件扫描、截图缓存</li>
+<li><b>Components（组件注册）</b>：可视化编辑器的组件库，注册渲染函数</li>
+<li><b>Nodes（节点树）</b>：页面由组件节点树构成，支持拖拽编辑</li>
+<li><b>DIY（自定义页面）</b>：商家自由搭建的页面，独立于主题模板</li>
+<li><b>Cache（渲染缓存）</b>：主题渲染结果缓存，避免重复编译模板</li>
+</ul>
+<h4>智能渲染切换</h4>
+<p>SSR 中间件根据主题的 <code>Runtime</code> 配置智能切换：<code>ThemeRuntimeStatic</code> 走静态文件直出（纯 HTML），<code>ThemeRuntimeDynamic</code> 走 Go 模板引擎实时渲染。静态模式性能更好，动态模式支持个性化内容。</p>
+<div class="project-link">简历关联：go-fast 框架主题系统支持组件注册渲染、节点树管理、DIY 自定义页面、主题缓存，Go 层直接实现 SSR 服务端渲染</div>
+<div class="key-point">面试追问"为什么不用 Next.js / Nuxt.js"：SaaS 多租户场景下几千个店铺共享进程，Go 单二进制 + 低内存占用的运维优势远大于前端框架的生态优势。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./builder-q-a0qyy2.html">积分系统为什么用 Builder 模式？事务内行锁怎么保证余额一致性？</a></li>
+      <li><a href="./ai-key-q-5c8mut.html">企业级 AI 模型管理平台需要解决什么问题？统一接入、Key 管控、多模型路由怎么做？</a></li>
+      <li><a href="./qps-q-tdwoih.html">你的项目 QPS 大概是多少？遇到的最大技术挑战是什么？如果重新设计你会改什么？</a></li>
+      <li><a href="./q-proj-coldhot-optimize.html">冷热迁移为什么从一次性搬运改成按日播种 + 分钟级微批续跑？参数怎么设？</a></li>
+      <li><a href="./saa-s-store-id-gorm-sharding-q-proj-saas-tenant.html">SaaS 多租户为什么用 store_id 逻辑隔离？自定义 GORM Sharding 和官方有什么区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

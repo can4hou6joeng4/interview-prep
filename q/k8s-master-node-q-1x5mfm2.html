@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Master 节点（控制平面） kube-apiserver ：所有操作的入口（RESTful API），唯一与 etcd 通信的组件 etcd ：分布式 KV 存储，保存集群所有状态数据 kube-scheduler ：将 Pod 调度到合适的 Node（根据资源、亲和性、污点等） kube-controller-m…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/k8s-master-node-q-1x5mfm2.html">
+<meta property="og:title" content="K8s 的核心架构？Master 和 Node 各有哪些组件？ - Go 后端面试题库">
+<meta property="og:description" content="Master 节点（控制平面） kube-apiserver ：所有操作的入口（RESTful API），唯一与 etcd 通信的组件 etcd ：分布式 KV 存储，保存集群所有状态数据 kube-scheduler ：将 Pod 调度到合适的 Node（根据资源、亲和性、污点等） kube-controller-m…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/k8s-master-node-q-1x5mfm2.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="K8s 的核心架构？Master 和 Node 各有哪些组件？ - Go 后端面试题库">
+<meta name="twitter:description" content="Master 节点（控制平面） kube-apiserver ：所有操作的入口（RESTful API），唯一与 etcd 通信的组件 etcd ：分布式 KV 存储，保存集群所有状态数据 kube-scheduler ：将 Pod 调度到合适的 Node（根据资源、亲和性、污点等） kube-controller-m…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>K8s 的核心架构？Master 和 Node 各有哪些组件？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kubernetes.html">Kubernetes 深入</a> ›
+    <span>K8s 的核心架构？Master 和 Node 各有哪些组件？</span>
+  </nav>
+
+  <article class="question">
+    <h1>K8s 的核心架构？Master 和 Node 各有哪些组件？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>Master 节点（控制平面）</h4>
+<ul>
+<li><b>kube-apiserver</b>：所有操作的入口（RESTful API），唯一与 etcd 通信的组件</li>
+<li><b>etcd</b>：分布式 KV 存储，保存集群所有状态数据</li>
+<li><b>kube-scheduler</b>：将 Pod 调度到合适的 Node（根据资源、亲和性、污点等）</li>
+<li><b>kube-controller-manager</b>：运行各种控制器（Deployment、ReplicaSet、Node、Service 等）</li>
+</ul>
+<h4>Node 节点（工作节点）</h4>
+<ul>
+<li><b>kubelet</b>：管理 Pod 生命周期，向 apiserver 汇报节点状态</li>
+<li><b>kube-proxy</b>：维护网络规则（iptables/IPVS），实现 Service 的负载均衡</li>
+<li><b>Container Runtime</b>：运行容器（containerd / CRI-O）</li>
+</ul>
+<h4>核心对象</h4>
+<ul>
+<li><b>Pod</b>：最小调度单元，包含一个或多个容器</li>
+<li><b>Deployment</b>：管理 ReplicaSet，支持滚动更新和回滚</li>
+<li><b>Service</b>：为 Pod 提供稳定的网络入口（ClusterIP / NodePort / LoadBalancer）</li>
+<li><b>ConfigMap / Secret</b>：配置和敏感数据管理</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./pod-init-q-dlfiam.html">Pod 的生命周期？init 容器、就绪探针、存活探针的作用？</a></li>
+      <li><a href="./k8s-service-cluster-ip-node-port-q-ssyycj.html">K8s 中 Service 的负载均衡原理？ClusterIP / NodePort / LoadBalancer 区别？</a></li>
+      <li><a href="./k8s-q-fzaiml.html">K8s 滚动更新的策略？如何实现零停机部署？</a></li>
+      <li><a href="./k8s-crd-operator-kubebuilder-q-1khb0gx.html">什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？</a></li>
+      <li><a href="./operator-reconcile-q-wpeuxb.html">Operator 的 Reconcile 循环是什么？为什么它必须保证幂等？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kubernetes.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=14">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

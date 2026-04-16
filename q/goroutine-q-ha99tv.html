@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="什么是 Goroutine 泄漏 goroutine 启动后因为某种原因永远无法退出，持续占用内存和调度资源。累积下去会导致内存持续增长，最终 OOM。 五种典型泄漏场景 无缓冲 channel 读写未配对 ：发送端没有接收者，或接收端没有发送者，goroutine 永久阻塞 锁未释放 ： mu.Lock() 后没有…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/goroutine-q-ha99tv.html">
+<meta property="og:title" content="Goroutine 泄漏的常见场景有哪些？怎么排查和预防？ - Go 后端面试题库">
+<meta property="og:description" content="什么是 Goroutine 泄漏 goroutine 启动后因为某种原因永远无法退出，持续占用内存和调度资源。累积下去会导致内存持续增长，最终 OOM。 五种典型泄漏场景 无缓冲 channel 读写未配对 ：发送端没有接收者，或接收端没有发送者，goroutine 永久阻塞 锁未释放 ： mu.Lock() 后没有…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/goroutine-q-ha99tv.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Goroutine 泄漏的常见场景有哪些？怎么排查和预防？ - Go 后端面试题库">
+<meta name="twitter:description" content="什么是 Goroutine 泄漏 goroutine 启动后因为某种原因永远无法退出，持续占用内存和调度资源。累积下去会导致内存持续增长，最终 OOM。 五种典型泄漏场景 无缓冲 channel 读写未配对 ：发送端没有接收者，或接收端没有发送者，goroutine 永久阻塞 锁未释放 ： mu.Lock() 后没有…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Goroutine 泄漏的常见场景有哪些？怎么排查和预防？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>什么是 Goroutine 泄漏</h4>
+<p>goroutine 启动后因为某种原因永远无法退出，持续占用内存和调度资源。累积下去会导致内存持续增长，最终 OOM。</p>
+<h4>五种典型泄漏场景</h4>
+<ul>
+<li><b>无缓冲 channel 读写未配对</b>：发送端没有接收者，或接收端没有发送者，goroutine 永久阻塞</li>
+<li><b>锁未释放</b>：<code>mu.Lock()</code> 后没有 <code>Unlock()</code>（panic 导致跳过 defer），等待该锁的所有 goroutine 永久阻塞</li>
+<li><b>WaitGroup 计数错误</b>：<code>Add(1)</code> 但 <code>Done()</code> 少调一次，<code>Wait()</code> 永远不返回</li>
+<li><b>网络 I/O 无超时</b>：<code>conn.Read</code> 对方不响应，goroutine 永久阻塞在 netpoller</li>
+<li><b>for-select 无退出条件</b>：循环里没有监听 <code>ctx.Done()</code>，goroutine 无法被通知停止</li>
+</ul>
+<h4>排查方法</h4>
+<ul>
+<li><code>runtime.NumGoroutine()</code> 暴露为监控指标，观察是否持续增长</li>
+<li><code>pprof goroutine</code> profile：<code>go tool pprof http://localhost:6060/debug/pprof/goroutine</code></li>
+<li>查看阻塞位置的栈信息，定位到具体代码行</li>
+</ul>
+<h4>预防套路</h4>
+<ul>
+<li>所有阻塞操作加超时：<code>context.WithTimeout</code>、<code>time.After</code></li>
+<li>用 <code>defer</code> 保证 Unlock / Done / Close</li>
+<li>for-select 循环里必须有 <code>case <-ctx.Done(): return</code></li>
+<li>启动 goroutine 时想清楚"它什么时候退出"</li>
+</ul>
+<div class="key-point">面试时最好补一句：线上监控 goroutine 数量是发现泄漏的第一道防线，pprof 是定位具体代码的工具。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./java-go-q-3jsw8b.html">从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</a></li>
+      <li><a href="./go-java-goroutine-vs-channel-vs-q-dbi34y.html">Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？</a></li>
+      <li><a href="./go-java-go-error-try-catch-q-ueisf2.html">Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？</a></li>
+      <li><a href="./go-java-gc-q-5cwrb2.html">Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</a></li>
+      <li><a href="./goroutine-gmp-g-m-p-q-q1rk0k.html">Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

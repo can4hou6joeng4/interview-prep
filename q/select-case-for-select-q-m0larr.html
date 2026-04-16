@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="多个 case 同时满足会怎样 Go 的 select 会在所有已就绪的 case 中做 伪随机 选择，不保证顺序，也不是永远选第一个。 select { case v := for-select 常见坑 default 导致忙等 ：如果循环里有 default ，又没有 sleep / 阻塞操作，就会空转占满 CPU…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/select-case-for-select-q-m0larr.html">
+<meta property="og:title" content="select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？ - Go 后端面试题库">
+<meta property="og:description" content="多个 case 同时满足会怎样 Go 的 select 会在所有已就绪的 case 中做 伪随机 选择，不保证顺序，也不是永远选第一个。 select { case v := for-select 常见坑 default 导致忙等 ：如果循环里有 default ，又没有 sleep / 阻塞操作，就会空转占满 CPU…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/select-case-for-select-q-m0larr.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？ - Go 后端面试题库">
+<meta name="twitter:description" content="多个 case 同时满足会怎样 Go 的 select 会在所有已就绪的 case 中做 伪随机 选择，不保证顺序，也不是永远选第一个。 select { case v := for-select 常见坑 default 导致忙等 ：如果循环里有 default ，又没有 sleep / 阻塞操作，就会空转占满 CPU…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</span>
+  </nav>
+
+  <article class="question">
+    <h1>select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>多个 case 同时满足会怎样</h4>
+<p>Go 的 <code>select</code> 会在所有已就绪的 case 中做<b>伪随机</b>选择，不保证顺序，也不是永远选第一个。</p>
+<pre><code>select {
+case v := <-ch1:
+    handle1(v)
+case v := <-ch2:
+    handle2(v)
+default:
+    idle()
+}</code></pre>
+<h4>for-select 常见坑</h4>
+<ul>
+<li><b>default 导致忙等</b>：如果循环里有 <code>default</code>，又没有 sleep / 阻塞操作，就会空转占满 CPU</li>
+<li><b>读到关闭 channel 后不退出</b>：必须用 <code>v, ok := <-ch</code> 判断，否则可能一直消费零值</li>
+<li><b>没有退出条件</b>：只写 <code>for { select { ... } }</code> 但不监听 <code>ctx.Done()</code>，goroutine 很容易泄漏</li>
+<li><b>把 select 当公平调度器</b>：它只是在已就绪 case 中随机选，不保证强公平</li>
+</ul>
+<h4>更稳妥的写法</h4>
+<pre><code>for {
+    select {
+    case msg, ok := <-queue:
+        if !ok {
+            return
+        }
+        handle(msg)
+    case <-ctx.Done():
+        return
+    }
+}</code></pre>
+<div class="key-point">真实面试里如果被追问“select 会不会一直循环”，关键不是答“会/不会”，而是说清：有没有 <code>default</code>、有没有阻塞点、有没有退出条件。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./sync-map-q-1arld6w.html">sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</a></li>
+      <li><a href="./go-goroutine-q-1cuk3uh.html">为什么 Go 里要用 goroutine，而不是线程？</a></li>
+      <li><a href="./go-net-http-fasthttp-gnet-q-sut1qe.html">Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</a></li>
+      <li><a href="./gmp-i-o-netpoller-hand-off-q-wfdrom.html">GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</a></li>
+      <li><a href="./go-q-u7zuhe.html">Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

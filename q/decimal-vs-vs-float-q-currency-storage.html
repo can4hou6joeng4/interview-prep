@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三种方案对比 方案 优点 缺点 适用场景 DECIMAL(20,2) 精确、可读、SQL 直接聚合 运算比整数慢 电商、金融结算 整数分存储（单位：分） 性能好、无精度问题 代码中频繁 ×100/÷100 转换容易出错；多币种小数位数不同（日元 0 位、科威特第纳尔 3 位） 单一币种、简单场景 FLOAT/DOUBL…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/decimal-vs-vs-float-q-currency-storage.html">
+<meta property="og:title" content="多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？ - Go 后端面试题库">
+<meta property="og:description" content="三种方案对比 方案 优点 缺点 适用场景 DECIMAL(20,2) 精确、可读、SQL 直接聚合 运算比整数慢 电商、金融结算 整数分存储（单位：分） 性能好、无精度问题 代码中频繁 ×100/÷100 转换容易出错；多币种小数位数不同（日元 0 位、科威特第纳尔 3 位） 单一币种、简单场景 FLOAT/DOUBL…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/decimal-vs-vs-float-q-currency-storage.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？ - Go 后端面试题库">
+<meta name="twitter:description" content="三种方案对比 方案 优点 缺点 适用场景 DECIMAL(20,2) 精确、可读、SQL 直接聚合 运算比整数慢 电商、金融结算 整数分存储（单位：分） 性能好、无精度问题 代码中频繁 ×100/÷100 转换容易出错；多币种小数位数不同（日元 0 位、科威特第纳尔 3 位） 单一币种、简单场景 FLOAT/DOUBL…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</span>
+  </nav>
+
+  <article class="question">
+    <h1>多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三种方案对比</h4>
+<table>
+<tr><th>方案</th><th>优点</th><th>缺点</th><th>适用场景</th></tr>
+<tr><td>DECIMAL(20,2)</td><td>精确、可读、SQL 直接聚合</td><td>运算比整数慢</td><td>电商、金融结算</td></tr>
+<tr><td>整数分存储（单位：分）</td><td>性能好、无精度问题</td><td>代码中频繁 ×100/÷100 转换容易出错；多币种小数位数不同（日元 0 位、科威特第纳尔 3 位）</td><td>单一币种、简单场景</td></tr>
+<tr><td>FLOAT/DOUBLE</td><td>性能最好</td><td>精度丢失（0.1+0.2≠0.3），金融场景不可接受</td><td>非金融统计数据</td></tr>
+</table>
+<h4>项目中的选择：DECIMAL + shopspring/decimal</h4>
+<ul>
+<li>数据库用 <code>DECIMAL(20,2)</code> 存储，保证持久化精度</li>
+<li>Go 代码中用 <code>shopspring/decimal</code> 做运算，避免 float 精度丢失</li>
+<li>为什么不用整数分：跨境电商涉及多币种，日元没有小数位，科威特第纳尔有三位小数，整数分方案需要对每种币种维护不同的倍率，复杂度反而更高</li>
+</ul>
+<h4>双轨金额设计</h4>
+<ul>
+<li>每个金额字段都有 Settle 对应字段：<code>PayPrice</code> / <code>SettlePayPrice</code></li>
+<li>所有计算在基础币种下完成，最后通过 <code>applyCurrency</code> 一次性转换到结算币种</li>
+<li>这样基础币种金额精确可对账，结算币种金额用于买家展示</li>
+</ul>
+<div class="project-link">简历关联：Shoply 采用 DECIMAL + shopspring/decimal + 双轨金额体系，残差补偿算法保证分摊后金额之和严格等于原始金额</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-agent-web-socket-q-ws-design.html">AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</a></li>
+      <li><a href="./asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</a></li>
+      <li><a href="./go-storage-storage-oss-sdk-q-storage-adapter.html">go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？</a></li>
+      <li><a href="./saa-s-jwt-rsa-session-q-jwt-vs-session.html">SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</a></li>
+      <li><a href="./json-rpc-http-api-rpc-http-q-rpc-vs-http.html">项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

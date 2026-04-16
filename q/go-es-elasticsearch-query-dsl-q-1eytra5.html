@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="倒排索引原理 // 正排索引（文档 → 词） doc1: &quot;Go 语言并发编程&quot; doc2: &quot;Go 语言网络编程&quot; // 倒排索引（词 → 文档列表） &quot;Go&quot; → [doc1, doc2] &quot;并发&quot; → [doc1] &quot;网络&quot; → [doc2] &quot;编程&quot; → [doc1, doc2] go-es 兼容实现 // 将…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-es-elasticsearch-query-dsl-q-1eytra5.html">
+<meta property="og:title" content="倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？ - Go 后端面试题库">
+<meta property="og:description" content="倒排索引原理 // 正排索引（文档 → 词） doc1: &quot;Go 语言并发编程&quot; doc2: &quot;Go 语言网络编程&quot; // 倒排索引（词 → 文档列表） &quot;Go&quot; → [doc1, doc2] &quot;并发&quot; → [doc1] &quot;网络&quot; → [doc2] &quot;编程&quot; → [doc1, doc2] go-es 兼容实现 // 将…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-es-elasticsearch-query-dsl-q-1eytra5.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？ - Go 后端面试题库">
+<meta name="twitter:description" content="倒排索引原理 // 正排索引（文档 → 词） doc1: &quot;Go 语言并发编程&quot; doc2: &quot;Go 语言网络编程&quot; // 倒排索引（词 → 文档列表） &quot;Go&quot; → [doc1, doc2] &quot;并发&quot; → [doc1] &quot;网络&quot; → [doc2] &quot;编程&quot; → [doc1, doc2] go-es 兼容实现 // 将…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/search.html">搜索引擎</a> ›
+    <span>倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？</span>
+  </nav>
+
+  <article class="question">
+    <h1>倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>倒排索引原理</h4>
+<pre><code>// 正排索引（文档 → 词）
+doc1: "Go 语言并发编程"
+doc2: "Go 语言网络编程"
+
+// 倒排索引（词 → 文档列表）
+"Go"   → [doc1, doc2]
+"并发" → [doc1]
+"网络" → [doc2]
+"编程" → [doc1, doc2]</code></pre>
+<h4>go-es 兼容实现</h4>
+<pre><code>// 将 ES DSL 转换为 Bluge 查询
+func ParseQuery(dsl map[string]interface{}) bluge.Query {
+    if boolQ, ok := dsl["bool"]; ok {
+        return parseBoolQuery(boolQ)  // must/should/must_not → AND/OR/NOT
+    }
+    if matchQ, ok := dsl["match"]; ok {
+        // 先分词，再 OR 组合
+        return parseMatchQuery(matchQ)
+    }
+    if termQ, ok := dsl["term"]; ok {
+        return bluge.NewTermQuery(value) // 精确匹配
+    }
+    if rangeQ, ok := dsl["range"]; ok {
+        return parseRangeQuery(rangeQ)   // gte/lte → NumericRange
+    }
+    // Geo, Fuzzy 类似...
+}</code></pre>
+<h4>Rendezvous 一致性哈希分片</h4>
+<ul>
+<li>每个分片一个 Bluge 索引实例</li>
+<li>写入时通过 Rendezvous Hash 确定文档归属分片</li>
+<li>查询时并行查所有分片，合并排序后返回</li>
+<li>对比 Consistent Hash Ring：Rendezvous Hash 分布更均匀，增删节点时迁移数据更少</li>
+</ul>
+<div class="project-link">简历关联：go-es 基于 Bluge 引擎，兼容 ES Query DSL (Bool/Match/Term/Range/Geo/Fuzzy)，Rendezvous 一致性哈希分片 + gse 中文分词 + WAL 事务日志</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./wal-write-ahead-logging-q-1xdj11h.html">WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？</a></li>
+      <li><a href="./q-1ietist.html">搜索/推荐/广告系统的核心架构是什么？召回、粗排、精排、重排分别做什么？</a></li>
+      <li><a href="./feature-store-q-je4gks.html">实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？</a></li>
+      <li><a href="./rtb-dsp-ssp-adx-q-wunp6.html">程序化广告的 RTB（实时竞价）流程是什么？DSP、SSP、ADX 各自扮演什么角色？</a></li>
+      <li><a href="./qps-q-1049m5x.html">高并发广告系统的技术挑战有哪些？QPS 和延迟要求通常是什么级别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/search.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=5">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

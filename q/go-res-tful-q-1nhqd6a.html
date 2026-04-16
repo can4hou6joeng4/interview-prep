@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="RESTful 不是“URL 长得像资源名”这么简单 资源导向 ：URL 表示资源，HTTP Method 表示动作，例如 GET /orders/{id} 、 POST /orders 、 PATCH /orders/{id} 状态语义清晰 ：成功返回 200/201/204，参数错误 400，未授权 401/403…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-res-tful-q-1nhqd6a.html">
+<meta property="og:title" content="Go 后端接口如何做 RESTful 设计和版本演进？ - Go 后端面试题库">
+<meta property="og:description" content="RESTful 不是“URL 长得像资源名”这么简单 资源导向 ：URL 表示资源，HTTP Method 表示动作，例如 GET /orders/{id} 、 POST /orders 、 PATCH /orders/{id} 状态语义清晰 ：成功返回 200/201/204，参数错误 400，未授权 401/403…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-res-tful-q-1nhqd6a.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 后端接口如何做 RESTful 设计和版本演进？ - Go 后端面试题库">
+<meta name="twitter:description" content="RESTful 不是“URL 长得像资源名”这么简单 资源导向 ：URL 表示资源，HTTP Method 表示动作，例如 GET /orders/{id} 、 POST /orders 、 PATCH /orders/{id} 状态语义清晰 ：成功返回 200/201/204，参数错误 400，未授权 401/403…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 后端接口如何做 RESTful 设计和版本演进？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>Go 后端接口如何做 RESTful 设计和版本演进？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 后端接口如何做 RESTful 设计和版本演进？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>RESTful 不是“URL 长得像资源名”这么简单</h4>
+<ul>
+<li><b>资源导向</b>：URL 表示资源，HTTP Method 表示动作，例如 <code>GET /orders/{id}</code>、<code>POST /orders</code>、<code>PATCH /orders/{id}</code></li>
+<li><b>状态语义清晰</b>：成功返回 200/201/204，参数错误 400，未授权 401/403，找不到资源 404，冲突 409</li>
+<li><b>列表接口规范化</b>：统一支持筛选、排序、分页，避免每个接口都自创参数格式</li>
+<li><b>幂等性意识</b>：<code>PUT</code> / <code>DELETE</code> 要天然幂等，创建类接口如果会重试，最好配合幂等键</li>
+</ul>
+<pre><code>GET    /v1/orders?status=paid&amp;cursor=xxx
+POST   /v1/orders
+GET    /v1/orders/{id}
+PATCH  /v1/orders/{id}
+POST   /v1/orders/{id}/refunds</code></pre>
+<h4>版本演进怎么做</h4>
+<ul>
+<li>优先做向后兼容的演进，比如新增可选字段而不是修改旧字段含义</li>
+<li>出现破坏性变更时，再引入 <code>/v1</code>、<code>/v2</code> 或媒体类型版本</li>
+<li>保留废弃窗口和迁移说明，不要一上来直接删旧接口</li>
+<li>错误码、字段命名和分页协议要尽量跨版本稳定</li>
+</ul>
+<div class="key-point">像 AfterShip 这类岗位写了 RESTful，本质想考的是接口抽象能力，不是背 GET/POST，而是看你会不会设计长期可演进的 API。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1ohx9b9.html">分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</a></li>
+      <li><a href="./q-17pttmy.html">自动化工单系统如何设计状态机、审批流、幂等和审计？</a></li>
+      <li><a href="./q-5ortqw.html">资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</a></li>
+      <li><a href="./go-php-plugin-mode-static-mode-q-arch-dual-engine.html">Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</a></li>
+      <li><a href="./checkout-payment-before-after-mutex-rw-q-arch-event-hooks.html">Checkout/Payment 的 Before/After 事件钩子怎么设计的？为什么用 Mutex 而不是 RWMutex？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

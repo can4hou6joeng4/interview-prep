@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="基础高可用 计算层跨多个 Availability Zone 部署，前面挂 ALB 或 NLB 数据库用 RDS Multi-AZ，关键数据定期快照 静态资源放 S3 + CloudFront，减少源站压力 配置和密钥交给 Parameter Store 或 Secrets Manager 容灾设计 同 Region…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/aws-q-1aoeo63.html">
+<meta property="og:title" content="如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="基础高可用 计算层跨多个 Availability Zone 部署，前面挂 ALB 或 NLB 数据库用 RDS Multi-AZ，关键数据定期快照 静态资源放 S3 + CloudFront，减少源站压力 配置和密钥交给 Parameter Store 或 Secrets Manager 容灾设计 同 Region…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/aws-q-1aoeo63.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="基础高可用 计算层跨多个 Availability Zone 部署，前面挂 ALB 或 NLB 数据库用 RDS Multi-AZ，关键数据定期快照 静态资源放 S3 + CloudFront，减少源站压力 配置和密钥交给 Parameter Store 或 Secrets Manager 容灾设计 同 Region…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/docker.html">Docker 与部署</a> ›
+    <span>如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>基础高可用</h4>
+<ul>
+<li>计算层跨多个 Availability Zone 部署，前面挂 ALB 或 NLB</li>
+<li>数据库用 RDS Multi-AZ，关键数据定期快照</li>
+<li>静态资源放 S3 + CloudFront，减少源站压力</li>
+<li>配置和密钥交给 Parameter Store 或 Secrets Manager</li>
+</ul>
+<h4>容灾设计</h4>
+<ul>
+<li>同 Region 内做 AZ 级容灾，防单机房故障</li>
+<li>跨 Region 做异地备份或热备，防区域级故障</li>
+<li>提前定义 RPO / RTO，别把容灾答成“多备几份”</li>
+</ul>
+<h4>发布与回滚</h4>
+<p>可以用蓝绿或金丝雀发布，配合 Route 53、ALB 权重或应用层开关；回滚时优先切流，再回退镜像或版本。</p>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./docker-namespace-cgroup-q-1juftm.html">Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？</a></li>
+      <li><a href="./go-dockerfile-q-7n8n2h.html">Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？</a></li>
+      <li><a href="./k8s-q-1ry7gt7.html">容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？</a></li>
+      <li><a href="./go-ci-cd-q-1h0a9vw.html">Go 项目的 CI/CD 流程一般怎么设计？</a></li>
+      <li><a href="./q-1dy8w42.html">灰度发布和金丝雀发布怎么实现？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/docker.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=8">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

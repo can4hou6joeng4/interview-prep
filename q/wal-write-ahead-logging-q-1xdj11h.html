@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="WAL 原理 所有修改操作 先写日志，再写数据 。崩溃恢复时重放日志即可恢复到一致状态 go-es 中的 WAL 实现 type WAL struct { file *os.File mu sync.Mutex offset int64 } func (w *WAL) Write(op Operation) error…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/wal-write-ahead-logging-q-1xdj11h.html">
+<meta property="og:title" content="WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？ - Go 后端面试题库">
+<meta property="og:description" content="WAL 原理 所有修改操作 先写日志，再写数据 。崩溃恢复时重放日志即可恢复到一致状态 go-es 中的 WAL 实现 type WAL struct { file *os.File mu sync.Mutex offset int64 } func (w *WAL) Write(op Operation) error…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/wal-write-ahead-logging-q-1xdj11h.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？ - Go 后端面试题库">
+<meta name="twitter:description" content="WAL 原理 所有修改操作 先写日志，再写数据 。崩溃恢复时重放日志即可恢复到一致状态 go-es 中的 WAL 实现 type WAL struct { file *os.File mu sync.Mutex offset int64 } func (w *WAL) Write(op Operation) error…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/search.html">搜索引擎</a> ›
+    <span>WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？</span>
+  </nav>
+
+  <article class="question">
+    <h1>WAL (Write-Ahead Logging) 在你的搜索引擎中起什么作用？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>WAL 原理</h4>
+<p>所有修改操作<b>先写日志，再写数据</b>。崩溃恢复时重放日志即可恢复到一致状态</p>
+<h4>go-es 中的 WAL 实现</h4>
+<pre><code>type WAL struct {
+    file   *os.File
+    mu     sync.Mutex
+    offset int64
+}
+
+func (w *WAL) Write(op Operation) error {
+    w.mu.Lock()
+    defer w.mu.Unlock()
+    // 1. 序列化操作（type + docId + data + checksum）
+    entry := encodeEntry(op)
+    // 2. 写入日志文件（顺序追加，高性能）
+    _, err := w.file.Write(entry)
+    // 3. fsync 确保持久化
+    return w.file.Sync()
+}
+
+// 崩溃恢复
+func (w *WAL) Recover(index *bluge.Writer) error {
+    entries := w.ReadAll()
+    for _, entry := range entries {
+        // 重放：将未持久化的操作重新应用到索引
+        switch entry.Type {
+        case OpIndex:  index.Update(entry.Doc)
+        case OpDelete: index.Delete(entry.DocId)
+        }
+    }
+    return w.Truncate() // 恢复完毕，截断日志
+}</code></pre>
+<h4>为什么需要 WAL</h4>
+<ul>
+<li>Bluge 索引写入有 batch commit 延迟，中间崩溃会丢数据</li>
+<li>WAL 是顺序写（极快），索引是随机写（较慢），WAL 填补了两者之间的安全间隙</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1ietist.html">搜索/推荐/广告系统的核心架构是什么？召回、粗排、精排、重排分别做什么？</a></li>
+      <li><a href="./feature-store-q-je4gks.html">实时特征、离线特征和 Feature Store 分别是什么？为什么推荐系统需要它们？</a></li>
+      <li><a href="./rtb-dsp-ssp-adx-q-wunp6.html">程序化广告的 RTB（实时竞价）流程是什么？DSP、SSP、ADX 各自扮演什么角色？</a></li>
+      <li><a href="./qps-q-1049m5x.html">高并发广告系统的技术挑战有哪些？QPS 和延迟要求通常是什么级别？</a></li>
+      <li><a href="./go-es-elasticsearch-query-dsl-q-1eytra5.html">倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/search.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=5">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

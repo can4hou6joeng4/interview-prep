@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="MongoDB 分片架构 mongos ：路由层，接收客户端请求，根据分片键路由到对应 shard config server ：存储元数据和分片映射关系 shard ：实际存储数据的副本集 分片键选择原则 高基数 ：分片键的取值范围要足够大，否则数据集中在少数 chunk 低频变更 ：分片键一旦设定不能修改（Mong…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-q-mg1shr.html">
+<meta property="og:title" content="MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？ - Go 后端面试题库">
+<meta property="og:description" content="MongoDB 分片架构 mongos ：路由层，接收客户端请求，根据分片键路由到对应 shard config server ：存储元数据和分片映射关系 shard ：实际存储数据的副本集 分片键选择原则 高基数 ：分片键的取值范围要足够大，否则数据集中在少数 chunk 低频变更 ：分片键一旦设定不能修改（Mong…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-q-mg1shr.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？ - Go 后端面试题库">
+<meta name="twitter:description" content="MongoDB 分片架构 mongos ：路由层，接收客户端请求，根据分片键路由到对应 shard config server ：存储元数据和分片映射关系 shard ：实际存储数据的副本集 分片键选择原则 高基数 ：分片键的取值范围要足够大，否则数据集中在少数 chunk 低频变更 ：分片键一旦设定不能修改（Mong…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mongodb.html">MongoDB</a> ›
+    <span>MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？</span>
+  </nav>
+
+  <article class="question">
+    <h1>MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>MongoDB 分片架构</h4>
+<ul>
+<li><b>mongos</b>：路由层，接收客户端请求，根据分片键路由到对应 shard</li>
+<li><b>config server</b>：存储元数据和分片映射关系</li>
+<li><b>shard</b>：实际存储数据的副本集</li>
+</ul>
+<h4>分片键选择原则</h4>
+<ul>
+<li><b>高基数</b>：分片键的取值范围要足够大，否则数据集中在少数 chunk</li>
+<li><b>低频变更</b>：分片键一旦设定不能修改（MongoDB 5.0 前），选错代价极高</li>
+<li><b>查询对齐</b>：最常见的查询条件应包含分片键，否则变成 scatter-gather 全分片扫描</li>
+</ul>
+<h4>常见的坑</h4>
+<ul>
+<li><b>用自增 ID 做分片键</b>：所有写入都落到最后一个 chunk（热点写入），吞吐量打不上去</li>
+<li><b>用低基数字段（如 status）</b>：数据倾斜严重，某些 shard 被撑爆</li>
+<li><b>忽略 jumbo chunk</b>：单个 chunk 超过阈值后无法自动迁移，需要手动拆分</li>
+<li><b>推荐方案</b>：哈希分片键（如 userId 的 hash）可以均匀分布，但牺牲了范围查询能力</li>
+</ul>
+<div class="key-point">分片键选错是 MongoDB 生产事故的高频原因之一。面试时能说出「自增 ID 导致热点写入」这个反例，就能展示实战经验。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./mongo-db-my-sql-mongo-db-q-gay2ec.html">MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？</a></li>
+      <li><a href="./mongo-db-my-sql-q-m6ivnq.html">MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？</a></li>
+      <li><a href="./mongo-db-aggregation-pipeline-q-jljpb8.html">MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？</a></li>
+      <li><a href="./mongo-db-my-sql-q-ikzhl1.html">MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？</a></li>
+      <li><a href="./my-sql-redis-mongo-db-q-l2i20y.html">时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mongodb.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=15">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

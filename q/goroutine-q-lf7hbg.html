@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么 goroutine 不能无限开 单个 goroutine 虽轻量，但不是零成本：有初始栈、调度开销、上下文切换成本 任务如果会打 DB、Redis、RPC，下游资源通常比 goroutine 本身更早被打满 无上限并发会带来内存膨胀、队列堆积、调度抖动，严重时把系统拖进雪崩 一个常见协程池设计 type Poo…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/goroutine-q-lf7hbg.html">
+<meta property="og:title" content="协程池怎么设计？为什么 goroutine 不能无上限地开？ - Go 后端面试题库">
+<meta property="og:description" content="为什么 goroutine 不能无限开 单个 goroutine 虽轻量，但不是零成本：有初始栈、调度开销、上下文切换成本 任务如果会打 DB、Redis、RPC，下游资源通常比 goroutine 本身更早被打满 无上限并发会带来内存膨胀、队列堆积、调度抖动，严重时把系统拖进雪崩 一个常见协程池设计 type Poo…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/goroutine-q-lf7hbg.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="协程池怎么设计？为什么 goroutine 不能无上限地开？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么 goroutine 不能无限开 单个 goroutine 虽轻量，但不是零成本：有初始栈、调度开销、上下文切换成本 任务如果会打 DB、Redis、RPC，下游资源通常比 goroutine 本身更早被打满 无上限并发会带来内存膨胀、队列堆积、调度抖动，严重时把系统拖进雪崩 一个常见协程池设计 type Poo…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>协程池怎么设计？为什么 goroutine 不能无上限地开？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>协程池怎么设计？为什么 goroutine 不能无上限地开？</span>
+  </nav>
+
+  <article class="question">
+    <h1>协程池怎么设计？为什么 goroutine 不能无上限地开？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么 goroutine 不能无限开</h4>
+<ul>
+<li>单个 goroutine 虽轻量，但不是零成本：有初始栈、调度开销、上下文切换成本</li>
+<li>任务如果会打 DB、Redis、RPC，下游资源通常比 goroutine 本身更早被打满</li>
+<li>无上限并发会带来内存膨胀、队列堆积、调度抖动，严重时把系统拖进雪崩</li>
+</ul>
+<h4>一个常见协程池设计</h4>
+<pre><code>type Pool struct {
+    jobs chan func()
+    wg   sync.WaitGroup
+}
+
+func NewPool(workerCount, queueSize int) *Pool {
+    p := &Pool{jobs: make(chan func(), queueSize)}
+    for i := 0; i < workerCount; i++ {
+        go func() {
+            for job := range p.jobs {
+                job()
+                p.wg.Done()
+            }
+        }()
+    }
+    return p
+}
+
+func (p *Pool) Submit(job func()) {
+    p.wg.Add(1)
+    p.jobs <- job
+}
+
+func (p *Pool) Wait() { p.wg.Wait() }</code></pre>
+<h4>设计时要想清楚的点</h4>
+<ul>
+<li><b>并发度上限</b>：通常按 CPU、连接池大小、下游吞吐能力共同决定</li>
+<li><b>队列长度</b>：太短会频繁拒绝，太长会造成排队过久</li>
+<li><b>拒绝策略</b>：阻塞等待、直接丢弃、返回错误、降级到异步补偿</li>
+<li><b>超时与取消</b>：最好配合 <code>context</code>，否则任务堆积后很难止损</li>
+</ul>
+<div class="key-point">这题真正想听的不是你会写 worker pool，而是你知道协程池的价值在于控制并发和保护下游，不是为了“把 goroutine 用满”。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1m8jgdz.html">程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？</a></li>
+      <li><a href="./q-25fyg1.html">“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？</a></li>
+      <li><a href="./qps-tps-rt-p99-q-hc1bas.html">什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？</a></li>
+      <li><a href="./q-1sk5mxj.html">高并发系统设计的常见手段有哪些？</a></li>
+      <li><a href="./q-1n761t2.html">限流算法有哪些？令牌桶和漏桶的区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

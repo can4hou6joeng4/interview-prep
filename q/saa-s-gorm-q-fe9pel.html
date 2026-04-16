@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="多租户隔离方案对比 独立数据库 ：隔离性最强，成本最高，适合大客户 共享数据库 + 独立 Schema ：中等隔离，运维复杂度中等 共享数据库 + 共享表 + StoreId 区分 ：成本最低，需要严格的数据隔离逻辑 ← 你的方案 你的实现方案 // 动态切换数据库连接 func GetDBByStoreId(stor…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-gorm-q-fe9pel.html">
+<meta property="og:title" content="多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？ - Go 后端面试题库">
+<meta property="og:description" content="多租户隔离方案对比 独立数据库 ：隔离性最强，成本最高，适合大客户 共享数据库 + 独立 Schema ：中等隔离，运维复杂度中等 共享数据库 + 共享表 + StoreId 区分 ：成本最低，需要严格的数据隔离逻辑 ← 你的方案 你的实现方案 // 动态切换数据库连接 func GetDBByStoreId(stor…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-gorm-q-fe9pel.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？ - Go 后端面试题库">
+<meta name="twitter:description" content="多租户隔离方案对比 独立数据库 ：隔离性最强，成本最高，适合大客户 共享数据库 + 独立 Schema ：中等隔离，运维复杂度中等 共享数据库 + 共享表 + StoreId 区分 ：成本最低，需要严格的数据隔离逻辑 ← 你的方案 你的实现方案 // 动态切换数据库连接 func GetDBByStoreId(stor…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？</span>
+  </nav>
+
+  <article class="question">
+    <h1>多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>多租户隔离方案对比</h4>
+<ul>
+<li><b>独立数据库</b>：隔离性最强，成本最高，适合大客户</li>
+<li><b>共享数据库 + 独立 Schema</b>：中等隔离，运维复杂度中等</li>
+<li><b>共享数据库 + 共享表 + StoreId 区分</b>：成本最低，需要严格的数据隔离逻辑 ← 你的方案</li>
+</ul>
+<h4>你的实现方案</h4>
+<pre><code>// 动态切换数据库连接
+func GetDBByStoreId(storeId uint) *gorm.DB {
+    connKey := fmt.Sprintf("store_%d", storeId)
+    if db, ok := dbPool.Load(connKey); ok {
+        return db.(*gorm.DB)
+    }
+    // 根据 storeId 路由到对应数据源
+    dsn := getStoreDSN(storeId)
+    db := initDB(dsn)
+    dbPool.Store(connKey, db)
+    return db
+}
+
+// GORM 分表：按租户 ID 分片
+// statistics_1, statistics_2, visitors_1, visitors_2 ...
+func (s *Statistics) TableName() string {
+    return fmt.Sprintf("statistics_%d", s.StoreId % shardCount)
+}
+
+// 连接池动态计算
+maxConns := runtime.NumCPU() * 2 + 1  // 基于 CPU 核心数
+maxIdle := maxConns / 2
+// 根据可用内存进一步调整</code></pre>
+<div class="project-link">简历关联：通过 StoreId 动态切换数据库连接，集成 GORM 分表插件支持按租户 ID 分片，连接池参数根据 CPU 核心数和内存动态计算</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./my-sql-q-1gxiy1s.html">MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？</a></li>
+      <li><a href="./inno-db-my-isam-count-q-qa08h2.html">InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？</a></li>
+      <li><a href="./inno-db-mvcc-next-key-lock-q-usbl7u.html">InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？</a></li>
+      <li><a href="./q-yq4cwq.html">分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？</a></li>
+      <li><a href="./inno-db-b-b-q-wxlgi4.html">InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="什么时候应该考虑 TSDB 指标、监控、埋点、设备上报、资源使用率这类“按时间持续写入”的数据 查询模式通常是“某个时间窗口内的聚合、降采样、趋势分析” 写多读多但关系不复杂，且数据会按时间自然过期 它擅长什么 高吞吐写入 按时间范围查询和聚合 保留策略、冷热分层、降采样 和其他存储的边界 MySQL ：适合事务和关系…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/my-sql-redis-mongo-db-q-l2i20y.html">
+<meta property="og:title" content="时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？ - Go 后端面试题库">
+<meta property="og:description" content="什么时候应该考虑 TSDB 指标、监控、埋点、设备上报、资源使用率这类“按时间持续写入”的数据 查询模式通常是“某个时间窗口内的聚合、降采样、趋势分析” 写多读多但关系不复杂，且数据会按时间自然过期 它擅长什么 高吞吐写入 按时间范围查询和聚合 保留策略、冷热分层、降采样 和其他存储的边界 MySQL ：适合事务和关系…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/my-sql-redis-mongo-db-q-l2i20y.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="什么时候应该考虑 TSDB 指标、监控、埋点、设备上报、资源使用率这类“按时间持续写入”的数据 查询模式通常是“某个时间窗口内的聚合、降采样、趋势分析” 写多读多但关系不复杂，且数据会按时间自然过期 它擅长什么 高吞吐写入 按时间范围查询和聚合 保留策略、冷热分层、降采样 和其他存储的边界 MySQL ：适合事务和关系…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mongodb.html">MongoDB</a> ›
+    <span>时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>什么时候应该考虑 TSDB</h4>
+<ul>
+<li>指标、监控、埋点、设备上报、资源使用率这类“按时间持续写入”的数据</li>
+<li>查询模式通常是“某个时间窗口内的聚合、降采样、趋势分析”</li>
+<li>写多读多但关系不复杂，且数据会按时间自然过期</li>
+</ul>
+<h4>它擅长什么</h4>
+<ul>
+<li>高吞吐写入</li>
+<li>按时间范围查询和聚合</li>
+<li>保留策略、冷热分层、降采样</li>
+</ul>
+<h4>和其他存储的边界</h4>
+<ul>
+<li><b>MySQL</b>：适合事务和关系查询，不适合海量时间序列长期堆积</li>
+<li><b>Redis</b>：适合热点计数、秒级缓存和窗口内近实时状态，不适合长期明细留存</li>
+<li><b>MongoDB</b>：适合文档结构灵活的数据，但如果核心查询就是时间窗口聚合，TSDB 往往更自然</li>
+<li><b>TSDB</b>：适合“时间是第一维度”的数据，而不是所有历史数据都应该无脑塞进去</li>
+</ul>
+<div class="key-point">这题的高质量回答不是背数据库名字，而是说清：数据模型、查询模式、保留周期和成本结构决定了你该不该上 TSDB。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./mongo-db-q-mg1shr.html">MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？</a></li>
+      <li><a href="./mongo-db-my-sql-mongo-db-q-gay2ec.html">MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？</a></li>
+      <li><a href="./mongo-db-my-sql-q-m6ivnq.html">MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？</a></li>
+      <li><a href="./mongo-db-aggregation-pipeline-q-jljpb8.html">MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？</a></li>
+      <li><a href="./mongo-db-my-sql-q-ikzhl1.html">MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mongodb.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=15">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

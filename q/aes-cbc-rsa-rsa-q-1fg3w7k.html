@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么不直接用 RSA RSA 加密数据长度受限（2048 位密钥最多加密 245 字节） RSA 加密速度极慢（比 AES 慢约 1000 倍） 混合加密流程 // 加密 1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes) 2. 用 AES-CBC 加密明文数据（对称，快速，无…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/aes-cbc-rsa-rsa-q-1fg3w7k.html">
+<meta property="og:title" content="AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？ - Go 后端面试题库">
+<meta property="og:description" content="为什么不直接用 RSA RSA 加密数据长度受限（2048 位密钥最多加密 245 字节） RSA 加密速度极慢（比 AES 慢约 1000 倍） 混合加密流程 // 加密 1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes) 2. 用 AES-CBC 加密明文数据（对称，快速，无…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/aes-cbc-rsa-rsa-q-1fg3w7k.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么不直接用 RSA RSA 加密数据长度受限（2048 位密钥最多加密 245 字节） RSA 加密速度极慢（比 AES 慢约 1000 倍） 混合加密流程 // 加密 1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes) 2. 用 AES-CBC 加密明文数据（对称，快速，无…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/security.html">安全防护</a> ›
+    <span>AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AES-CBC + RSA 混合加密的流程？为什么不直接用 RSA 加密全部数据？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>为什么不直接用 RSA</h4>
+<ul>
+<li>RSA 加密数据长度受限（2048 位密钥最多加密 245 字节）</li>
+<li>RSA 加密速度极慢（比 AES 慢约 1000 倍）</li>
+</ul>
+<h4>混合加密流程</h4>
+<pre><code>// 加密
+1. 随机生成 AES-256 密钥 (32 bytes) 和 IV (16 bytes)
+2. 用 AES-CBC 加密明文数据（对称，快速，无长度限制）
+3. 用 RSA 公钥加密 AES 密钥（非对称，只加密 32 bytes）
+4. 发送：RSA(AES_Key) + IV + AES_CBC(Data)
+
+// 解密
+1. 用 RSA 私钥解密出 AES 密钥
+2. 用 AES 密钥 + IV 解密数据</code></pre>
+<h4>CBC 模式注意事项</h4>
+<ul>
+<li>需要 PKCS7 Padding（明文长度对齐到块大小 16 字节）</li>
+<li>IV 必须每次随机生成，不能复用（否则相同明文产生相同密文）</li>
+<li>生产中建议用 AES-GCM（自带认证，防篡改）替代 AES-CBC</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./waf-q-sec-waf-score.html">WAF 的累加评分模型是怎么设计的？加分减分策略有哪些？灰度拦截怎么做？</a></li>
+      <li><a href="./cookie-q-sec-ratelimit-cookie.html">频率限制为什么做动态阈值？无 Cookie 连续访问检测的设计考量？</a></li>
+      <li><a href="./jwt-rsa-hmac-q-1o4zsc6.html">JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？</a></li>
+      <li><a href="./waf-q-2zizcr.html">你的自研 WAF 中间件是怎么做访客风险分析的？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/security.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=6">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="WMS（仓储管理）核心问题 库存模型 ：可售库存、在途库存、冻结库存、预扣库存要分开记账，不能只靠一个字段 入库流程 ：采购到货 → 质检 → 上架 → 库位分配，每一步都要有状态和审计 出库流程 ：订单锁库 → 拣货 → 打包 → 交接物流，库存扣减时机要明确 库位管理 ：SKU 和库位的映射关系，支持多仓、多区域…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/wms-tms-q-tms1wm.html">
+<meta property="og:title" content="跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？ - Go 后端面试题库">
+<meta property="og:description" content="WMS（仓储管理）核心问题 库存模型 ：可售库存、在途库存、冻结库存、预扣库存要分开记账，不能只靠一个字段 入库流程 ：采购到货 → 质检 → 上架 → 库位分配，每一步都要有状态和审计 出库流程 ：订单锁库 → 拣货 → 打包 → 交接物流，库存扣减时机要明确 库位管理 ：SKU 和库位的映射关系，支持多仓、多区域…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/wms-tms-q-tms1wm.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？ - Go 后端面试题库">
+<meta name="twitter:description" content="WMS（仓储管理）核心问题 库存模型 ：可售库存、在途库存、冻结库存、预扣库存要分开记账，不能只靠一个字段 入库流程 ：采购到货 → 质检 → 上架 → 库位分配，每一步都要有状态和审计 出库流程 ：订单锁库 → 拣货 → 打包 → 交接物流，库存扣减时机要明确 库位管理 ：SKU 和库位的映射关系，支持多仓、多区域…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</span>
+  </nav>
+
+  <article class="question">
+    <h1>跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>WMS（仓储管理）核心问题</h4>
+<ul>
+<li><b>库存模型</b>：可售库存、在途库存、冻结库存、预扣库存要分开记账，不能只靠一个字段</li>
+<li><b>入库流程</b>：采购到货 → 质检 → 上架 → 库位分配，每一步都要有状态和审计</li>
+<li><b>出库流程</b>：订单锁库 → 拣货 → 打包 → 交接物流，库存扣减时机要明确</li>
+<li><b>库位管理</b>：SKU 和库位的映射关系，支持多仓、多区域</li>
+</ul>
+<h4>TMS（运输管理）核心问题</h4>
+<ul>
+<li><b>物流商对接</b>：不同物流商 API 差异大，需要统一抽象层（类似支付网关抽象）</li>
+<li><b>运单生命周期</b>：下单 → 揽收 → 转运 → 清关 → 派送 → 签收，每个节点都靠回调或轮询更新</li>
+<li><b>物流轨迹</b>：多来源轨迹合并、时区统一、异常状态检测（长时间无更新告警）</li>
+</ul>
+<h4>跨境特有挑战</h4>
+<ul>
+<li>海外仓 + 国内仓的库存同步和调拨</li>
+<li>清关环节的不确定性（状态长时间卡住）</li>
+<li>退货逆向物流链路复杂度远高于国内电商</li>
+</ul>
+<div class="key-point">这题和你的项目直接相关：你做过订单和支付链路，面试时可以顺着说「订单确认后进入履约环节」，展示你对全链路的理解。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./stripe-q-sp-stripe-refund.html">Stripe 自动退款是怎么接入统一退款网关的？如何保证多渠道退款的可扩展性？</a></li>
+      <li><a href="./apple-pay-saa-s-q-sp-applepay-domain.html">Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？</a></li>
+      <li><a href="./q-pay1bas.html">支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？</a></li>
+      <li><a href="./q-atv685.html">你对接了 4 种支付网关，统一抽象层是怎么设计的？</a></li>
+      <li><a href="./q-k0d4gn.html">订单状态机如何设计？主子订单拆分架构怎么处理退款？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

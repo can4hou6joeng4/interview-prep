@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="内存模型对比 维度 Java Go 内存区域 堆 + 栈 + 方法区 + 元空间，JVM 统一管理 堆 + 栈，编译器通过逃逸分析决定分配位置 GC 算法 多种可选：G1（默认）、ZGC、Shenandoah 并发三色标记清除 + 混合写屏障 GC 调优 丰富：堆大小、新生代比例、GC 线程数、停顿目标等几十个参数 简…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-java-gc-q-5cwrb2.html">
+<meta property="og:title" content="Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？ - Go 后端面试题库">
+<meta property="og:description" content="内存模型对比 维度 Java Go 内存区域 堆 + 栈 + 方法区 + 元空间，JVM 统一管理 堆 + 栈，编译器通过逃逸分析决定分配位置 GC 算法 多种可选：G1（默认）、ZGC、Shenandoah 并发三色标记清除 + 混合写屏障 GC 调优 丰富：堆大小、新生代比例、GC 线程数、停顿目标等几十个参数 简…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-java-gc-q-5cwrb2.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？ - Go 后端面试题库">
+<meta name="twitter:description" content="内存模型对比 维度 Java Go 内存区域 堆 + 栈 + 方法区 + 元空间，JVM 统一管理 堆 + 栈，编译器通过逃逸分析决定分配位置 GC 算法 多种可选：G1（默认）、ZGC、Shenandoah 并发三色标记清除 + 混合写屏障 GC 调优 丰富：堆大小、新生代比例、GC 线程数、停顿目标等几十个参数 简…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>内存模型对比</h4>
+<table>
+<tr><th>维度</th><th>Java</th><th>Go</th></tr>
+<tr><td>内存区域</td><td>堆 + 栈 + 方法区 + 元空间，JVM 统一管理</td><td>堆 + 栈，编译器通过逃逸分析决定分配位置</td></tr>
+<tr><td>GC 算法</td><td>多种可选：G1（默认）、ZGC、Shenandoah</td><td>并发三色标记清除 + 混合写屏障</td></tr>
+<tr><td>GC 调优</td><td>丰富：堆大小、新生代比例、GC 线程数、停顿目标等几十个参数</td><td>简单：GOGC（控制堆增长比例）、GOMEMLIMIT（Go 1.19+）</td></tr>
+<tr><td>STW 停顿</td><td>G1 目标 <200ms，ZGC 目标 <1ms</td><td>通常 <1ms（Mark Setup + Mark Termination）</td></tr>
+<tr><td>逃逸分析</td><td>JIT 编译器做标量替换和栈上分配</td><td>编译期逃逸分析，<code>-gcflags="-m"</code> 可查看</td></tr>
+</table>
+<h4>对线上服务的影响</h4>
+<ul>
+<li><b>Java</b>：需要预留 JVM 堆外内存，容器内存限制要设得比 -Xmx 大；GC 调优是性能优化的重要环节，调得好可以跑得很快，调不好容易 Full GC 导致停顿</li>
+<li><b>Go</b>：内存占用更可预测，GC 几乎不需要调（默认 GOGC=100 就够用）；但如果分配过多短命对象，GC 频率高，可以用 sync.Pool 缓解</li>
+</ul>
+<h4>从 Java 转 Go 的体感</h4>
+<p>Java 服务动辄几百 MB 内存起步（JVM 本身的开销），Go 服务几十 MB 就能跑。在多租户 SaaS 场景下，Go 的低内存占用意味着同一台机器能跑更多实例，基础设施成本更低。</p>
+<div class="key-point">面试追问"Go 的 GC 够用吗"——答：对 99% 的后端服务足够了，STW 在亚毫秒级。只有少数极低延迟场景（如量化交易）才需要考虑更精细的 GC 控制，那种场景可能 Rust/C++ 更合适。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./goroutine-gmp-g-m-p-q-q1rk0k.html">Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？</a></li>
+      <li><a href="./go-channel-channel-q-1uwipet.html">Go 中 Channel 的底层结构是什么？有缓冲和无缓冲 Channel 的区别？</a></li>
+      <li><a href="./go-interface-q-1v8drm9.html">Go 的 interface 底层是如何实现的？空接口和非空接口有什么区别？</a></li>
+      <li><a href="./go-reflect-go-cache-reflect-redis-q-1dumk95.html">Go 的 reflect 包的核心原理？你在 go-cache 中如何用 reflect 实现 Redis Hash 与 Struct 的自动映射？</a></li>
+      <li><a href="./go-defer-defer-panic-recover-q-yws6gn.html">Go 的 defer 执行顺序是什么？defer 与 panic/recover 的配合机制？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

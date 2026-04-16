@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="两种渲染模式 ThemeRuntimeStatic ：主题编译为纯静态 HTML 文件直出，Go 层只做文件读取和响应。性能极高，适合内容固定的页面（关于我们、政策页） ThemeRuntimeDynamic ：Go 模板引擎实时渲染，支持动态数据注入（用户信息、实时库存、个性化推荐）。性能低于静态模式，但支持个性化内…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">
+<meta property="og:title" content="Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？ - Go 后端面试题库">
+<meta property="og:description" content="两种渲染模式 ThemeRuntimeStatic ：主题编译为纯静态 HTML 文件直出，Go 层只做文件读取和响应。性能极高，适合内容固定的页面（关于我们、政策页） ThemeRuntimeDynamic ：Go 模板引擎实时渲染，支持动态数据注入（用户信息、实时库存、个性化推荐）。性能低于静态模式，但支持个性化内…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？ - Go 后端面试题库">
+<meta name="twitter:description" content="两种渲染模式 ThemeRuntimeStatic ：主题编译为纯静态 HTML 文件直出，Go 层只做文件读取和响应。性能极高，适合内容固定的页面（关于我们、政策页） ThemeRuntimeDynamic ：Go 模板引擎实时渲染，支持动态数据注入（用户信息、实时库存、个性化推荐）。性能低于静态模式，但支持个性化内…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>两种渲染模式</h4>
+<ul>
+<li><b>ThemeRuntimeStatic</b>：主题编译为纯静态 HTML 文件直出，Go 层只做文件读取和响应。性能极高，适合内容固定的页面（关于我们、政策页）</li>
+<li><b>ThemeRuntimeDynamic</b>：Go 模板引擎实时渲染，支持动态数据注入（用户信息、实时库存、个性化推荐）。性能低于静态模式，但支持个性化内容</li>
+</ul>
+<h4>切换策略</h4>
+<ul>
+<li>主题配置中声明 <code>Runtime</code> 字段，SSR 中间件根据该字段自动路由</li>
+<li>同一个站点可以混合使用：首页走动态渲染（展示推荐商品），博客页走静态直出</li>
+<li>主题开发者在主题 JSON 配置中声明每个页面的渲染模式</li>
+</ul>
+<h4>为什么不全部用动态渲染</h4>
+<ul>
+<li><b>性能</b>：模板编译有 CPU 开销，SaaS 多租户场景下几千个店铺共享进程，静态直出可以大幅减少 CPU 压力</li>
+<li><b>缓存效率</b>：静态 HTML 可以直接被 CDN 缓存，命中率接近 100%。动态页面需要额外的缓存策略</li>
+<li><b>稳定性</b>：静态页面不会因为数据库查询失败导致渲染错误</li>
+</ul>
+<h4>为什么不全部用静态直出</h4>
+<ul>
+<li><b>实时性</b>：商品库存、价格、个性化推荐需要实时数据，静态页面无法满足</li>
+<li><b>构建成本</b>：每次内容更新需要重新生成静态文件，对频繁更新的电商站不现实</li>
+</ul>
+<div class="key-point">面试加分：能说清"不是 SSR vs SSG 的二选一，而是根据页面特征混合使用"，体现你对渲染策略有工程级理解。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-string-hash-set-q-redis-structures.html">项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</a></li>
+      <li><a href="./q-1x4gxxf.html">「游客订单归户」是什么？购物车串单问题怎么解决的？</a></li>
+      <li><a href="./q-2mq2hq.html">第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</a></li>
+      <li><a href="./go-storage-io-read-seeker-q-1dqlfpk.html">请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</a></li>
+      <li><a href="./ai-agent-q-teeahw.html">你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Code Review 的核心目标 不是找 typo，而是 发现设计问题、逻辑漏洞和潜在风险 同时也是团队知识传递和技术标准对齐的手段 Go 项目审查重点 错误处理 ：error 是否被忽略、是否有合适的上下文包装（ fmt.Errorf(&quot;xxx: %w&quot;, err) ） 并发安全 ：共享变量有没有加锁或用 chan…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-code-review-q-cr1rev.html">
+<meta property="og:title" content="Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？ - Go 后端面试题库">
+<meta property="og:description" content="Code Review 的核心目标 不是找 typo，而是 发现设计问题、逻辑漏洞和潜在风险 同时也是团队知识传递和技术标准对齐的手段 Go 项目审查重点 错误处理 ：error 是否被忽略、是否有合适的上下文包装（ fmt.Errorf(&quot;xxx: %w&quot;, err) ） 并发安全 ：共享变量有没有加锁或用 chan…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-code-review-q-cr1rev.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="Code Review 的核心目标 不是找 typo，而是 发现设计问题、逻辑漏洞和潜在风险 同时也是团队知识传递和技术标准对齐的手段 Go 项目审查重点 错误处理 ：error 是否被忽略、是否有合适的上下文包装（ fmt.Errorf(&quot;xxx: %w&quot;, err) ） 并发安全 ：共享变量有没有加锁或用 chan…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/linux.html">Linux 基础</a> ›
+    <span>Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 项目如何建立代码审查（Code Review）规范？审查时重点看什么？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>Code Review 的核心目标</h4>
+<ul>
+<li>不是找 typo，而是<b>发现设计问题、逻辑漏洞和潜在风险</b></li>
+<li>同时也是团队知识传递和技术标准对齐的手段</li>
+</ul>
+<h4>Go 项目审查重点</h4>
+<ul>
+<li><b>错误处理</b>：error 是否被忽略、是否有合适的上下文包装（<code>fmt.Errorf("xxx: %w", err)</code>）</li>
+<li><b>并发安全</b>：共享变量有没有加锁或用 channel 保护、goroutine 有没有泄漏风险</li>
+<li><b>资源释放</b>：DB 连接、HTTP Body、文件句柄是否 defer Close</li>
+<li><b>接口设计</b>：函数签名是否清晰、参数是否过多、返回值是否合理</li>
+<li><b>测试覆盖</b>：关键路径有没有测试、边界条件有没有覆盖</li>
+<li><b>性能隐患</b>：循环内是否有不必要的分配、SQL 是否有 N+1 问题</li>
+</ul>
+<h4>流程规范</h4>
+<ul>
+<li>PR 粒度要小，一个 PR 解决一个问题，不要混杂无关改动</li>
+<li>CI 先过（lint + test），再请人 Review</li>
+<li>Review 意见分级：Must Fix / Suggestion / Nit</li>
+<li>作者要写清 PR 描述：做了什么、为什么、怎么测的</li>
+</ul>
+<div class="key-point">面试时的高分回答：不只是说\"我们有 CR 流程\"，而是能举例你在 Review 中发现过什么问题（比如并发 bug、资源泄漏），以及这个发现避免了什么线上事故。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./linux-cpu-q-1jr6c9a.html">常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？</a></li>
+      <li><a href="./go-pprof-q-152su1v.html">Go 服务内存泄漏怎么排查？pprof 怎么用？</a></li>
+      <li><a href="./linux-too-many-open-files-q-1vd8czs.html">Linux 文件描述符是什么？Too many open files 怎么解决？</a></li>
+      <li><a href="./shell-q-sh1ops.html">Shell 脚本在后端日常运维中怎么用？写过哪些实用脚本？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/linux.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=18">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

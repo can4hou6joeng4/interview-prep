@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="推荐分层 internal/ order/ domain/ // 实体、值对象、领域服务、仓储接口 application/ // 用例编排、事务边界、DTO 转换 infrastructure/ // DB、MQ、第三方实现 interfaces/ // HTTP / gRPC Handler 职责划分 Domain…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-ddd-q-10q1978.html">
+<meta property="og:title" content="Go 项目如何实践 DDD？目录结构和分层怎么组织？ - Go 后端面试题库">
+<meta property="og:description" content="推荐分层 internal/ order/ domain/ // 实体、值对象、领域服务、仓储接口 application/ // 用例编排、事务边界、DTO 转换 infrastructure/ // DB、MQ、第三方实现 interfaces/ // HTTP / gRPC Handler 职责划分 Domain…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-ddd-q-10q1978.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 项目如何实践 DDD？目录结构和分层怎么组织？ - Go 后端面试题库">
+<meta name="twitter:description" content="推荐分层 internal/ order/ domain/ // 实体、值对象、领域服务、仓储接口 application/ // 用例编排、事务边界、DTO 转换 infrastructure/ // DB、MQ、第三方实现 interfaces/ // HTTP / gRPC Handler 职责划分 Domain…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 项目如何实践 DDD？目录结构和分层怎么组织？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>Go 项目如何实践 DDD？目录结构和分层怎么组织？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 项目如何实践 DDD？目录结构和分层怎么组织？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>推荐分层</h4>
+<pre><code>internal/
+  order/
+    domain/        // 实体、值对象、领域服务、仓储接口
+    application/   // 用例编排、事务边界、DTO 转换
+    infrastructure/ // DB、MQ、第三方实现
+    interfaces/    // HTTP / gRPC Handler</code></pre>
+<h4>职责划分</h4>
+<ul>
+<li><b>Domain</b>：只表达业务规则，不依赖数据库和 Web 框架</li>
+<li><b>Application</b>：负责编排用例、事务和权限校验</li>
+<li><b>Infrastructure</b>：实现仓储、缓存、消息和外部依赖</li>
+<li><b>Interfaces</b>：处理 HTTP / gRPC 请求与响应映射</li>
+</ul>
+<h4>落地注意点</h4>
+<ul>
+<li>不要把 DDD 变成“多一层文件夹”而没有业务边界</li>
+<li>先从复杂领域开始，例如订单、支付、库存，不必全项目一次性改造</li>
+<li>应用服务负责编排，领域对象负责规则，仓储负责持久化，边界要清</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-res-tful-q-1nhqd6a.html">Go 后端接口如何做 RESTful 设计和版本演进？</a></li>
+      <li><a href="./q-1ohx9b9.html">分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</a></li>
+      <li><a href="./q-17pttmy.html">自动化工单系统如何设计状态机、审批流、幂等和审计？</a></li>
+      <li><a href="./q-5ortqw.html">资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</a></li>
+      <li><a href="./go-php-plugin-mode-static-mode-q-arch-dual-engine.html">Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

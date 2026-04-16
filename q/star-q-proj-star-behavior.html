@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="推荐用 UUFind 项目（STAR 法） S ：UUFind 需要聚合 1688/淘宝多渠道商品，各平台 ID 和数据结构不同 T ：独立负责设计整个平台的数据模型和后端业务（210+ commits） A ：设计 UufindProduct 统一商品标识 + AgentLink 跨渠道关联；构建 ExternalG…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/star-q-proj-star-behavior.html">
+<meta property="og:title" content="行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法） - Go 后端面试题库">
+<meta property="og:description" content="推荐用 UUFind 项目（STAR 法） S ：UUFind 需要聚合 1688/淘宝多渠道商品，各平台 ID 和数据结构不同 T ：独立负责设计整个平台的数据模型和后端业务（210+ commits） A ：设计 UufindProduct 统一商品标识 + AgentLink 跨渠道关联；构建 ExternalG…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/star-q-proj-star-behavior.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法） - Go 后端面试题库">
+<meta name="twitter:description" content="推荐用 UUFind 项目（STAR 法） S ：UUFind 需要聚合 1688/淘宝多渠道商品，各平台 ID 和数据结构不同 T ：独立负责设计整个平台的数据模型和后端业务（210+ commits） A ：设计 UufindProduct 统一商品标识 + AgentLink 跨渠道关联；构建 ExternalG…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</span>
+  </nav>
+
+  <article class="question">
+    <h1>行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">behavior</span>
+    </p>
+    <section class="answer">
+<h4>推荐用 UUFind 项目（STAR 法）</h4>
+<ul>
+<li><b>S</b>：UUFind 需要聚合 1688/淘宝多渠道商品，各平台 ID 和数据结构不同</li>
+<li><b>T</b>：独立负责设计整个平台的数据模型和后端业务（210+ commits）</li>
+<li><b>A</b>：设计 UufindProduct 统一商品标识 + AgentLink 跨渠道关联；构建 ExternalGoodsService 实现 URL 实时解析落库 + 原站优先查询；引入请求级汇率缓存</li>
+<li><b>R</b>：平台上线稳定运行，商品列表响应时间显著下降</li>
+</ul>
+<h4>备选：支付串单问题</h4>
+<ul>
+<li><b>S</b>：游客在公用设备下单后，下一个游客购物车出现前人商品</li>
+<li><b>A</b>：排查发现 visitorId Cookie 未在登录时清除 → 重构归户逻辑：只归户当前 session 的 visitorId 并清除旧绑定</li>
+<li><b>R</b>：线上串单问题归零</li>
+</ul>
+<div class="key-point">STAR 法：Situation 简短、Task 说清职责、Action 要具体、Result 要量化</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./ai-claude-code-cursor-codex-q-u76ayt.html">AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</a></li>
+      <li><a href="./ai-ai-q-wjtvi3.html">AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</a></li>
+      <li><a href="./python-go-java-saa-s-q-7zioa5.html">Python、Go、Java 各自适合什么后端场景？出海 SaaS 技术栈怎么选？</a></li>
+      <li><a href="./llm-api-open-ai-claude-q-16opd4.html">后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？</a></li>
+      <li><a href="./next-js-api-q-xm41mo.html">全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="TLS 1.2 握手（简化） 客户端 服务端 |--- ClientHello --------&gt;| 支持的加密套件、随机数A | | 用证书公钥加密预主密钥 (Pre-Master Secret) | 双方计算会话密钥 | Key = PRF(PreMaster, 随机数A, 随机数B) |--- ChangeCip…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/https-tls-q-1cu35pj.html">
+<meta property="og:title" content="HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？ - Go 后端面试题库">
+<meta property="og:description" content="TLS 1.2 握手（简化） 客户端 服务端 |--- ClientHello --------&gt;| 支持的加密套件、随机数A | | 用证书公钥加密预主密钥 (Pre-Master Secret) | 双方计算会话密钥 | Key = PRF(PreMaster, 随机数A, 随机数B) |--- ChangeCip…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/https-tls-q-1cu35pj.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？ - Go 后端面试题库">
+<meta name="twitter:description" content="TLS 1.2 握手（简化） 客户端 服务端 |--- ClientHello --------&gt;| 支持的加密套件、随机数A | | 用证书公钥加密预主密钥 (Pre-Master Secret) | 双方计算会话密钥 | Key = PRF(PreMaster, 随机数A, 随机数B) |--- ChangeCip…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/network.html">计算机网络</a> ›
+    <span>HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？</span>
+  </nav>
+
+  <article class="question">
+    <h1>HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>TLS 1.2 握手（简化）</h4>
+<pre><code>客户端                    服务端
+  |--- ClientHello -------->|   支持的加密套件、随机数A
+  |<-- ServerHello ---------|   选定加密套件、随机数B、证书
+  |  验证证书（CA 链）        |
+  |--- ClientKeyExchange -->|   用证书公钥加密预主密钥 (Pre-Master Secret)
+  |  双方计算会话密钥          |   Key = PRF(PreMaster, 随机数A, 随机数B)
+  |--- ChangeCipherSpec --->|   切换到加密通信
+  |<-- ChangeCipherSpec ----|
+  |=== 加密数据传输 =========|</code></pre>
+<h4>两种加密的角色</h4>
+<ul>
+<li><b>非对称加密 (RSA/ECDHE)</b>：仅用于握手阶段安全地交换密钥，速度慢但安全</li>
+<li><b>对称加密 (AES-GCM)</b>：用于数据传输阶段，速度快</li>
+</ul>
+<h4>TLS 1.3 改进</h4>
+<ul>
+<li>握手从 2-RTT 缩减到 1-RTT（0-RTT 可选）</li>
+<li>移除了 RSA 密钥交换（仅保留前向安全的 ECDHE）</li>
+<li>精简加密套件（只保留 AEAD）</li>
+</ul>
+<div class="project-link">简历关联：你的 go-utils 实现了 AES-CBC + RSA 混合加密，原理与 TLS 的混合加密思路一致</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./tcp-q-1k8jhph.html">TCP 粘包/拆包是什么？怎么解决？</a></li>
+      <li><a href="./url-q-fv9so3.html">从浏览器输入 URL 到页面显示，发生了什么？（网络全链路）</a></li>
+      <li><a href="./tcp-q-1d7q686.html">TCP 的拥塞控制算法是什么？慢启动、拥塞避免、快重传、快恢复分别在做什么？</a></li>
+      <li><a href="./q-1chyr79.html">弱网场景下的优化策略有哪些？超时重试、断线重连、背压怎么配合？</a></li>
+      <li><a href="./http-stream-g-rpc-q-uka9s5.html">HTTP/2 的 Stream 多路复用在 gRPC 中是怎么体现的？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/network.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=13">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

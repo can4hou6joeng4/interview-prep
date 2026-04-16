@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心差异对比 维度 JWT + RSA Session（服务端存储） 状态 无状态，Token 自包含用户信息 有状态，需要 Redis/DB 存 session 扩容 天然支持水平扩容，任何节点都能验证 需要共享 session 存储（Redis Cluster） 性能 验签是本地 CPU 计算，无网络开销 每次请求…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-jwt-rsa-session-q-jwt-vs-session.html">
+<meta property="og:title" content="SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？ - Go 后端面试题库">
+<meta property="og:description" content="核心差异对比 维度 JWT + RSA Session（服务端存储） 状态 无状态，Token 自包含用户信息 有状态，需要 Redis/DB 存 session 扩容 天然支持水平扩容，任何节点都能验证 需要共享 session 存储（Redis Cluster） 性能 验签是本地 CPU 计算，无网络开销 每次请求…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-jwt-rsa-session-q-jwt-vs-session.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心差异对比 维度 JWT + RSA Session（服务端存储） 状态 无状态，Token 自包含用户信息 有状态，需要 Redis/DB 存 session 扩容 天然支持水平扩容，任何节点都能验证 需要共享 session 存储（Redis Cluster） 性能 验签是本地 CPU 计算，无网络开销 每次请求…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</span>
+  </nav>
+
+  <article class="question">
+    <h1>SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>核心差异对比</h4>
+<table>
+<tr><th>维度</th><th>JWT + RSA</th><th>Session（服务端存储）</th></tr>
+<tr><td>状态</td><td>无状态，Token 自包含用户信息</td><td>有状态，需要 Redis/DB 存 session</td></tr>
+<tr><td>扩容</td><td>天然支持水平扩容，任何节点都能验证</td><td>需要共享 session 存储（Redis Cluster）</td></tr>
+<tr><td>性能</td><td>验签是本地 CPU 计算，无网络开销</td><td>每次请求需查 Redis/DB</td></tr>
+<tr><td>吊销</td><td>困难，需要黑名单机制</td><td>简单，删除 session 即可</td></tr>
+<tr><td>安全</td><td>RSA 公私钥分离，私钥只在签发端</td><td>依赖 session 存储的安全性</td></tr>
+</table>
+<h4>项目中选 JWT+RSA 的理由</h4>
+<ul>
+<li><b>多租户架构</b>：每个店铺是独立租户，JWT 的 payload 直接携带 <code>store_id</code> + <code>user_id</code> + <code>role</code>，中间件无需查库即可完成鉴权和租户隔离</li>
+<li><b>Go + PHP 跨服务验证</b>：Go 签发 Token，PHP 侧只需持有公钥即可验签，不需要共享 Redis session</li>
+<li><b>部署简单</b>：SaaS 多实例部署时无需配置 session 共享存储</li>
+</ul>
+<h4>JWT 的缺点和应对</h4>
+<ul>
+<li><b>Token 吊销</b>：用户改密码或被封禁时需要即时失效。通过 Redis 黑名单 + 短过期时间（如 2 小时）+ Refresh Token 轮转来解决</li>
+<li><b>Token 体积</b>：JWT 比 session ID 大，每次请求多传几百字节。对于 HTTP API 可接受，对于高频 WebSocket 可考虑首次认证后切换为轻量 session</li>
+</ul>
+<div class="key-point">面试追问"如果让你重新选，还会选 JWT 吗"——答：SaaS 多租户 + 多语言服务场景下仍然选 JWT，但会增加 Refresh Token 轮转和更严格的黑名单机制。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./json-rpc-http-api-rpc-http-q-rpc-vs-http.html">项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</a></li>
+      <li><a href="./go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</a></li>
+      <li><a href="./redis-string-hash-set-q-redis-structures.html">项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</a></li>
+      <li><a href="./q-1x4gxxf.html">「游客订单归户」是什么？购物车串单问题怎么解决的？</a></li>
+      <li><a href="./q-2mq2hq.html">第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

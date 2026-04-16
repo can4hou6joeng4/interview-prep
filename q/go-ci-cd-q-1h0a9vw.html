@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="一条常见流水线 代码提交后先跑静态检查和单元测试，例如 golangci-lint 、 go test ./... 构建可执行文件或 Docker 镜像，产出可部署制品 将镜像推到镜像仓库，如 GHCR、Docker Hub、ECR 部署到测试环境，做 smoke test 和关键路径校验 通过后再进入生产发布，例如滚…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-ci-cd-q-1h0a9vw.html">
+<meta property="og:title" content="Go 项目的 CI/CD 流程一般怎么设计？ - Go 后端面试题库">
+<meta property="og:description" content="一条常见流水线 代码提交后先跑静态检查和单元测试，例如 golangci-lint 、 go test ./... 构建可执行文件或 Docker 镜像，产出可部署制品 将镜像推到镜像仓库，如 GHCR、Docker Hub、ECR 部署到测试环境，做 smoke test 和关键路径校验 通过后再进入生产发布，例如滚…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-ci-cd-q-1h0a9vw.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 项目的 CI/CD 流程一般怎么设计？ - Go 后端面试题库">
+<meta name="twitter:description" content="一条常见流水线 代码提交后先跑静态检查和单元测试，例如 golangci-lint 、 go test ./... 构建可执行文件或 Docker 镜像，产出可部署制品 将镜像推到镜像仓库，如 GHCR、Docker Hub、ECR 部署到测试环境，做 smoke test 和关键路径校验 通过后再进入生产发布，例如滚…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 项目的 CI/CD 流程一般怎么设计？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/docker.html">Docker 与部署</a> ›
+    <span>Go 项目的 CI/CD 流程一般怎么设计？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 项目的 CI/CD 流程一般怎么设计？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>一条常见流水线</h4>
+<ol>
+<li>代码提交后先跑静态检查和单元测试，例如 <code>golangci-lint</code>、<code>go test ./...</code></li>
+<li>构建可执行文件或 Docker 镜像，产出可部署制品</li>
+<li>将镜像推到镜像仓库，如 GHCR、Docker Hub、ECR</li>
+<li>部署到测试环境，做 smoke test 和关键路径校验</li>
+<li>通过后再进入生产发布，例如滚动更新或灰度发布</li>
+</ol>
+<h4>关键原则</h4>
+<ul>
+<li>把“是否可合并”前置到 CI，而不是等上线后再发现问题</li>
+<li>构建产物要唯一可追踪，最好带 commit SHA 或版本号</li>
+<li>部署后要有健康检查和回滚手段，不能只有发布没有验证</li>
+</ul>
+<div class="key-point">这题别只背工具名，重点是讲清楚：校验、制品、部署、验证、回滚这五步。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1dy8w42.html">灰度发布和金丝雀发布怎么实现？</a></li>
+      <li><a href="./aws-ec2-s3-rds-lambda-q-1snbf9s.html">AWS 核心服务有哪些？EC2、S3、RDS、Lambda 分别适合什么场景？</a></li>
+      <li><a href="./aws-q-1aoeo63.html">如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？</a></li>
+      <li><a href="./docker-namespace-cgroup-q-1juftm.html">Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？</a></li>
+      <li><a href="./go-dockerfile-q-7n8n2h.html">Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/docker.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=8">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

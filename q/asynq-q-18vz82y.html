@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Asynq 架构 基于 Redis 的分布式任务队列（类似 Sidekiq/Celery） 核心数据结构： asynq:{queue}:pending (List)、 asynq:{queue}:active (Set)、 asynq:{queue}:scheduled (ZSet，按执行时间排序) Scheduler…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/asynq-q-18vz82y.html">
+<meta property="og:title" content="Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？ - Go 后端面试题库">
+<meta property="og:description" content="Asynq 架构 基于 Redis 的分布式任务队列（类似 Sidekiq/Celery） 核心数据结构： asynq:{queue}:pending (List)、 asynq:{queue}:active (Set)、 asynq:{queue}:scheduled (ZSet，按执行时间排序) Scheduler…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/asynq-q-18vz82y.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？ - Go 后端面试题库">
+<meta name="twitter:description" content="Asynq 架构 基于 Redis 的分布式任务队列（类似 Sidekiq/Celery） 核心数据结构： asynq:{queue}:pending (List)、 asynq:{queue}:active (Set)、 asynq:{queue}:scheduled (ZSet，按执行时间排序) Scheduler…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/redis.html">Redis 缓存与队列</a> ›
+    <span>Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Asynq 的实现原理？你如何用它实现营销召回系统的三条异步任务链？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>Asynq 架构</h4>
+<ul>
+<li>基于 Redis 的分布式任务队列（类似 Sidekiq/Celery）</li>
+<li>核心数据结构：<code>asynq:{queue}:pending</code> (List)、<code>asynq:{queue}:active</code> (Set)、<code>asynq:{queue}:scheduled</code> (ZSet，按执行时间排序)</li>
+<li>Scheduler 定时将到期任务从 scheduled → pending，Worker 从 pending 取任务执行</li>
+<li>支持重试（指数退避）、唯一任务（去重）、超时控制、优先级队列</li>
+</ul>
+<h4>营销召回系统设计</h4>
+<pre><code>// 三条召回链
+const (
+    TaskCartRecall     = "recall:cart"      // 购物车召回
+    TaskCheckoutRecall = "recall:checkout"  // 结账页召回
+    TaskOrderRecall    = "recall:order"     // 订单召回
+)
+
+// 10 分钟定时扫描 + 分步邮件
+func HandleCartRecall(ctx context.Context, t *asynq.Task) error {
+    // 1. 查询 10 分钟内有购物车但未下单的用户
+    // 2. 第一封邮件：温馨提醒
+    // 3. 注册延时任务：24 小时后发第二封（含优惠券）
+    task := asynq.NewTask(TaskCartRecallStep2, payload,
+        asynq.ProcessIn(24 * time.Hour),
+        asynq.Unique(24 * time.Hour), // 去重
+    )
+    return client.Enqueue(task)
+}
+
+// 定时调度
+scheduler.Register("*/10 * * * *", // 每 10 分钟
+    asynq.NewTask(TaskCartRecall, nil))</code></pre>
+<div class="project-link">简历关联：基于 Asynq (Redis-backed) 实现购物车召回、结账页召回、订单召回三条异步任务链，10 分钟级定时扫描配合分步邮件提醒</div>
+<div class="key-point">能说出 Asynq 底层就是 Redis List + ZSET 实现延迟和重试，比背 API 更有说服力。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./redis-q-x046rc.html">Redis 分布式锁怎么实现？有什么陷阱？</a></li>
+      <li><a href="./q-1l47aze.html">缓存和数据库双写时，如何保证一致性？延迟双删为什么不是银弹？</a></li>
+      <li><a href="./redis-q-sheogy.html">Redis 宕机时，缓存层怎么降级？哪些数据可能丢，业务该怎么兜底？</a></li>
+      <li><a href="./redis-lua-redis-call-cluster-evalsha-q-dwhlc8.html">秒杀场景用 Redis Lua 脚本防超卖怎么做？redis.call、脚本阻塞、Cluster 限制、EVALSHA 缓存分别要注意什么？</a></li>
+      <li><a href="./redis-pub-sub-goroutine-q-redis-pubsub-shutdown.html">Redis PubSub 的优雅关机怎么实现？为什么需要特别处理订阅 goroutine？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/redis.html">浏览本分类全部 9 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=2">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

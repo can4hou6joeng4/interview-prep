@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心原因 更轻量 ：goroutine 初始栈很小，创建和销毁成本低，适合海量并发 调度更灵活 ：goroutine 由 Go runtime 在用户态调度，切换成本通常比线程更低 通信模型更友好 ：Go 鼓励用 channel、context 和共享内存最小化的方式组织并发 和线程的区别 线程由 OS 直接调度，资源…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-goroutine-q-1cuk3uh.html">
+<meta property="og:title" content="为什么 Go 里要用 goroutine，而不是线程？ - Go 后端面试题库">
+<meta property="og:description" content="核心原因 更轻量 ：goroutine 初始栈很小，创建和销毁成本低，适合海量并发 调度更灵活 ：goroutine 由 Go runtime 在用户态调度，切换成本通常比线程更低 通信模型更友好 ：Go 鼓励用 channel、context 和共享内存最小化的方式组织并发 和线程的区别 线程由 OS 直接调度，资源…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-goroutine-q-1cuk3uh.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="为什么 Go 里要用 goroutine，而不是线程？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心原因 更轻量 ：goroutine 初始栈很小，创建和销毁成本低，适合海量并发 调度更灵活 ：goroutine 由 Go runtime 在用户态调度，切换成本通常比线程更低 通信模型更友好 ：Go 鼓励用 channel、context 和共享内存最小化的方式组织并发 和线程的区别 线程由 OS 直接调度，资源…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>为什么 Go 里要用 goroutine，而不是线程？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>为什么 Go 里要用 goroutine，而不是线程？</span>
+  </nav>
+
+  <article class="question">
+    <h1>为什么 Go 里要用 goroutine，而不是线程？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>核心原因</h4>
+<ul>
+<li><b>更轻量</b>：goroutine 初始栈很小，创建和销毁成本低，适合海量并发</li>
+<li><b>调度更灵活</b>：goroutine 由 Go runtime 在用户态调度，切换成本通常比线程更低</li>
+<li><b>通信模型更友好</b>：Go 鼓励用 channel、context 和共享内存最小化的方式组织并发</li>
+</ul>
+<h4>和线程的区别</h4>
+<ul>
+<li>线程由 OS 直接调度，资源占用和上下文切换成本更高</li>
+<li>goroutine 不是替代线程“凭空执行”，而是复用底层线程，由 GMP 模型统一调度</li>
+<li>所以答案不是“线程没用”，而是 Go 用 goroutine 提供了更适合服务端并发的抽象层</li>
+</ul>
+<h4>怎么答得更像做过项目</h4>
+<p>可以补一句：真正的收益不只是“能开很多协程”，而是能把网络请求、批量任务、异步消费这些高并发场景写得更自然；但 goroutine 也不能无限开，否则会把内存和下游一起拖垮。</p>
+<div class="key-point">这题常被答成“goroutine 比线程快”。更好的答法是：它更轻量、调度更灵活、工程抽象更适合高并发服务。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-net-http-fasthttp-gnet-q-sut1qe.html">Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</a></li>
+      <li><a href="./gmp-i-o-netpoller-hand-off-q-wfdrom.html">GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</a></li>
+      <li><a href="./go-q-u7zuhe.html">Go 的逃逸分析是什么？哪些情况会导致变量从栈逃逸到堆？</a></li>
+      <li><a href="./goroutine-q-ha99tv.html">Goroutine 泄漏的常见场景有哪些？怎么排查和预防？</a></li>
+      <li><a href="./java-go-q-3jsw8b.html">从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

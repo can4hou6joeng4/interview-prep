@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三次握手 客户端 服务端 |--- SYN (seq=x) ---&gt;| ① 客户端发起连接 | | ③ 客户端确认 为什么三次 ：防止历史连接请求（旧 SYN）造成误连。两次的话服务端无法确认客户端是否收到 SYN+ACK 四次挥手 主动方 被动方 |--- FIN ---&gt;| ① 我要关闭发送 | | ④ 收到，连接…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/tcp-q-1a3g4ml.html">
+<meta property="og:title" content="TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？ - Go 后端面试题库">
+<meta property="og:description" content="三次握手 客户端 服务端 |--- SYN (seq=x) ---&gt;| ① 客户端发起连接 | | ③ 客户端确认 为什么三次 ：防止历史连接请求（旧 SYN）造成误连。两次的话服务端无法确认客户端是否收到 SYN+ACK 四次挥手 主动方 被动方 |--- FIN ---&gt;| ① 我要关闭发送 | | ④ 收到，连接…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/tcp-q-1a3g4ml.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？ - Go 后端面试题库">
+<meta name="twitter:description" content="三次握手 客户端 服务端 |--- SYN (seq=x) ---&gt;| ① 客户端发起连接 | | ③ 客户端确认 为什么三次 ：防止历史连接请求（旧 SYN）造成误连。两次的话服务端无法确认客户端是否收到 SYN+ACK 四次挥手 主动方 被动方 |--- FIN ---&gt;| ① 我要关闭发送 | | ④ 收到，连接…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/network.html">计算机网络</a> ›
+    <span>TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？</span>
+  </nav>
+
+  <article class="question">
+    <h1>TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>三次握手</h4>
+<pre><code>客户端         服务端
+  |--- SYN (seq=x) --->|     ① 客户端发起连接
+  |<-- SYN+ACK (seq=y, ack=x+1) --|  ② 服务端确认并发起
+  |--- ACK (ack=y+1) -->|     ③ 客户端确认</code></pre>
+<p><b>为什么三次</b>：防止历史连接请求（旧 SYN）造成误连。两次的话服务端无法确认客户端是否收到 SYN+ACK</p>
+
+<h4>四次挥手</h4>
+<pre><code>主动方         被动方
+  |--- FIN --->|    ① 我要关闭发送
+  |<-- ACK ----|    ② 知道了（但我可能还有数据要发）
+  |<-- FIN ----|    ③ 我也发完了，关闭
+  |--- ACK --->|    ④ 收到，连接关闭</code></pre>
+<p><b>为什么四次</b>：TCP 全双工，每个方向需要独立关闭。被动方收到 FIN 时可能还有数据没发完，所以 ACK 和 FIN 分两步</p>
+
+<h4>TIME_WAIT</h4>
+<ul>
+<li>主动关闭方进入 TIME_WAIT，等待 2MSL（通常 60 秒）</li>
+<li>原因：(1) 确保最后的 ACK 到达对方 (2) 让旧连接的迟到报文在网络中消亡</li>
+<li>服务端大量 TIME_WAIT 解决：<code>tcp_tw_reuse</code>、连接池复用</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./http-http-http-q-10s0hae.html">HTTP/1.1、HTTP/2、HTTP/3 的区别？</a></li>
+      <li><a href="./https-tls-q-1cu35pj.html">HTTPS 的 TLS 握手过程？对称加密和非对称加密在其中的角色？</a></li>
+      <li><a href="./tcp-q-1k8jhph.html">TCP 粘包/拆包是什么？怎么解决？</a></li>
+      <li><a href="./url-q-fv9so3.html">从浏览器输入 URL 到页面显示，发生了什么？（网络全链路）</a></li>
+      <li><a href="./tcp-q-1d7q686.html">TCP 的拥塞控制算法是什么？慢启动、拥塞避免、快重传、快恢复分别在做什么？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/network.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=13">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

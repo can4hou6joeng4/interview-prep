@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="热点 Key 治理 本地缓存兜底，减少所有请求都压到 Redis 对可拆分的热点数据做 Key 打散，例如按用户桶或分片后缀拆开 读写分离或增加副本，缓解单节点读热点 对极热点内容采用“永不过期 + 异步刷新”，避免击穿 大 Key 治理 先用 MEMORY USAGE 、 bigkeys 等手段找出大 Key 把超大…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/redis-key-key-q-es6a6z.html">
+<meta property="og:title" content="Redis 热点 Key 和大 Key 怎么治理？ - Go 后端面试题库">
+<meta property="og:description" content="热点 Key 治理 本地缓存兜底，减少所有请求都压到 Redis 对可拆分的热点数据做 Key 打散，例如按用户桶或分片后缀拆开 读写分离或增加副本，缓解单节点读热点 对极热点内容采用“永不过期 + 异步刷新”，避免击穿 大 Key 治理 先用 MEMORY USAGE 、 bigkeys 等手段找出大 Key 把超大…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/redis-key-key-q-es6a6z.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Redis 热点 Key 和大 Key 怎么治理？ - Go 后端面试题库">
+<meta name="twitter:description" content="热点 Key 治理 本地缓存兜底，减少所有请求都压到 Redis 对可拆分的热点数据做 Key 打散，例如按用户桶或分片后缀拆开 读写分离或增加副本，缓解单节点读热点 对极热点内容采用“永不过期 + 异步刷新”，避免击穿 大 Key 治理 先用 MEMORY USAGE 、 bigkeys 等手段找出大 Key 把超大…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Redis 热点 Key 和大 Key 怎么治理？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>Redis 热点 Key 和大 Key 怎么治理？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Redis 热点 Key 和大 Key 怎么治理？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>热点 Key 治理</h4>
+<ul>
+<li>本地缓存兜底，减少所有请求都压到 Redis</li>
+<li>对可拆分的热点数据做 Key 打散，例如按用户桶或分片后缀拆开</li>
+<li>读写分离或增加副本，缓解单节点读热点</li>
+<li>对极热点内容采用“永不过期 + 异步刷新”，避免击穿</li>
+</ul>
+<h4>大 Key 治理</h4>
+<ul>
+<li>先用 <code>MEMORY USAGE</code>、<code>bigkeys</code> 等手段找出大 Key</li>
+<li>把超大 Hash、List、Set 拆成多个小 Key 或分段存储</li>
+<li>删除时优先用 <code>UNLINK</code> 做异步删除，避免阻塞主线程</li>
+<li>从设计上限制单个 Key 的元素规模，避免把 Redis 当对象存储</li>
+</ul>
+<div class="key-point">面试里最好把热点 Key 和大 Key 分开答：前者关注流量集中，后者关注单次操作成本。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./my-sql-q-1sde06e.html">MySQL 慢查询定位和优化的完整流程？</a></li>
+      <li><a href="./q-vszs02.html">线上接口响应变慢，系统化排查思路是什么？</a></li>
+      <li><a href="./go-q-lpgq5z.html">Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？</a></li>
+      <li><a href="./goroutine-q-lf7hbg.html">协程池怎么设计？为什么 goroutine 不能无上限地开？</a></li>
+      <li><a href="./q-1m8jgdz.html">程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

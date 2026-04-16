@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="原理 // 编译插件 // go build -buildmode=plugin -o myplugin.so myplugin.go p, _ := plugin.Open(&quot;myplugin.so&quot;) sym, _ := p.Lookup(&quot;NewEngine&quot;) // 查找导出符号 factory := sym.…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-plugin-so-q-1f99wc9.html">
+<meta property="og:title" content="Go Plugin (.so) 热加载的原理、限制和你的实践？ - Go 后端面试题库">
+<meta property="og:description" content="原理 // 编译插件 // go build -buildmode=plugin -o myplugin.so myplugin.go p, _ := plugin.Open(&quot;myplugin.so&quot;) sym, _ := p.Lookup(&quot;NewEngine&quot;) // 查找导出符号 factory := sym.…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-plugin-so-q-1f99wc9.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go Plugin (.so) 热加载的原理、限制和你的实践？ - Go 后端面试题库">
+<meta name="twitter:description" content="原理 // 编译插件 // go build -buildmode=plugin -o myplugin.so myplugin.go p, _ := plugin.Open(&quot;myplugin.so&quot;) sym, _ := p.Lookup(&quot;NewEngine&quot;) // 查找导出符号 factory := sym.…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go Plugin (.so) 热加载的原理、限制和你的实践？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go Plugin (.so) 热加载的原理、限制和你的实践？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go Plugin (.so) 热加载的原理、限制和你的实践？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>原理</h4>
+<pre><code>// 编译插件
+// go build -buildmode=plugin -o myplugin.so myplugin.go
+
+p, _ := plugin.Open("myplugin.so")
+sym, _ := p.Lookup("NewEngine")  // 查找导出符号
+factory := sym.(func() TemplateEngine)
+engine := factory()</code></pre>
+<h4>核心限制</h4>
+<ul>
+<li>仅支持 Linux 和 macOS，不支持 Windows</li>
+<li>主程序和插件必须使用<b>完全相同的 Go 版本</b>编译</li>
+<li>共享依赖的包路径和版本必须一致</li>
+<li>插件一旦加载<b>无法卸载</b>（内存中永驻）</li>
+<li>不支持泛型导出（Go 1.18+）</li>
+</ul>
+<h4>你的实践方案</h4>
+<ul>
+<li>定义统一接口（如 <code>TemplateEngine</code>、<code>ORMExtension</code>、<code>CaptchaProvider</code>）</li>
+<li>插件实现接口并导出工厂函数</li>
+<li>主进程通过 <code>plugin.Open</code> + <code>Lookup</code> + 类型断言加载</li>
+<li>适用场景：模板引擎切换、ORM 扩展、验证码提供商动态替换</li>
+</ul>
+<div class="key-point">面试追问：如果面试官问 "为什么不用 RPC 微服务替代？"——Plugin 是进程内调用零延迟，适合同进程功能扩展；微服务适合独立部署的业务拆分</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-wait-group-q-16gf8u3.html">Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</a></li>
+      <li><a href="./select-case-for-select-q-m0larr.html">select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</a></li>
+      <li><a href="./sync-map-q-1arld6w.html">sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</a></li>
+      <li><a href="./go-goroutine-q-1cuk3uh.html">为什么 Go 里要用 goroutine，而不是线程？</a></li>
+      <li><a href="./go-net-http-fasthttp-gnet-q-sut1qe.html">Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

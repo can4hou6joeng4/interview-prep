@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心区别 特性 MySQL MongoDB 数据模型 关系型（行/列/表） 文档型（JSON/BSON） Schema 强 Schema（需建表） 灵活 Schema（无需预定义） JOIN 支持 不支持（嵌入文档或 $lookup） 事务 完整 ACID 4.0+ 支持多文档事务 扩展 垂直扩展为主 原生分片（水平扩…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-my-sql-mongo-db-q-gay2ec.html">
+<meta property="og:title" content="MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？ - Go 后端面试题库">
+<meta property="og:description" content="核心区别 特性 MySQL MongoDB 数据模型 关系型（行/列/表） 文档型（JSON/BSON） Schema 强 Schema（需建表） 灵活 Schema（无需预定义） JOIN 支持 不支持（嵌入文档或 $lookup） 事务 完整 ACID 4.0+ 支持多文档事务 扩展 垂直扩展为主 原生分片（水平扩…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/mongo-db-my-sql-mongo-db-q-gay2ec.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心区别 特性 MySQL MongoDB 数据模型 关系型（行/列/表） 文档型（JSON/BSON） Schema 强 Schema（需建表） 灵活 Schema（无需预定义） JOIN 支持 不支持（嵌入文档或 $lookup） 事务 完整 ACID 4.0+ 支持多文档事务 扩展 垂直扩展为主 原生分片（水平扩…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mongodb.html">MongoDB</a> ›
+    <span>MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？</span>
+  </nav>
+
+  <article class="question">
+    <h1>MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>核心区别</h4>
+<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">MySQL</th><th style="text-align:left;padding:6px">MongoDB</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">数据模型</td><td style="padding:6px">关系型（行/列/表）</td><td style="padding:6px">文档型（JSON/BSON）</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">Schema</td><td style="padding:6px">强 Schema（需建表）</td><td style="padding:6px">灵活 Schema（无需预定义）</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">JOIN</td><td style="padding:6px">支持</td><td style="padding:6px">不支持（嵌入文档或 $lookup）</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">事务</td><td style="padding:6px">完整 ACID</td><td style="padding:6px">4.0+ 支持多文档事务</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">扩展</td><td style="padding:6px">垂直扩展为主</td><td style="padding:6px">原生分片（水平扩展）</td></tr>
+<tr><td style="padding:6px">索引</td><td style="padding:6px">B+ 树</td><td style="padding:6px">B 树 + 支持嵌套字段索引</td></tr>
+</table>
+<h4>适用场景</h4>
+<ul>
+<li><b>MongoDB 适合</b>：日志/埋点、内容管理（CMS）、IoT 时序数据、Schema 频繁变更的早期项目、嵌套结构数据</li>
+<li><b>MySQL 适合</b>：强一致性事务（支付/订单）、复杂关联查询、数据结构稳定的业务</li>
+</ul>
+<div class="key-point">岗位关联：腾讯赛事平台和运维工具岗位要求 MongoDB 经验，通常用于日志存储、赛事数据（嵌套结构）、运维指标等场景</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./mongo-db-my-sql-q-m6ivnq.html">MongoDB 的索引类型有哪些？复合索引和 MySQL 有什么不同？</a></li>
+      <li><a href="./mongo-db-aggregation-pipeline-q-jljpb8.html">MongoDB 的聚合管道 (Aggregation Pipeline) 是什么？常用的阶段有哪些？</a></li>
+      <li><a href="./mongo-db-my-sql-q-ikzhl1.html">MongoDB 的事务怎么用？它和 MySQL 事务有什么差异？</a></li>
+      <li><a href="./my-sql-redis-mongo-db-q-l2i20y.html">时序数据库适合什么场景？它和 MySQL、Redis、MongoDB 的边界是什么？</a></li>
+      <li><a href="./mongo-db-q-mg1shr.html">MongoDB 在高并发写入场景下如何做分片？分片键怎么选？踩过什么坑？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mongodb.html">浏览本分类全部 6 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=15">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

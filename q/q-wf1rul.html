@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先分清两者 工作流引擎 ：编排多步骤、多角色的流程推进，核心是状态流转和节点编排。典型：订单审批流、退款审核流、采购入库流 规则引擎 ：在某个决策点，根据条件集合计算出结果。典型：运费规则、税费规则、风控规则、优惠叠加规则 两者经常配合：工作流某个节点调用规则引擎做决策，决策结果决定流程走向 跨境电商的常见场景 工作流…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-wf1rul.html">
+<meta property="og:title" content="工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？ - Go 后端面试题库">
+<meta property="og:description" content="先分清两者 工作流引擎 ：编排多步骤、多角色的流程推进，核心是状态流转和节点编排。典型：订单审批流、退款审核流、采购入库流 规则引擎 ：在某个决策点，根据条件集合计算出结果。典型：运费规则、税费规则、风控规则、优惠叠加规则 两者经常配合：工作流某个节点调用规则引擎做决策，决策结果决定流程走向 跨境电商的常见场景 工作流…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-wf1rul.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？ - Go 后端面试题库">
+<meta name="twitter:description" content="先分清两者 工作流引擎 ：编排多步骤、多角色的流程推进，核心是状态流转和节点编排。典型：订单审批流、退款审核流、采购入库流 规则引擎 ：在某个决策点，根据条件集合计算出结果。典型：运费规则、税费规则、风控规则、优惠叠加规则 两者经常配合：工作流某个节点调用规则引擎做决策，决策结果决定流程走向 跨境电商的常见场景 工作流…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？</span>
+  </nav>
+
+  <article class="question">
+    <h1>工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先分清两者</h4>
+<ul>
+<li><b>工作流引擎</b>：编排多步骤、多角色的流程推进，核心是状态流转和节点编排。典型：订单审批流、退款审核流、采购入库流</li>
+<li><b>规则引擎</b>：在某个决策点，根据条件集合计算出结果。典型：运费规则、税费规则、风控规则、优惠叠加规则</li>
+<li>两者经常配合：工作流某个节点调用规则引擎做决策，决策结果决定流程走向</li>
+</ul>
+<h4>跨境电商的常见场景</h4>
+<ul>
+<li><b>工作流</b>：采购单审批 → 供应商确认 → 入库 → 质检 → 上架；退款申请 → 客服审核 → 财务放款</li>
+<li><b>规则引擎</b>：根据目的国+商品类目+重量命中运费模板；根据收货地址命中税率和税种（VAT/Sales Tax）；根据用户标签+订单金额命中优惠策略</li>
+</ul>
+<h4>工程实现要点</h4>
+<ul>
+<li>工作流引擎的核心是状态机 + 节点注册 + 条件分支 + 超时/补偿</li>
+<li>规则引擎的核心是规则匹配优先级（精确 > 通配 > 默认）和命中结果可审计</li>
+<li>不要把业务逻辑硬编码在流程代码里，要做到规则和流程可配置、可追溯</li>
+</ul>
+<div class="key-point">面试高分点：能说清工作流管「流程推进」、规则引擎管「决策计算」，两者边界清晰但常配合使用。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./wms-tms-q-tms1wm.html">跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</a></li>
+      <li><a href="./stripe-q-sp-stripe-refund.html">Stripe 自动退款是怎么接入统一退款网关的？如何保证多渠道退款的可扩展性？</a></li>
+      <li><a href="./apple-pay-saa-s-q-sp-applepay-domain.html">Apple Pay 域名注册与校验文件托管的完整链路是什么？SaaS 多租户场景下怎么处理？</a></li>
+      <li><a href="./q-pay1bas.html">支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？</a></li>
+      <li><a href="./q-atv685.html">你对接了 4 种支付网关，统一抽象层是怎么设计的？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

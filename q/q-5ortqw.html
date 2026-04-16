@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先把“资源”和“流程”拆开 资源实体 ：机房、集群、节点、实例、网络、磁盘、账号等真实对象 流程实体 ：工单、审批记录、执行记录、审计日志 不要把资源本体和流程状态硬塞到一张表里，否则后续会越改越乱 一个常见关系模型 Region / IDC └─ Node └─ ResourceInstance (VM / Pod…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-5ortqw.html">
+<meta property="og:title" content="资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？ - Go 后端面试题库">
+<meta property="og:description" content="先把“资源”和“流程”拆开 资源实体 ：机房、集群、节点、实例、网络、磁盘、账号等真实对象 流程实体 ：工单、审批记录、执行记录、审计日志 不要把资源本体和流程状态硬塞到一张表里，否则后续会越改越乱 一个常见关系模型 Region / IDC └─ Node └─ ResourceInstance (VM / Pod…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-5ortqw.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？ - Go 后端面试题库">
+<meta name="twitter:description" content="先把“资源”和“流程”拆开 资源实体 ：机房、集群、节点、实例、网络、磁盘、账号等真实对象 流程实体 ：工单、审批记录、执行记录、审计日志 不要把资源本体和流程状态硬塞到一张表里，否则后续会越改越乱 一个常见关系模型 Region / IDC └─ Node └─ ResourceInstance (VM / Pod…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</span>
+  </nav>
+
+  <article class="question">
+    <h1>资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先把“资源”和“流程”拆开</h4>
+<ul>
+<li><b>资源实体</b>：机房、集群、节点、实例、网络、磁盘、账号等真实对象</li>
+<li><b>流程实体</b>：工单、审批记录、执行记录、审计日志</li>
+<li>不要把资源本体和流程状态硬塞到一张表里，否则后续会越改越乱</li>
+</ul>
+<h4>一个常见关系模型</h4>
+<pre><code>Region / IDC
+  └─ Node
+      └─ ResourceInstance (VM / Pod / DB / Cache ...)
+
+ResourceInstance
+  ├─ Tags
+  ├─ Owner
+  ├─ QuotaBinding
+  └─ ChangeTickets</code></pre>
+<h4>对象职责</h4>
+<ul>
+<li><b>机房 / 区域</b>：表达物理或逻辑归属，支撑容灾和拓扑管理</li>
+<li><b>节点</b>：承载计算资源，记录 CPU、内存、磁盘、状态和所属集群</li>
+<li><b>资源实例</b>：真正对外服务的对象，带类型、规格、状态、负责人</li>
+<li><b>标签</b>：表达环境、业务线、风险级别、租户、用途等横切维度</li>
+<li><b>配额</b>：限制团队、租户或业务线的资源上限</li>
+<li><b>工单</b>：针对资源发起变更申请，不等于资源本体本身</li>
+</ul>
+<div class="key-point">这题的高分点在于：你能说清平台系统本质上在管理元数据、关系和流程，而不是往一张表里不断堆字段。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-php-plugin-mode-static-mode-q-arch-dual-engine.html">Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</a></li>
+      <li><a href="./checkout-payment-before-after-mutex-rw-q-arch-event-hooks.html">Checkout/Payment 的 Before/After 事件钩子怎么设计的？为什么用 Mutex 而不是 RWMutex？</a></li>
+      <li><a href="./go-q-dp1bas.html">常见的设计模式有哪几大类？Go 里最常用的是哪些？</a></li>
+      <li><a href="./q-159zveo.html">你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？</a></li>
+      <li><a href="./before-after-q-1yd5y53.html">你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

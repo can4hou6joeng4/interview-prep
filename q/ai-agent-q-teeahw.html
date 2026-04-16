@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="整体架构 用户请求 → API → 创建异步任务 (Asynq) ↓ Task Worker 执行 AI 调用 ↓ WebSocket 推送实时状态 ↓ 结果入库 → 用户编辑 → 一键应用 任务编排 // AI 文章生成任务链 func HandleArticleGeneration(ctx context.Cont…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-agent-q-teeahw.html">
+<meta property="og:title" content="你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="整体架构 用户请求 → API → 创建异步任务 (Asynq) ↓ Task Worker 执行 AI 调用 ↓ WebSocket 推送实时状态 ↓ 结果入库 → 用户编辑 → 一键应用 任务编排 // AI 文章生成任务链 func HandleArticleGeneration(ctx context.Cont…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-agent-q-teeahw.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="整体架构 用户请求 → API → 创建异步任务 (Asynq) ↓ Task Worker 执行 AI 调用 ↓ WebSocket 推送实时状态 ↓ 结果入库 → 用户编辑 → 一键应用 任务编排 // AI 文章生成任务链 func HandleArticleGeneration(ctx context.Cont…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>整体架构</h4>
+<pre><code>用户请求 → API → 创建异步任务 (Asynq)
+                        ↓
+              Task Worker 执行 AI 调用
+                        ↓
+              WebSocket 推送实时状态
+                        ↓
+              结果入库 → 用户编辑 → 一键应用</code></pre>
+<h4>任务编排</h4>
+<pre><code>// AI 文章生成任务链
+func HandleArticleGeneration(ctx context.Context, t *asynq.Task) error {
+    taskId := getTaskId(t)
+    pushStatus(taskId, "generating")    // WS 推送
+
+    // 1. 调用 AI API 生成文章
+    result, err := aiClient.Generate(ctx, prompt)
+    if err != nil {
+        pushStatus(taskId, "error", mapError(err))  // 错误映射
+        return err
+    }
+
+    // 2. 存储生成结果（草稿状态）
+    saveAsDraft(taskId, result)
+    pushStatus(taskId, "completed", result.Summary)
+    return nil
+}
+
+// SEO 优化建议：生成 → 用户编辑 → 一键应用
+func HandleSEOOptimization(ctx context.Context, t *asynq.Task) error {
+    product := getProduct(t)
+    suggestions := aiClient.GenerateSEO(ctx, product)
+    // 生成 title/description/keywords 建议
+    // 用户在前端编辑确认后，调用 apply 接口一键更新
+    saveSuggestions(product.Id, suggestions)
+    return nil
+}</code></pre>
+<h4>错误映射</h4>
+<pre><code>// AI 接口错误 → 用户友好提示
+func mapError(err error) string {
+    switch {
+    case errors.Is(err, context.DeadlineExceeded):
+        return "AI 生成超时，请稍后重试"
+    case isRateLimitError(err):
+        return "请求频率过高，请 1 分钟后重试"
+    case isTokenLimitError(err):
+        return "内容过长，请缩短输入"
+    default:
+        return "生成失败，请重试"
+    }
+}</code></pre>
+<div class="project-link">简历关联：从零构建 AI Agent 应用模块，AI 文章定时生成 + 产品 SEO 优化建议生成→用户编辑→一键应用，WebSocket 实时状态推送与错误映射</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-php-go-q-1logdyo.html">为什么选择 Go + PHP 混合架构而不是纯 Go？</a></li>
+      <li><a href="./checkout-q-1mw1c5q.html">Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</a></li>
+      <li><a href="./capability-assert-q-123b1zo.html">Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</a></li>
+      <li><a href="./uu-find-q-esz930.html">UUFind 的跨平台商品统一标识是怎么设计的？</a></li>
+      <li><a href="./prompt-engineering-few-shot-chain-of-q-10vccg3.html">Prompt Engineering 的基本技巧有哪些？Few-shot、Chain-of-Thought、ReAct 分别适合什么场景？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

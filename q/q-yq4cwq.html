@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么分表后查询变难 单表时 ORDER BY created_at DESC LIMIT 10 OFFSET 100 很简单。分表后数据散落在多个物理表中，无法直接跨表排序和分页。 常见方案 方案一：归并排序法 每个分片执行相同查询（带排序），应用层对多个结果集做归并排序，取前 N 条 问题：深分页时每个分片都要取…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-yq4cwq.html">
+<meta property="og:title" content="分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？ - Go 后端面试题库">
+<meta property="og:description" content="为什么分表后查询变难 单表时 ORDER BY created_at DESC LIMIT 10 OFFSET 100 很简单。分表后数据散落在多个物理表中，无法直接跨表排序和分页。 常见方案 方案一：归并排序法 每个分片执行相同查询（带排序），应用层对多个结果集做归并排序，取前 N 条 问题：深分页时每个分片都要取…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-yq4cwq.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么分表后查询变难 单表时 ORDER BY created_at DESC LIMIT 10 OFFSET 100 很简单。分表后数据散落在多个物理表中，无法直接跨表排序和分页。 常见方案 方案一：归并排序法 每个分片执行相同查询（带排序），应用层对多个结果集做归并排序，取前 N 条 问题：深分页时每个分片都要取…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？</span>
+  </nav>
+
+  <article class="question">
+    <h1>分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么分表后查询变难</h4>
+<p>单表时 <code>ORDER BY created_at DESC LIMIT 10 OFFSET 100</code> 很简单。分表后数据散落在多个物理表中，无法直接跨表排序和分页。</p>
+<h4>常见方案</h4>
+<ul>
+<li><b>方案一：归并排序法</b>
+  <ul>
+  <li>每个分片执行相同查询（带排序），应用层对多个结果集做归并排序，取前 N 条</li>
+  <li>问题：深分页时每个分片都要取 offset+limit 条数据，内存和性能随页码线性增长</li>
+  </ul>
+</li>
+<li><b>方案二：禁止跳页 + 游标分页</b>
+  <ul>
+  <li>不允许直接跳到第 100 页，只支持"下一页"</li>
+  <li>用上一页最后一条的排序字段值做游标：<code>WHERE created_at < ? ORDER BY created_at DESC LIMIT 10</code></li>
+  <li>每个分片只需返回 limit 条数据，内存开销恒定</li>
+  <li>这是<b>生产中最推荐的方案</b></li>
+  </ul>
+</li>
+<li><b>方案三：二次查询法</b>
+  <ul>
+  <li>第一轮：每个分片查 <code>LIMIT offset/N, limit</code>（N 是分片数），收集边界值</li>
+  <li>第二轮：根据全局排序范围精确查询各分片</li>
+  <li>适合数据分布均匀的场景</li>
+  </ul>
+</li>
+<li><b>方案四：异构索引表</b>
+  <ul>
+  <li>维护一张全局排序索引表（只存 ID + 排序字段），用它做分页定位，再回源分片取完整数据</li>
+  <li>适合查询维度固定、写入频率可控的场景</li>
+  </ul>
+</li>
+</ul>
+<h4>你的项目实践</h4>
+<p>Shoply 按 store_id 分片，大多数查询天然带 store_id 条件，所以路由到单个分片后就是单表查询，不涉及跨分片。只有后台运营统计类查询需要跨分片，这类场景用异步聚合 + 缓存解决，不做实时跨分片分页。</p>
+<div class="project-link">简历关联：自定义 GORM Sharding 按租户 ID 分片，大部分查询路由到单分片避免跨片问题</div>
+<div class="key-point">面试最佳回答：先说"我的分片策略让大多数查询不需要跨分片"，再展开"如果确实需要跨分片，生产上推荐游标分页"。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./inno-db-b-b-q-wxlgi4.html">InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</a></li>
+      <li><a href="./q-sqoeth.html">你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</a></li>
+      <li><a href="./my-sql-acid-redo-log-undo-q-m41whe.html">MySQL 事务的 ACID 如何保证？redo log 和 undo log 分别起什么作用？</a></li>
+      <li><a href="./saa-s-gorm-q-fe9pel.html">多租户 SaaS 分表方案是怎么设计的？GORM 分表插件如何实现？</a></li>
+      <li><a href="./my-sql-q-1gxiy1s.html">MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

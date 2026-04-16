@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心流程 下单 ：用户提交订单，后端创建订单记录，锁定库存 结算 ：计算商品金额、优惠、运费、税费，生成应付总额 支付 ：调用支付网关（如 Stripe/PayPal）创建支付意图，用户完成付款 回调 ：支付网关异步通知支付结果（Webhook），后端验签后更新订单状态 履约 ：支付成功后触发发货、物流等后续流程 关键…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-pay1bas.html">
+<meta property="og:title" content="支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？ - Go 后端面试题库">
+<meta property="og:description" content="核心流程 下单 ：用户提交订单，后端创建订单记录，锁定库存 结算 ：计算商品金额、优惠、运费、税费，生成应付总额 支付 ：调用支付网关（如 Stripe/PayPal）创建支付意图，用户完成付款 回调 ：支付网关异步通知支付结果（Webhook），后端验签后更新订单状态 履约 ：支付成功后触发发货、物流等后续流程 关键…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-pay1bas.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心流程 下单 ：用户提交订单，后端创建订单记录，锁定库存 结算 ：计算商品金额、优惠、运费、税费，生成应付总额 支付 ：调用支付网关（如 Stripe/PayPal）创建支付意图，用户完成付款 回调 ：支付网关异步通知支付结果（Webhook），后端验签后更新订单状态 履约 ：支付成功后触发发货、物流等后续流程 关键…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？</span>
+  </nav>
+
+  <article class="question">
+    <h1>支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>核心流程</h4>
+<ol>
+<li><b>下单</b>：用户提交订单，后端创建订单记录，锁定库存</li>
+<li><b>结算</b>：计算商品金额、优惠、运费、税费，生成应付总额</li>
+<li><b>支付</b>：调用支付网关（如 Stripe/PayPal）创建支付意图，用户完成付款</li>
+<li><b>回调</b>：支付网关异步通知支付结果（Webhook），后端验签后更新订单状态</li>
+<li><b>履约</b>：支付成功后触发发货、物流等后续流程</li>
+</ol>
+<h4>关键设计点</h4>
+<ul>
+<li>订单和支付是两个独立实体，一个订单可能对应多次支付尝试</li>
+<li>支付结果以 Webhook 回调为准，不能只靠前端跳转判断</li>
+<li>必须做幂等——同一笔支付回调可能重复到达</li>
+</ul>
+<div class="key-point">面试入门题，但要能说清「订单」和「支付」的边界，以及为什么 Webhook 才是支付结果的唯一可信来源。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-atv685.html">你对接了 4 种支付网关，统一抽象层是怎么设计的？</a></li>
+      <li><a href="./q-k0d4gn.html">订单状态机如何设计？主子订单拆分架构怎么处理退款？</a></li>
+      <li><a href="./q-1y3mnwx.html">跨境电商中多币种金额精度问题怎么解决？</a></li>
+      <li><a href="./webhook-q-15z7zx.html">支付系统如何保证幂等性？Webhook 重复回调怎么处理？</a></li>
+      <li><a href="./q-ro9kaq.html">优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

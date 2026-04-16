@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="采集层 前端埋点 ：页面浏览（PV）、商品曝光、加购、结账、支付等关键事件通过 JS SDK 上报 后端埋点 ：WAF 中间件拦截每个请求，提取 IP、UA、Referer、Cookie 等维度，写入内存 channel 关键设计 ：主链路只做数据入队（纳秒级），不阻塞 HTTP 响应。后台 Worker 从 chan…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-q-stat-pipeline.html">
+<meta property="og:title" content="电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="采集层 前端埋点 ：页面浏览（PV）、商品曝光、加购、结账、支付等关键事件通过 JS SDK 上报 后端埋点 ：WAF 中间件拦截每个请求，提取 IP、UA、Referer、Cookie 等维度，写入内存 channel 关键设计 ：主链路只做数据入队（纳秒级），不阻塞 HTTP 响应。后台 Worker 从 chan…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-q-stat-pipeline.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="采集层 前端埋点 ：页面浏览（PV）、商品曝光、加购、结账、支付等关键事件通过 JS SDK 上报 后端埋点 ：WAF 中间件拦截每个请求，提取 IP、UA、Referer、Cookie 等维度，写入内存 channel 关键设计 ：主链路只做数据入队（纳秒级），不阻塞 HTTP 响应。后台 Worker 从 chan…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>采集层</h4>
+<ul>
+<li><b>前端埋点</b>：页面浏览（PV）、商品曝光、加购、结账、支付等关键事件通过 JS SDK 上报</li>
+<li><b>后端埋点</b>：WAF 中间件拦截每个请求，提取 IP、UA、Referer、Cookie 等维度，写入内存 channel</li>
+<li><b>关键设计</b>：主链路只做数据入队（纳秒级），不阻塞 HTTP 响应。后台 Worker 从 channel 批量消费写库</li>
+</ul>
+<h4>聚合层</h4>
+<ul>
+<li><b>实时聚合</b>：Redis INCR 计数器实现当日 PV/UV/转化率等指标，按 <code>store_id:date:metric</code> 维度存储</li>
+<li><b>离线聚合</b>：每日定时任务将 Redis 计数器落盘到 MySQL 统计表，生成日报/周报/月报</li>
+<li><b>UV 去重</b>：基于 visitor_hash（IP+UA+Accept-Language MD5）在 Redis HyperLogLog 中去重，内存占用极小</li>
+</ul>
+<h4>冷热分离</h4>
+<ul>
+<li>热表存近 7 天数据，支撑实时看板查询</li>
+<li>冷表存历史归档数据，按日播种 + 分钟级微批迁移，避免大 IO 冲击</li>
+<li>查询时根据时间范围自动路由：近期查热表，历史查冷表</li>
+</ul>
+<div class="project-link">简历关联：Shoply 的访客统计采用 WAF 中间件采集 + channel 异步批写 + Redis 实时聚合 + 冷热分表归档的四层链路</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./id-q-orderid-design.html">订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？</a></li>
+      <li><a href="./checkout-id-trade-id-webhook-q-idempotent-design.html">支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</a></li>
+      <li><a href="./decimal-vs-vs-float-q-currency-storage.html">多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</a></li>
+      <li><a href="./ai-agent-web-socket-q-ws-design.html">AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</a></li>
+      <li><a href="./asynq-kafka-rabbit-mq-q-asynq-vs-kafka.html">营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

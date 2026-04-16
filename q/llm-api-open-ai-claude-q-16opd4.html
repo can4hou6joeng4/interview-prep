@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="基本集成架构 客户端 → 后端 API → LLM Provider (OpenAI/Claude/国产模型) ↓ 统一适配层（标准化请求/响应格式） ↓ 流式输出（SSE/WebSocket → 前端逐字显示） 流式输出（Streaming）实现 后端 ：调用 LLM API 时设置 stream: true ，逐块…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/llm-api-open-ai-claude-q-16opd4.html">
+<meta property="og:title" content="后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？ - Go 后端面试题库">
+<meta property="og:description" content="基本集成架构 客户端 → 后端 API → LLM Provider (OpenAI/Claude/国产模型) ↓ 统一适配层（标准化请求/响应格式） ↓ 流式输出（SSE/WebSocket → 前端逐字显示） 流式输出（Streaming）实现 后端 ：调用 LLM API 时设置 stream: true ，逐块…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/llm-api-open-ai-claude-q-16opd4.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？ - Go 后端面试题库">
+<meta name="twitter:description" content="基本集成架构 客户端 → 后端 API → LLM Provider (OpenAI/Claude/国产模型) ↓ 统一适配层（标准化请求/响应格式） ↓ 流式输出（SSE/WebSocket → 前端逐字显示） 流式输出（Streaming）实现 后端 ：调用 LLM API 时设置 stream: true ，逐块…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？</span>
+  </nav>
+
+  <article class="question">
+    <h1>后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>基本集成架构</h4>
+<pre><code>客户端 → 后端 API → LLM Provider (OpenAI/Claude/国产模型)
+         ↓
+  统一适配层（标准化请求/响应格式）
+         ↓
+  流式输出（SSE/WebSocket → 前端逐字显示）</code></pre>
+<h4>流式输出（Streaming）实现</h4>
+<ul>
+<li><b>后端</b>：调用 LLM API 时设置 <code>stream: true</code>，逐块读取响应</li>
+<li><b>传给前端</b>：用 <b>SSE (Server-Sent Events)</b> 逐块推送，前端用 <code>EventSource</code> 接收</li>
+<li>为什么不用 WebSocket：SSE 更简单，单向推送足够，且 HTTP/2 下复用连接</li>
+</ul>
+<pre><code>// Go 后端 SSE 流式推送示例
+w.Header().Set("Content-Type", "text/event-stream")
+w.Header().Set("Cache-Control", "no-cache")
+for chunk := range llmStream {
+    fmt.Fprintf(w, "data: %s\n\n", chunk)
+    w.(http.Flusher).Flush()
+}</code></pre>
+<h4>错误处理与重试</h4>
+<ul>
+<li><b>超时控制</b>：LLM 响应慢（首 token 可能 2-5 秒），超时设长一些（30-60s），但要有上限</li>
+<li><b>重试策略</b>：429 (Rate Limit) 指数退避重试；500 系列最多重试 2 次；400 系列（Prompt 问题）不重试</li>
+<li><b>模型降级</b>：主模型超时/报错时自动 fallback 到备用模型（如 Claude → GPT-4 → GPT-3.5）</li>
+<li><b>幂等保证</b>：同一请求重试时用相同的 request_id，避免重复计费</li>
+</ul>
+<h4>成本控制</h4>
+<ul>
+<li><b>Token 计量</b>：每次请求记录 input/output token 数，按用户/项目聚合统计</li>
+<li><b>配额管理</b>：按团队设 token 月度预算，接近上限时告警</li>
+<li><b>缓存</b>：相同 Prompt 的结果做语义缓存（Embedding 相似度匹配），避免重复调用</li>
+<li><b>Prompt 优化</b>：减少冗余上下文，用 system prompt 复用替代每次重传</li>
+</ul>
+<div class="project-link">简历关联：你有 AI Agent 模块经验，基于 WebSocket 实现任务状态实时推送。流式输出和错误映射的经验可以直接迁移</div>
+<div class="key-point">面试追问"你们的 AI 模块怎么控制成本"——能答出 token 计量 + 语义缓存 + 模型降级这三点就很加分。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./next-js-api-q-xm41mo.html">全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？</a></li>
+      <li><a href="./visitor-id-q-vid-design.html">系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？</a></li>
+      <li><a href="./saa-s-q-stat-pipeline.html">电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？</a></li>
+      <li><a href="./id-q-orderid-design.html">订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？</a></li>
+      <li><a href="./checkout-id-trade-id-webhook-q-idempotent-design.html">支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

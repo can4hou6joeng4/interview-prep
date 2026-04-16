@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三条召回链路（Asynq + Redis） 购物车召回 ：加购未结账 → 10min 后邮件提醒 结账页召回 ：进入结账未支付 → 分步提醒（10min → 1h → 24h） 订单召回 ：下单未支付 → 支付提醒 执行机制 定时任务每 10 分钟扫描符合条件的记录 创建 Asynq 任务 → Redis 队列 → W…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-q-proj-recovery.html">
+<meta property="og:title" content="营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？ - Go 后端面试题库">
+<meta property="og:description" content="三条召回链路（Asynq + Redis） 购物车召回 ：加购未结账 → 10min 后邮件提醒 结账页召回 ：进入结账未支付 → 分步提醒（10min → 1h → 24h） 订单召回 ：下单未支付 → 支付提醒 执行机制 定时任务每 10 分钟扫描符合条件的记录 创建 Asynq 任务 → Redis 队列 → W…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/saa-s-q-proj-recovery.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？ - Go 后端面试题库">
+<meta name="twitter:description" content="三条召回链路（Asynq + Redis） 购物车召回 ：加购未结账 → 10min 后邮件提醒 结账页召回 ：进入结账未支付 → 分步提醒（10min → 1h → 24h） 订单召回 ：下单未支付 → 支付提醒 执行机制 定时任务每 10 分钟扫描符合条件的记录 创建 Asynq 任务 → Redis 队列 → W…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</span>
+  </nav>
+
+  <article class="question">
+    <h1>营销召回系统的三条任务链怎么设计的？和 SaaS 套餐能力控制怎么联动？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>三条召回链路（Asynq + Redis）</h4>
+<ul>
+<li><b>购物车召回</b>：加购未结账 → 10min 后邮件提醒</li>
+<li><b>结账页召回</b>：进入结账未支付 → 分步提醒（10min → 1h → 24h）</li>
+<li><b>订单召回</b>：下单未支付 → 支付提醒</li>
+</ul>
+<h4>执行机制</h4>
+<ul>
+<li>定时任务每 10 分钟扫描符合条件的记录</li>
+<li>创建 Asynq 任务 → Redis 队列 → Worker 消费 → 发送邮件</li>
+<li>发送前检查用户是否已完成操作（避免误发）</li>
+</ul>
+<h4>套餐联动</h4>
+<p>召回功能受 Capability 系统管控：Free 版不开放，Pro/Enterprise 开放。触发前调用 <code>AssertRecoveryEnabled()</code> 校验。</p>
+<div class="project-link">简历关联：营销召回 + SaaS 能力控制闭环</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./star-q-proj-star-behavior.html">行为面试：描述一次你独立解决复杂技术问题的经历（STAR 法）</a></li>
+      <li><a href="./ai-claude-code-cursor-codex-q-u76ayt.html">AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？</a></li>
+      <li><a href="./ai-ai-q-wjtvi3.html">AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？</a></li>
+      <li><a href="./python-go-java-saa-s-q-7zioa5.html">Python、Go、Java 各自适合什么后端场景？出海 SaaS 技术栈怎么选？</a></li>
+      <li><a href="./llm-api-open-ai-claude-q-16opd4.html">后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

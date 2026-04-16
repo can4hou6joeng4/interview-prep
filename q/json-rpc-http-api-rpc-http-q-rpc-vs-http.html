@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="划分原则 HTTP API ：面向外部（前端、第三方、Webhook 回调），需要标准化的 RESTful 语义、CORS、鉴权中间件 JSON-RPC ：面向内部服务间调用（Go ↔ PHP），不需要 HTTP 语义，追求调用简单和性能 项目中的具体边界 走 HTTP 的接口 走 RPC 的接口 前端 CRUD AP…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/json-rpc-http-api-rpc-http-q-rpc-vs-http.html">
+<meta property="og:title" content="项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？ - Go 后端面试题库">
+<meta property="og:description" content="划分原则 HTTP API ：面向外部（前端、第三方、Webhook 回调），需要标准化的 RESTful 语义、CORS、鉴权中间件 JSON-RPC ：面向内部服务间调用（Go ↔ PHP），不需要 HTTP 语义，追求调用简单和性能 项目中的具体边界 走 HTTP 的接口 走 RPC 的接口 前端 CRUD AP…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/json-rpc-http-api-rpc-http-q-rpc-vs-http.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？ - Go 后端面试题库">
+<meta name="twitter:description" content="划分原则 HTTP API ：面向外部（前端、第三方、Webhook 回调），需要标准化的 RESTful 语义、CORS、鉴权中间件 JSON-RPC ：面向内部服务间调用（Go ↔ PHP），不需要 HTTP 语义，追求调用简单和性能 项目中的具体边界 走 HTTP 的接口 走 RPC 的接口 前端 CRUD AP…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</span>
+  </nav>
+
+  <article class="question">
+    <h1>项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>划分原则</h4>
+<ul>
+<li><b>HTTP API</b>：面向外部（前端、第三方、Webhook 回调），需要标准化的 RESTful 语义、CORS、鉴权中间件</li>
+<li><b>JSON-RPC</b>：面向内部服务间调用（Go ↔ PHP），不需要 HTTP 语义，追求调用简单和性能</li>
+</ul>
+<h4>项目中的具体边界</h4>
+<table>
+<tr><th>走 HTTP 的接口</th><th>走 RPC 的接口</th></tr>
+<tr><td>前端 CRUD API（商品/订单/用户）</td><td>PHP 调 Go 的高性能服务（ES 搜索/支付/邮件）</td></tr>
+<tr><td>支付网关 Webhook 回调</td><td>Go 调 PHP 的业务逻辑（插件执行/模板渲染）</td></tr>
+<tr><td>第三方平台对接（Shopify/1688 API）</td><td>内部数据同步（商品变更 → ES 索引更新）</td></tr>
+<tr><td>Apple Pay 域名验证文件托管</td><td>积分变更、能力校验等内部操作</td></tr>
+</table>
+<h4>为什么内部不用 gRPC 而选 JSON-RPC</h4>
+<ul>
+<li><b>协议轻量</b>：JSON-RPC 基于 JSON，PHP 端原生支持解析，不需要安装 Protobuf 编译器和额外依赖</li>
+<li><b>调试方便</b>：JSON 文本格式可直接抓包可读，gRPC 的二进制协议需要额外工具解码</li>
+<li><b>场景不需要</b>：内部通信不跨网络、不需要流式传输、不需要多语言 IDL，gRPC 的优势发挥不出来</li>
+</ul>
+<h4>什么场景应该换成 gRPC</h4>
+<ul>
+<li>服务数量超过 10 个，需要强类型接口契约（Protobuf IDL）防止联调出错</li>
+<li>需要双向流式传输（如实时数据推送）</li>
+<li>跨语言服务增多（Python/Java/Rust），Protobuf 的多语言代码生成价值更大</li>
+</ul>
+<div class="project-link">简历关联：Shoply 用 Go net/rpc（JSON 编码）桥接 Go 和 PHP，25+ 个 RPC 服务覆盖商品、支付、搜索、邮件等模块</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-ssr-theme-runtime-static-theme-q-ssr-mode-tradeoff.html">Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？</a></li>
+      <li><a href="./redis-string-hash-set-q-redis-structures.html">项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？</a></li>
+      <li><a href="./q-1x4gxxf.html">「游客订单归户」是什么？购物车串单问题怎么解决的？</a></li>
+      <li><a href="./q-2mq2hq.html">第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</a></li>
+      <li><a href="./go-storage-io-read-seeker-q-1dqlfpk.html">请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

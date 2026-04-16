@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="锁类型 全局锁 ： FLUSH TABLES WITH READ LOCK （全库备份） 表锁 ：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁 行锁 （InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock) 行锁升级为表锁的情况 WHE…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/my-sql-q-1gxiy1s.html">
+<meta property="og:title" content="MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？ - Go 后端面试题库">
+<meta property="og:description" content="锁类型 全局锁 ： FLUSH TABLES WITH READ LOCK （全库备份） 表锁 ：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁 行锁 （InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock) 行锁升级为表锁的情况 WHE…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/my-sql-q-1gxiy1s.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？ - Go 后端面试题库">
+<meta name="twitter:description" content="锁类型 全局锁 ： FLUSH TABLES WITH READ LOCK （全库备份） 表锁 ：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁 行锁 （InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock) 行锁升级为表锁的情况 WHE…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/mysql.html">MySQL 数据库</a> ›
+    <span>MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？</span>
+  </nav>
+
+  <article class="question">
+    <h1>MySQL 的锁机制？什么情况下行锁会升级为表锁？如何避免死锁？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>锁类型</h4>
+<ul>
+<li><b>全局锁</b>：<code>FLUSH TABLES WITH READ LOCK</code>（全库备份）</li>
+<li><b>表锁</b>：表级共享/排他锁、MDL 锁（DDL 时自动加）、意向锁</li>
+<li><b>行锁</b>（InnoDB 特有）：记录锁 (Record Lock)、间隙锁 (Gap Lock)、临键锁 (Next-Key Lock)</li>
+</ul>
+<h4>行锁升级为表锁的情况</h4>
+<ul>
+<li>WHERE 条件<b>没有命中索引</b>，InnoDB 退化为全表扫描 → 锁住所有扫描到的行（近似表锁）</li>
+<li>索引失效（如对索引列进行函数操作、隐式类型转换）</li>
+</ul>
+<h4>死锁预防</h4>
+<ul>
+<li>按<b>固定顺序</b>访问表和行（如按主键 ASC 顺序更新）</li>
+<li>事务尽量短小，减少持锁时间</li>
+<li>使用合理的索引，避免全表扫描</li>
+<li><code>innodb_deadlock_detect = ON</code>（默认开启），自动检测并回滚代价最小的事务</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./inno-db-my-isam-count-q-qa08h2.html">InnoDB 和 MyISAM 在 count(*) 上为什么表现不同？</a></li>
+      <li><a href="./inno-db-mvcc-next-key-lock-q-usbl7u.html">InnoDB 可重复读级别下如何防幻读？MVCC 快照读和 Next-Key Lock 当前读分别起什么作用？</a></li>
+      <li><a href="./q-yq4cwq.html">分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？</a></li>
+      <li><a href="./inno-db-b-b-q-wxlgi4.html">InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？</a></li>
+      <li><a href="./q-sqoeth.html">你简历中提到「新增数据库索引优化查询性能」，能具体说说索引优化的方法论吗？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/mysql.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=1">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

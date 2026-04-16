@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先减少竞争，再谈无锁 分片锁 ：把全局一把锁拆成多个 shard，按 key 哈希落到不同锁上 读写分离 ：读多写少场景用 RWMutex 或 sync.Map 缩小临界区 ：把耗时逻辑移出锁内，减少持锁时间 批量处理 ：把频繁小操作合并，降低锁进入次数 常见无锁思路 atomic ：计数器、状态位、指针切换这类简单共…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-q-lpgq5z.html">
+<meta property="og:title" content="Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？ - Go 后端面试题库">
+<meta property="og:description" content="先减少竞争，再谈无锁 分片锁 ：把全局一把锁拆成多个 shard，按 key 哈希落到不同锁上 读写分离 ：读多写少场景用 RWMutex 或 sync.Map 缩小临界区 ：把耗时逻辑移出锁内，减少持锁时间 批量处理 ：把频繁小操作合并，降低锁进入次数 常见无锁思路 atomic ：计数器、状态位、指针切换这类简单共…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-q-lpgq5z.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？ - Go 后端面试题库">
+<meta name="twitter:description" content="先减少竞争，再谈无锁 分片锁 ：把全局一把锁拆成多个 shard，按 key 哈希落到不同锁上 读写分离 ：读多写少场景用 RWMutex 或 sync.Map 缩小临界区 ：把耗时逻辑移出锁内，减少持锁时间 批量处理 ：把频繁小操作合并，降低锁进入次数 常见无锁思路 atomic ：计数器、状态位、指针切换这类简单共…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先减少竞争，再谈无锁</h4>
+<ul>
+<li><b>分片锁</b>：把全局一把锁拆成多个 shard，按 key 哈希落到不同锁上</li>
+<li><b>读写分离</b>：读多写少场景用 <code>RWMutex</code> 或 <code>sync.Map</code></li>
+<li><b>缩小临界区</b>：把耗时逻辑移出锁内，减少持锁时间</li>
+<li><b>批量处理</b>：把频繁小操作合并，降低锁进入次数</li>
+</ul>
+<h4>常见无锁思路</h4>
+<ul>
+<li><b>atomic</b>：计数器、状态位、指针切换这类简单共享状态优先用原子操作</li>
+<li><b>Copy-on-Write</b>：读多写少时写入复制新副本，再原子替换指针</li>
+<li><b>Channel ownership</b>：让单 goroutine 独占状态，其他协程通过消息通信而不是共享内存</li>
+<li><b>CAS 结构</b>：如 lock-free queue，但实现复杂、易踩 ABA 和内存序问题</li>
+</ul>
+<div class="key-point">面试里别上来就吹 lock-free。大多数业务系统的最优解是先把数据结构和临界区设计好，再谈无锁。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./goroutine-q-lf7hbg.html">协程池怎么设计？为什么 goroutine 不能无上限地开？</a></li>
+      <li><a href="./q-1m8jgdz.html">程序化广告或数据监测类系统的实时统计链路怎么设计？如何做去重、聚合和延迟控制？</a></li>
+      <li><a href="./q-25fyg1.html">“高并发”不是泛词：社交或广告系统里最先爆的通常是哪几层？容量评估怎么做？</a></li>
+      <li><a href="./qps-tps-rt-p99-q-hc1bas.html">什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？</a></li>
+      <li><a href="./q-1sk5mxj.html">高并发系统设计的常见手段有哪些？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

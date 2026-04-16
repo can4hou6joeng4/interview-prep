@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="怎么调度 GPU 通过 NVIDIA Device Plugin 把 GPU 作为扩展资源暴露给 Kubernetes Pod 通过 resources.limits[&quot;nvidia.com/gpu&quot;] 申请 GPU 调度器会把请求了 GPU 的 Pod 放到有足够 GPU 资源的节点 resources: limit…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/gpu-k8s-q-e20dxe.html">
+<meta property="og:title" content="GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？ - Go 后端面试题库">
+<meta property="og:description" content="怎么调度 GPU 通过 NVIDIA Device Plugin 把 GPU 作为扩展资源暴露给 Kubernetes Pod 通过 resources.limits[&quot;nvidia.com/gpu&quot;] 申请 GPU 调度器会把请求了 GPU 的 Pod 放到有足够 GPU 资源的节点 resources: limit…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/gpu-k8s-q-e20dxe.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？ - Go 后端面试题库">
+<meta name="twitter:description" content="怎么调度 GPU 通过 NVIDIA Device Plugin 把 GPU 作为扩展资源暴露给 Kubernetes Pod 通过 resources.limits[&quot;nvidia.com/gpu&quot;] 申请 GPU 调度器会把请求了 GPU 的 Pod 放到有足够 GPU 资源的节点 resources: limit…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kubernetes.html">Kubernetes 深入</a> ›
+    <span>GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？</span>
+  </nav>
+
+  <article class="question">
+    <h1>GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>怎么调度 GPU</h4>
+<ul>
+<li>通过 NVIDIA Device Plugin 把 GPU 作为扩展资源暴露给 Kubernetes</li>
+<li>Pod 通过 <code>resources.limits["nvidia.com/gpu"]</code> 申请 GPU</li>
+<li>调度器会把请求了 GPU 的 Pod 放到有足够 GPU 资源的节点</li>
+</ul>
+<pre><code>resources:
+  limits:
+    nvidia.com/gpu: 1</code></pre>
+<h4>常见挑战</h4>
+<ul>
+<li>GPU 资源昂贵，碎片化严重，容易出现“总量够但没有连续可用卡”</li>
+<li>不同模型对显存、带宽和延迟要求差异很大</li>
+<li>多租户场景下要处理配额、抢占和隔离</li>
+<li>推理任务和训练任务混跑时，调度策略要区分优先级</li>
+</ul>
+<div class="key-point">面试里加一句“MIG、time-slicing、节点池拆分”会显得你更像做过 AI 基础设施的人。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./k8s-master-node-q-1x5mfm2.html">K8s 的核心架构？Master 和 Node 各有哪些组件？</a></li>
+      <li><a href="./pod-init-q-dlfiam.html">Pod 的生命周期？init 容器、就绪探针、存活探针的作用？</a></li>
+      <li><a href="./k8s-service-cluster-ip-node-port-q-ssyycj.html">K8s 中 Service 的负载均衡原理？ClusterIP / NodePort / LoadBalancer 区别？</a></li>
+      <li><a href="./k8s-q-fzaiml.html">K8s 滚动更新的策略？如何实现零停机部署？</a></li>
+      <li><a href="./k8s-crd-operator-kubebuilder-q-1khb0gx.html">什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kubernetes.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=14">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

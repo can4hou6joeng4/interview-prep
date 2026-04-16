@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="完整链路 # K8s Deployment 配置 spec: containers: - name: app livenessProbe: # 存活探针：失败则重启容器 httpGet: { path: /healthz, port: 8080 } periodSeconds: 10 readinessProbe: #…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/k8s-q-1ry7gt7.html">
+<meta property="og:title" content="容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？ - Go 后端面试题库">
+<meta property="og:description" content="完整链路 # K8s Deployment 配置 spec: containers: - name: app livenessProbe: # 存活探针：失败则重启容器 httpGet: { path: /healthz, port: 8080 } periodSeconds: 10 readinessProbe: #…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/k8s-q-1ry7gt7.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？ - Go 后端面试题库">
+<meta name="twitter:description" content="完整链路 # K8s Deployment 配置 spec: containers: - name: app livenessProbe: # 存活探针：失败则重启容器 httpGet: { path: /healthz, port: 8080 } periodSeconds: 10 readinessProbe: #…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/docker.html">Docker 与部署</a> ›
+    <span>容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？</span>
+  </nav>
+
+  <article class="question">
+    <h1>容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>完整链路</h4>
+<pre><code># K8s Deployment 配置
+spec:
+  containers:
+  - name: app
+    livenessProbe:     # 存活探针：失败则重启容器
+      httpGet: { path: /healthz, port: 8080 }
+      periodSeconds: 10
+    readinessProbe:    # 就绪探针：失败则从 Service 摘除
+      httpGet: { path: /readyz, port: 8080 }
+      periodSeconds: 5
+    lifecycle:
+      preStop:          # 在 SIGTERM 前执行
+        exec:
+          command: ["sh", "-c", "sleep 5"]  # 等待 LB 摘掉流量
+  terminationGracePeriodSeconds: 30</code></pre>
+<h4>滚动更新流程</h4>
+<ol>
+<li>K8s 发送 SIGTERM 给 Pod，同时将 Pod 从 Service Endpoints 移除</li>
+<li>preStop hook 执行（sleep 5s 等 LB 生效）</li>
+<li>应用收到 SIGTERM，readiness 返回不健康，开始优雅关机</li>
+<li>等待处理中的请求完成（你的 10 秒超时保护）</li>
+<li>关闭 DB/Redis 连接，进程退出</li>
+<li>超过 terminationGracePeriodSeconds 仍未退出则 SIGKILL 强杀</li>
+</ol>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-ci-cd-q-1h0a9vw.html">Go 项目的 CI/CD 流程一般怎么设计？</a></li>
+      <li><a href="./q-1dy8w42.html">灰度发布和金丝雀发布怎么实现？</a></li>
+      <li><a href="./aws-ec2-s3-rds-lambda-q-1snbf9s.html">AWS 核心服务有哪些？EC2、S3、RDS、Lambda 分别适合什么场景？</a></li>
+      <li><a href="./aws-q-1aoeo63.html">如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？</a></li>
+      <li><a href="./docker-namespace-cgroup-q-1juftm.html">Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/docker.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=8">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

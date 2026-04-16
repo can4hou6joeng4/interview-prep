@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="生成策略 前端生成 UUID v4，首次访问时写入 Cookie（ visitor_id ），后续请求自动携带 为什么不用浏览器指纹（fingerprint）：指纹依赖 Canvas/WebGL 等 API，同一设备不同浏览器会生成不同值，且隐私法规（GDPR）对指纹追踪限制越来越严。Cookie 方案更简单、用户可感…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/visitor-id-q-vid-design.html">
+<meta property="og:title" content="系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？ - Go 后端面试题库">
+<meta property="og:description" content="生成策略 前端生成 UUID v4，首次访问时写入 Cookie（ visitor_id ），后续请求自动携带 为什么不用浏览器指纹（fingerprint）：指纹依赖 Canvas/WebGL 等 API，同一设备不同浏览器会生成不同值，且隐私法规（GDPR）对指纹追踪限制越来越严。Cookie 方案更简单、用户可感…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/visitor-id-q-vid-design.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？ - Go 后端面试题库">
+<meta name="twitter:description" content="生成策略 前端生成 UUID v4，首次访问时写入 Cookie（ visitor_id ），后续请求自动携带 为什么不用浏览器指纹（fingerprint）：指纹依赖 Canvas/WebGL 等 API，同一设备不同浏览器会生成不同值，且隐私法规（GDPR）对指纹追踪限制越来越严。Cookie 方案更简单、用户可感…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？</span>
+  </nav>
+
+  <article class="question">
+    <h1>系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>生成策略</h4>
+<ul>
+<li>前端生成 UUID v4，首次访问时写入 Cookie（<code>visitor_id</code>），后续请求自动携带</li>
+<li>为什么不用浏览器指纹（fingerprint）：指纹依赖 Canvas/WebGL 等 API，同一设备不同浏览器会生成不同值，且隐私法规（GDPR）对指纹追踪限制越来越严。Cookie 方案更简单、用户可感知、可清除</li>
+</ul>
+<h4>存储方式</h4>
+<ul>
+<li>Cookie 端：<code>HttpOnly=false</code>（前端需读取用于加购等操作），<code>SameSite=Lax</code>，<code>Secure=true</code></li>
+<li>服务端：购物车和订单表的 <code>visitor_id</code> 字段关联游客数据，WAF 访客表用 <code>visitor_hash</code>（IP+UA+Accept-Language 的 MD5）做风控维度的去重</li>
+<li>两者区别：Cookie 的 visitorId 用于业务归户，visitor_hash 用于安全风控，职责分离</li>
+</ul>
+<h4>过期与清理</h4>
+<ul>
+<li>Cookie 过期时间 30 天，覆盖大多数购买决策周期</li>
+<li>登录归户后清除 visitorId 与旧数据的绑定关系，防止下一个游客串数据</li>
+<li>WAF 侧的 visitor_hash 通过冷热迁移定期归档，热表只保留近 7 天</li>
+</ul>
+<h4>安全性</h4>
+<ul>
+<li>visitorId 本身不含敏感信息（纯随机 UUID），泄露不会造成数据风险</li>
+<li>归户操作在事务内执行，防止并发归户导致数据错乱</li>
+<li>公共设备场景：登录时只归户当前 session 的 visitorId 数据，而非所有历史</li>
+</ul>
+<div class="key-point">面试追问重点：visitorId 和 session 的区别是什么？答：visitorId 跨 session 持久化（30 天 Cookie），用于长周期行为追踪；session 是单次会话，关闭浏览器即失效。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./saa-s-q-stat-pipeline.html">电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？</a></li>
+      <li><a href="./id-q-orderid-design.html">订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？</a></li>
+      <li><a href="./checkout-id-trade-id-webhook-q-idempotent-design.html">支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</a></li>
+      <li><a href="./decimal-vs-vs-float-q-currency-storage.html">多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</a></li>
+      <li><a href="./ai-agent-web-socket-q-ws-design.html">AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

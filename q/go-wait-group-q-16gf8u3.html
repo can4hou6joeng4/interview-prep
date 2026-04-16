@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="它本质上做什么 sync.WaitGroup 用来等待一组 goroutine 全部结束。内部维护一个计数器：每启动一个任务就 Add(1) ，任务结束时 Done() ，主协程调用 Wait() 阻塞直到计数归零。 var wg sync.WaitGroup for _, job := range jobs { wg…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-wait-group-q-16gf8u3.html">
+<meta property="og:title" content="Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？ - Go 后端面试题库">
+<meta property="og:description" content="它本质上做什么 sync.WaitGroup 用来等待一组 goroutine 全部结束。内部维护一个计数器：每启动一个任务就 Add(1) ，任务结束时 Done() ，主协程调用 Wait() 阻塞直到计数归零。 var wg sync.WaitGroup for _, job := range jobs { wg…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-wait-group-q-16gf8u3.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？ - Go 后端面试题库">
+<meta name="twitter:description" content="它本质上做什么 sync.WaitGroup 用来等待一组 goroutine 全部结束。内部维护一个计数器：每启动一个任务就 Add(1) ，任务结束时 Done() ，主协程调用 Wait() 阻塞直到计数归零。 var wg sync.WaitGroup for _, job := range jobs { wg…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>它本质上做什么</h4>
+<p><code>sync.WaitGroup</code> 用来等待一组 goroutine 全部结束。内部维护一个计数器：每启动一个任务就 <code>Add(1)</code>，任务结束时 <code>Done()</code>，主协程调用 <code>Wait()</code> 阻塞直到计数归零。</p>
+<pre><code>var wg sync.WaitGroup
+for _, job := range jobs {
+    wg.Add(1)
+    go func(j Job) {
+        defer wg.Done()
+        process(j)
+    }(job)
+}
+wg.Wait()</code></pre>
+<h4>常见误用</h4>
+<ul>
+<li><b><code>Add</code> 放到 goroutine 里</b>：主协程可能先执行到 <code>Wait()</code>，导致提前返回</li>
+<li><b>少调或漏调 <code>Done()</code></b>：计数永远不归零，程序卡死</li>
+<li><b>多调 <code>Done()</code></b>：计数变负数会直接 panic</li>
+<li><b>复制 WaitGroup</b>：官方明确不允许 copy，多个副本会让状态错乱</li>
+<li><b>把它当取消机制</b>：WaitGroup 只能等结束，不能通知 goroutine 提前退出；要配合 <code>context</code> 或 channel</li>
+</ul>
+<div class="key-point">面试里最好补一句：WaitGroup 只解决“等待完成”，不解决“错误收集”和“取消传播”；这也是很多场景下要上 <code>errgroup</code> 的原因。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./select-case-for-select-q-m0larr.html">select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</a></li>
+      <li><a href="./sync-map-q-1arld6w.html">sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</a></li>
+      <li><a href="./go-goroutine-q-1cuk3uh.html">为什么 Go 里要用 goroutine，而不是线程？</a></li>
+      <li><a href="./go-net-http-fasthttp-gnet-q-sut1qe.html">Go 服务里的网络框架怎么选？原生 net/http、fasthttp、gnet 各自适合什么场景？</a></li>
+      <li><a href="./gmp-i-o-netpoller-hand-off-q-wfdrom.html">GMP 调度中，网络 I/O 阻塞、系统调用阻塞、锁竞争阻塞分别走什么路径？netpoller 和 hand off 各自怎么工作？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="先把“信令链路”和“媒体链路”分开 TCP ：可靠、有序，适合关键控制消息、状态同步、需要严格送达的链路 UDP ：低延迟、无连接，适合音视频媒体流，但要接受丢包并通过编解码或协议层补偿 WebSocket ：浏览器端最常见的实时双向通道，适合聊天、房间状态、信令交互 HTTP/2 ：更适合服务间 RPC 和多路复用请…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/tcp-udp-web-socket-http-q-szt6bc.html">
+<meta property="og:title" content="TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？ - Go 后端面试题库">
+<meta property="og:description" content="先把“信令链路”和“媒体链路”分开 TCP ：可靠、有序，适合关键控制消息、状态同步、需要严格送达的链路 UDP ：低延迟、无连接，适合音视频媒体流，但要接受丢包并通过编解码或协议层补偿 WebSocket ：浏览器端最常见的实时双向通道，适合聊天、房间状态、信令交互 HTTP/2 ：更适合服务间 RPC 和多路复用请…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/tcp-udp-web-socket-http-q-szt6bc.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？ - Go 后端面试题库">
+<meta name="twitter:description" content="先把“信令链路”和“媒体链路”分开 TCP ：可靠、有序，适合关键控制消息、状态同步、需要严格送达的链路 UDP ：低延迟、无连接，适合音视频媒体流，但要接受丢包并通过编解码或协议层补偿 WebSocket ：浏览器端最常见的实时双向通道，适合聊天、房间状态、信令交互 HTTP/2 ：更适合服务间 RPC 和多路复用请…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/websocket.html">WebSocket 与实时通信</a> ›
+    <span>TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？</span>
+  </nav>
+
+  <article class="question">
+    <h1>TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>先把“信令链路”和“媒体链路”分开</h4>
+<ul>
+<li><b>TCP</b>：可靠、有序，适合关键控制消息、状态同步、需要严格送达的链路</li>
+<li><b>UDP</b>：低延迟、无连接，适合音视频媒体流，但要接受丢包并通过编解码或协议层补偿</li>
+<li><b>WebSocket</b>：浏览器端最常见的实时双向通道，适合聊天、房间状态、信令交互</li>
+<li><b>HTTP/2</b>：更适合服务间 RPC 和多路复用请求，不是浏览器端房间长连接的首选</li>
+</ul>
+<h4>常见选型</h4>
+<ul>
+<li><b>客户端实时信令</b>：WebSocket</li>
+<li><b>服务间内部调用</b>：HTTP/2 / gRPC</li>
+<li><b>音视频媒体流</b>：UDP / QUIC 方向</li>
+<li><b>关键控制消息</b>：仍走可靠链路，不要为了低延迟把所有消息都扔到不可靠通道</li>
+</ul>
+<div class="key-point">这题的高分答案不是“哪个协议最快”，而是你能按可靠性、时延、顺序性和连接管理成本，把不同链路分开回答。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./web-socket-http-web-socket-q-u0lewn.html">WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？</a></li>
+      <li><a href="./web-socket-q-10vreb4.html">WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？</a></li>
+      <li><a href="./sse-web-socket-ai-q-1g7gty9.html">SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？</a></li>
+      <li><a href="./q-1s009sz.html">语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/websocket.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=7">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

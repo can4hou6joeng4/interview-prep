@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三类工具各看什么 pprof ：看 CPU、堆内存、goroutine、锁阻塞、block profile，适合定位热点函数和资源泄漏 trace ：看 goroutine 调度、系统调用、GC 和网络事件时间线，适合分析“为什么慢” benchmark ：看某个函数或算法在不同实现下的耗时和分配量，适合做局部优化对比…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-pprof-trace-benchmark-q-94lt8t.html">
+<meta property="og:title" content="Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？ - Go 后端面试题库">
+<meta property="og:description" content="三类工具各看什么 pprof ：看 CPU、堆内存、goroutine、锁阻塞、block profile，适合定位热点函数和资源泄漏 trace ：看 goroutine 调度、系统调用、GC 和网络事件时间线，适合分析“为什么慢” benchmark ：看某个函数或算法在不同实现下的耗时和分配量，适合做局部优化对比…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-pprof-trace-benchmark-q-94lt8t.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？ - Go 后端面试题库">
+<meta name="twitter:description" content="三类工具各看什么 pprof ：看 CPU、堆内存、goroutine、锁阻塞、block profile，适合定位热点函数和资源泄漏 trace ：看 goroutine 调度、系统调用、GC 和网络事件时间线，适合分析“为什么慢” benchmark ：看某个函数或算法在不同实现下的耗时和分配量，适合做局部优化对比…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三类工具各看什么</h4>
+<ul>
+<li><b><code>pprof</code></b>：看 CPU、堆内存、goroutine、锁阻塞、block profile，适合定位热点函数和资源泄漏</li>
+<li><b><code>trace</code></b>：看 goroutine 调度、系统调用、GC 和网络事件时间线，适合分析“为什么慢”</li>
+<li><b><code>benchmark</code></b>：看某个函数或算法在不同实现下的耗时和分配量，适合做局部优化对比</li>
+</ul>
+<h4>常见命令</h4>
+<pre><code># benchmark
+go test -bench=. -benchmem ./...
+
+# pprof
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+
+# trace
+go test -run=^$ -trace trace.out ./...
+go tool trace trace.out</code></pre>
+<div class="key-point">回答这题时不要只背工具名，重点是说明：函数级优化看 benchmark，热点定位看 pprof，时序和调度问题看 trace。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-6ao1y7.html">性能优化方法论不是背工具：线上性能问题应该如何建立指标、定位、实验和回归的闭环？</a></li>
+      <li><a href="./redis-key-key-q-es6a6z.html">Redis 热点 Key 和大 Key 怎么治理？</a></li>
+      <li><a href="./my-sql-q-1sde06e.html">MySQL 慢查询定位和优化的完整流程？</a></li>
+      <li><a href="./q-vszs02.html">线上接口响应变慢，系统化排查思路是什么？</a></li>
+      <li><a href="./go-q-lpgq5z.html">Go 中减少锁竞争的方案有哪些？无锁设计思路怎么讲？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

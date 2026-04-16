@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="分布式存储不是先选产品名，而是先回答四类问题 存什么 ：对象、KV、列族、文档还是时序数据，不同模型直接决定系统形态 怎么写 ：写多读少、读多写少、热点明显还是均匀分布，会影响副本和分片策略 一致性要求 ：是订单类强一致，还是日志类最终一致，决定你能接受多大读写延迟和复杂度 故障目标 ：单机故障、机架故障、机房故障都要…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1ohx9b9.html">
+<meta property="og:title" content="分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？ - Go 后端面试题库">
+<meta property="og:description" content="分布式存储不是先选产品名，而是先回答四类问题 存什么 ：对象、KV、列族、文档还是时序数据，不同模型直接决定系统形态 怎么写 ：写多读少、读多写少、热点明显还是均匀分布，会影响副本和分片策略 一致性要求 ：是订单类强一致，还是日志类最终一致，决定你能接受多大读写延迟和复杂度 故障目标 ：单机故障、机架故障、机房故障都要…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1ohx9b9.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？ - Go 后端面试题库">
+<meta name="twitter:description" content="分布式存储不是先选产品名，而是先回答四类问题 存什么 ：对象、KV、列族、文档还是时序数据，不同模型直接决定系统形态 怎么写 ：写多读少、读多写少、热点明显还是均匀分布，会影响副本和分片策略 一致性要求 ：是订单类强一致，还是日志类最终一致，决定你能接受多大读写延迟和复杂度 故障目标 ：单机故障、机架故障、机房故障都要…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</span>
+  </nav>
+
+  <article class="question">
+    <h1>分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>分布式存储不是先选产品名，而是先回答四类问题</h4>
+<ul>
+<li><b>存什么</b>：对象、KV、列族、文档还是时序数据，不同模型直接决定系统形态</li>
+<li><b>怎么写</b>：写多读少、读多写少、热点明显还是均匀分布，会影响副本和分片策略</li>
+<li><b>一致性要求</b>：是订单类强一致，还是日志类最终一致，决定你能接受多大读写延迟和复杂度</li>
+<li><b>故障目标</b>：单机故障、机架故障、机房故障都要不要扛住，决定副本拓扑和容灾成本</li>
+</ul>
+<h4>四个高频权衡</h4>
+<ul>
+<li><b>副本</b>：副本数越多，可用性越强，但写放大和成本越高</li>
+<li><b>一致性</b>：强一致简化业务语义，但吞吐和延迟通常更吃紧；最终一致更弹性，但业务要补偿</li>
+<li><b>分片</b>：分片键决定热点是否均匀，选错后期重平衡会非常痛</li>
+<li><b>扩缩容</b>：分布式存储必须预留 rebalancing 机制，不能只考虑“加节点”，还要考虑迁移成本和数据倾斜</li>
+</ul>
+<h4>怎么答更像做过系统设计</h4>
+<p>把问题落成一个路径会更好：先定义访问模式和一致性，再定副本策略和分片键，最后再谈故障恢复、扩缩容和观测指标。</p>
+<div class="key-point">这题真正考的是你有没有“分布式存储”的建模能力，而不是只会背 CAP。高质量回答要体现：数据模型、访问模式、故障域和扩容路径是一起设计的。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-17pttmy.html">自动化工单系统如何设计状态机、审批流、幂等和审计？</a></li>
+      <li><a href="./q-5ortqw.html">资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</a></li>
+      <li><a href="./go-php-plugin-mode-static-mode-q-arch-dual-engine.html">Go + PHP 双引擎中 plugin_mode 和 static_mode 是怎么实现的？各自适用什么场景？</a></li>
+      <li><a href="./checkout-payment-before-after-mutex-rw-q-arch-event-hooks.html">Checkout/Payment 的 Before/After 事件钩子怎么设计的？为什么用 Mutex 而不是 RWMutex？</a></li>
+      <li><a href="./go-q-dp1bas.html">常见的设计模式有哪几大类？Go 里最常用的是哪些？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

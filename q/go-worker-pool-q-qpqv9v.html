@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="type WorkerPool struct { maxWorkers int taskQueue chan func() wg sync.WaitGroup } func NewWorkerPool(maxWorkers, queueSize int) *WorkerPool { wp := &amp;WorkerPool{…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-worker-pool-q-qpqv9v.html">
+<meta property="og:title" content="用 Go 实现一个简单的 Worker Pool（限制并发数） - Go 后端面试题库">
+<meta property="og:description" content="type WorkerPool struct { maxWorkers int taskQueue chan func() wg sync.WaitGroup } func NewWorkerPool(maxWorkers, queueSize int) *WorkerPool { wp := &amp;WorkerPool{…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-worker-pool-q-qpqv9v.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="用 Go 实现一个简单的 Worker Pool（限制并发数） - Go 后端面试题库">
+<meta name="twitter:description" content="type WorkerPool struct { maxWorkers int taskQueue chan func() wg sync.WaitGroup } func NewWorkerPool(maxWorkers, queueSize int) *WorkerPool { wp := &amp;WorkerPool{…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>用 Go 实现一个简单的 Worker Pool（限制并发数） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>用 Go 实现一个简单的 Worker Pool（限制并发数）</span>
+  </nav>
+
+  <article class="question">
+    <h1>用 Go 实现一个简单的 Worker Pool（限制并发数）</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<pre><code>type WorkerPool struct {
+    maxWorkers int
+    taskQueue  chan func()
+    wg         sync.WaitGroup
+}
+
+func NewWorkerPool(maxWorkers, queueSize int) *WorkerPool {
+    wp := &WorkerPool{
+        maxWorkers: maxWorkers,
+        taskQueue:  make(chan func(), queueSize),
+    }
+    wp.start()
+    return wp
+}
+
+func (wp *WorkerPool) start() {
+    for i := 0; i < wp.maxWorkers; i++ {
+        go func() {
+            for task := range wp.taskQueue {
+                task()
+                wp.wg.Done()
+            }
+        }()
+    }
+}
+
+func (wp *WorkerPool) Submit(task func()) {
+    wp.wg.Add(1)
+    wp.taskQueue <- task
+}
+
+func (wp *WorkerPool) Wait() {
+    wp.wg.Wait()
+}
+
+func (wp *WorkerPool) Shutdown() {
+    close(wp.taskQueue)
+}
+
+// 使用
+pool := NewWorkerPool(5, 100)
+for _, url := range urls {
+    u := url
+    pool.Submit(func() { download(u) })
+}
+pool.Wait()
+pool.Shutdown()</code></pre>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-singleflight-q-chozb9.html">用 Go 实现 singleflight（合并并发请求）</a></li>
+      <li><a href="./top-k-k-q-i5famw.html">实现 Top K 问题（海量数据中找前 K 大的元素）</a></li>
+      <li><a href="./bloom-filter-q-dxyqet.html">实现一个简单的布隆过滤器（Bloom Filter）</a></li>
+      <li><a href="./go-channel-select-q-15zi8zt.html">用 Go 实现生产者-消费者模型（channel + select）</a></li>
+      <li><a href="./go-skip-list-q-blkq5.html">实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

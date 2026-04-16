@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="图片去重 // 基于图片 URL 的 MD5 去重 func DeduplicateImages(images []string) []string { seen := make(map[string]bool) result := make([]string, 0) for _, url := range image…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-2mq2hq.html">
+<meta property="og:title" content="第三方平台商品导入：图片去重和异步下载重试机制怎么实现？ - Go 后端面试题库">
+<meta property="og:description" content="图片去重 // 基于图片 URL 的 MD5 去重 func DeduplicateImages(images []string) []string { seen := make(map[string]bool) result := make([]string, 0) for _, url := range image…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-2mq2hq.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="第三方平台商品导入：图片去重和异步下载重试机制怎么实现？ - Go 后端面试题库">
+<meta name="twitter:description" content="图片去重 // 基于图片 URL 的 MD5 去重 func DeduplicateImages(images []string) []string { seen := make(map[string]bool) result := make([]string, 0) for _, url := range image…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>第三方平台商品导入：图片去重和异步下载重试机制怎么实现？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</span>
+  </nav>
+
+  <article class="question">
+    <h1>第三方平台商品导入：图片去重和异步下载重试机制怎么实现？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>图片去重</h4>
+<pre><code>// 基于图片 URL 的 MD5 去重
+func DeduplicateImages(images []string) []string {
+    seen := make(map[string]bool)
+    result := make([]string, 0)
+    for _, url := range images {
+        hash := md5.Sum([]byte(url))
+        key := hex.EncodeToString(hash[:])
+        if !seen[key] {
+            seen[key] = true
+            result = append(result, url)
+        }
+    }
+    return result
+}
+
+// 更严格：下载后对图片内容做 perceptual hash，避免同图不同 URL</code></pre>
+<h4>异步下载 + 重试</h4>
+<pre><code>// Worker Pool + 指数退避重试
+func DownloadImages(ctx context.Context, urls []string) {
+    sem := make(chan struct{}, 5) // 5 并发
+    var wg sync.WaitGroup
+
+    for i, url := range urls {
+        wg.Add(1)
+        go func(idx int, u string) {
+            defer wg.Done()
+            sem <- struct{}{}
+            defer func() { <-sem }()
+
+            var err error
+            for retry := 0; retry < 3; retry++ {
+                err = downloadAndSave(ctx, u)
+                if err == nil {
+                    // WebSocket 推送进度
+                    pushProgress(idx, len(urls), "success")
+                    return
+                }
+                time.Sleep(time.Duration(1<<retry) * time.Second) // 指数退避
+            }
+            pushProgress(idx, len(urls), "failed: "+err.Error())
+        }(i, url)
+    }
+    wg.Wait()
+}</code></pre>
+<div class="project-link">简历关联：对接 Shopify/微店 API，实现商品批量导入、图片去重与异步下载重试、WebSocket 导入进度通知</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-storage-io-read-seeker-q-1dqlfpk.html">请介绍一下你的 go-storage 分片上传的完整流程？为什么用 io.ReadSeeker？</a></li>
+      <li><a href="./ai-agent-q-teeahw.html">你如何从零构建 AI Agent 应用模块？任务编排和错误处理怎么做？</a></li>
+      <li><a href="./go-php-go-q-1logdyo.html">为什么选择 Go + PHP 混合架构而不是纯 Go？</a></li>
+      <li><a href="./checkout-q-1mw1c5q.html">Checkout 八步计算管道的执行顺序是什么？为什么不能随便调整？</a></li>
+      <li><a href="./capability-assert-q-123b1zo.html">Capability 套餐能力控制系统是怎么设计的？为什么用 Assert 模式？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

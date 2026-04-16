@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三个常见方案 vLLM ：面向 LLM 推理做了高吞吐优化，核心优势是 PagedAttention，适合大模型高并发服务 TGI (Text Generation Inference) ：Hugging Face 出的推理服务框架，生态友好，适合快速接入开源模型 Triton Inference Server ：NV…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ai-v-llm-tgi-triton-q-1xgzadm.html">
+<meta property="og:title" content="AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？ - Go 后端面试题库">
+<meta property="og:description" content="三个常见方案 vLLM ：面向 LLM 推理做了高吞吐优化，核心优势是 PagedAttention，适合大模型高并发服务 TGI (Text Generation Inference) ：Hugging Face 出的推理服务框架，生态友好，适合快速接入开源模型 Triton Inference Server ：NV…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ai-v-llm-tgi-triton-q-1xgzadm.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？ - Go 后端面试题库">
+<meta name="twitter:description" content="三个常见方案 vLLM ：面向 LLM 推理做了高吞吐优化，核心优势是 PagedAttention，适合大模型高并发服务 TGI (Text Generation Inference) ：Hugging Face 出的推理服务框架，生态友好，适合快速接入开源模型 Triton Inference Server ：NV…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？</span>
+  </nav>
+
+  <article class="question">
+    <h1>AI 大模型推理部署方案里，vLLM、TGI、Triton 分别适合什么场景？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>三个常见方案</h4>
+<ul>
+<li><b>vLLM</b>：面向 LLM 推理做了高吞吐优化，核心优势是 PagedAttention，适合大模型高并发服务</li>
+<li><b>TGI (Text Generation Inference)</b>：Hugging Face 出的推理服务框架，生态友好，适合快速接入开源模型</li>
+<li><b>Triton Inference Server</b>：NVIDIA 的通用推理服务框架，不只做 LLM，也适合 CV、语音、多模型统一服务</li>
+</ul>
+<h4>怎么选</h4>
+<ul>
+<li>要极致 LLM 吞吐，优先考虑 vLLM</li>
+<li>要 Hugging Face 模型快速上线，TGI 很顺手</li>
+<li>要统一管理多类模型、做企业级推理平台，Triton 更合适</li>
+</ul>
+<div class="key-point">面试官真正想听的是：你知道它们不是“谁更高级”，而是针对不同推理目标的工程取舍。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./dify-lang-chain-ai-q-ewu3mp.html">Dify 和 LangChain 这类 AI 应用开发框架有什么区别？怎么选？</a></li>
+      <li><a href="./lang-chain-chain-agent-tool-memory-q-o9wizi.html">LangChain 的核心概念是什么？Chain、Agent、Tool、Memory 分别怎么理解？</a></li>
+      <li><a href="./q-leyruw.html">跨境电商独立站的核心技术挑战有哪些？</a></li>
+      <li><a href="./agent-lang-chain-q-7b1rcb.html">Agent 项目里怎么做框架选型？LangChain、轻量编排、自研流程各自的取舍是什么？</a></li>
+      <li><a href="./ai-agent-q-1s90v9j.html">AI Agent 最常见的失败场景有哪些？工具调用失败、上下文溢出、目标漂移怎么治理？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

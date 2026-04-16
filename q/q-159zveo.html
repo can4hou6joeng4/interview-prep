@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="适配器模式 (Adapter) — go-cache 问题：Redis / Badger / File 三种缓存后端接口不一致 type CacheAdapter interface { Get(key string) ([]byte, error) Set(key string, val []byte, ttl ti…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-159zveo.html">
+<meta property="og:title" content="你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？ - Go 后端面试题库">
+<meta property="og:description" content="适配器模式 (Adapter) — go-cache 问题：Redis / Badger / File 三种缓存后端接口不一致 type CacheAdapter interface { Get(key string) ([]byte, error) Set(key string, val []byte, ttl ti…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-159zveo.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？ - Go 后端面试题库">
+<meta name="twitter:description" content="适配器模式 (Adapter) — go-cache 问题：Redis / Badger / File 三种缓存后端接口不一致 type CacheAdapter interface { Get(key string) ([]byte, error) Set(key string, val []byte, ttl ti…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？</span>
+  </nav>
+
+  <article class="question">
+    <h1>你在项目中用了适配器模式、策略模式、门面模式，分别解决什么问题？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span>
+    </p>
+    <section class="answer">
+<h4>适配器模式 (Adapter) — go-cache</h4>
+<p>问题：Redis / Badger / File 三种缓存后端接口不一致</p>
+<pre><code>type CacheAdapter interface {
+    Get(key string) ([]byte, error)
+    Set(key string, val []byte, ttl time.Duration) error
+    Del(key string) error
+}
+// RedisAdapter, BadgerAdapter, FileAdapter 分别实现
+// 上层代码只依赖 CacheAdapter 接口，切换后端零改动</code></pre>
+
+<h4>策略模式 (Strategy) — go-storage</h4>
+<p>问题：Local 存储和阿里云 OSS 的上传逻辑不同</p>
+<pre><code>type StorageDriver interface {
+    ChunkInit(filename string, size int64) (uploadId string, err error)
+    ChunkPart(uploadId string, partNum int, reader io.ReadSeeker) error
+    ChunkComplete(uploadId string) (url string, err error)
+}
+// LocalDriver 写本地磁盘，OSSDriver 调用阿里云 SDK
+// 通过配置选择具体 Driver</code></pre>
+
+<h4>门面模式 (Facade) — go-storage</h4>
+<p>问题：分片上传涉及多步骤操作（Init→Part→Complete），调用方不需要关心细节</p>
+<pre><code>type Storage struct { driver StorageDriver }
+func (s *Storage) Upload(file io.Reader, size int64) (string, error) {
+    // 门面：封装 Init → 分片读取 → Part → Complete 全流程
+    // 调用方只需要一行 storage.Upload(file, size)
+}</code></pre>
+<div class="key-point">面试回答模板：先说问题（为什么需要这个模式）→ 再说方案（接口设计）→ 最后说效果（解耦/扩展性）</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./before-after-q-1yd5y53.html">你设计的 Before/After 事件钩子系统是什么架构？和观察者模式有什么关系？</a></li>
+      <li><a href="./json-rpc-g-rpc-json-rpc-q-1ad9nas.html">微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？</a></li>
+      <li><a href="./graceful-shutdown-q-1ensob8.html">如何设计一个优雅关机 (Graceful Shutdown) 方案？</a></li>
+      <li><a href="./ddd-q-fi8niu.html">DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</a></li>
+      <li><a href="./go-ddd-q-10q1978.html">Go 项目如何实践 DDD？目录结构和分层怎么组织？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

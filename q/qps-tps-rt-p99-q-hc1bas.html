@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心概念 高并发 ：系统在同一时刻能处理大量请求的能力，不是单纯的流量大，而是要在高流量下保持低延迟和高可用 QPS (Queries Per Second) ：每秒查询数，衡量读请求吞吐能力 TPS (Transactions Per Second) ：每秒事务数，衡量写操作吞吐能力 RT (Response Tim…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/qps-tps-rt-p99-q-hc1bas.html">
+<meta property="og:title" content="什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？ - Go 后端面试题库">
+<meta property="og:description" content="核心概念 高并发 ：系统在同一时刻能处理大量请求的能力，不是单纯的流量大，而是要在高流量下保持低延迟和高可用 QPS (Queries Per Second) ：每秒查询数，衡量读请求吞吐能力 TPS (Transactions Per Second) ：每秒事务数，衡量写操作吞吐能力 RT (Response Tim…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/qps-tps-rt-p99-q-hc1bas.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心概念 高并发 ：系统在同一时刻能处理大量请求的能力，不是单纯的流量大，而是要在高流量下保持低延迟和高可用 QPS (Queries Per Second) ：每秒查询数，衡量读请求吞吐能力 TPS (Transactions Per Second) ：每秒事务数，衡量写操作吞吐能力 RT (Response Tim…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/concurrency.html">高并发与高可用</a> ›
+    <span>什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？</span>
+  </nav>
+
+  <article class="question">
+    <h1>什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>核心概念</h4>
+<ul>
+<li><b>高并发</b>：系统在同一时刻能处理大量请求的能力，不是单纯的流量大，而是要在高流量下保持低延迟和高可用</li>
+<li><b>QPS (Queries Per Second)</b>：每秒查询数，衡量读请求吞吐能力</li>
+<li><b>TPS (Transactions Per Second)</b>：每秒事务数，衡量写操作吞吐能力</li>
+<li><b>RT (Response Time)</b>：响应时间，通常关注平均值和尾延迟</li>
+<li><b>P99</b>：99% 的请求在这个时间内完成，比平均值更能反映用户真实体验</li>
+</ul>
+<h4>为什么 P99 比平均值更重要</h4>
+<ul>
+<li>平均 RT 20ms 可能掩盖了 1% 的请求需要 2 秒的事实</li>
+<li>尾延迟影响的往往是付费用户或高频用户</li>
+<li>优化方向：先看 P99 定位瓶颈，而不是盯着平均值优化</li>
+</ul>
+<div class="key-point">面试时别把高并发等同于「加机器」，先说清你关注的指标是什么、瓶颈在哪里，再谈方案。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-1sk5mxj.html">高并发系统设计的常见手段有哪些？</a></li>
+      <li><a href="./q-1n761t2.html">限流算法有哪些？令牌桶和漏桶的区别？</a></li>
+      <li><a href="./cap-base-q-1rup8vt.html">分布式系统中如何保证数据一致性？CAP 和 BASE 理论？</a></li>
+      <li><a href="./q-1lta6ds.html">服务雪崩是什么？熔断、降级、限流怎么配合？</a></li>
+      <li><a href="./go-pprof-trace-benchmark-q-94lt8t.html">Go 程序的性能分析工具链有哪些？pprof、trace、benchmark 分别解决什么问题？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/concurrency.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=16">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

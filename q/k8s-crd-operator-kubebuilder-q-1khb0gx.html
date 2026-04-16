@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="CRD 是什么 CustomResourceDefinition 允许你在 Kubernetes 里定义自己的资源类型，比如 RedisCluster 、 AIJob 。 Operator 是什么 Operator 本质上是“理解某类业务资源生命周期的控制器”。它持续监听自定义资源状态，并把集群实际状态修正到期望状态。…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/k8s-crd-operator-kubebuilder-q-1khb0gx.html">
+<meta property="og:title" content="什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？ - Go 后端面试题库">
+<meta property="og:description" content="CRD 是什么 CustomResourceDefinition 允许你在 Kubernetes 里定义自己的资源类型，比如 RedisCluster 、 AIJob 。 Operator 是什么 Operator 本质上是“理解某类业务资源生命周期的控制器”。它持续监听自定义资源状态，并把集群实际状态修正到期望状态。…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/k8s-crd-operator-kubebuilder-q-1khb0gx.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？ - Go 后端面试题库">
+<meta name="twitter:description" content="CRD 是什么 CustomResourceDefinition 允许你在 Kubernetes 里定义自己的资源类型，比如 RedisCluster 、 AIJob 。 Operator 是什么 Operator 本质上是“理解某类业务资源生命周期的控制器”。它持续监听自定义资源状态，并把集群实际状态修正到期望状态。…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/kubernetes.html">Kubernetes 深入</a> ›
+    <span>什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？</span>
+  </nav>
+
+  <article class="question">
+    <h1>什么是 K8s 的 CRD 和 Operator？Kubebuilder 在里面扮演什么角色？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>CRD 是什么</h4>
+<p><code>CustomResourceDefinition</code> 允许你在 Kubernetes 里定义自己的资源类型，比如 <code>RedisCluster</code>、<code>AIJob</code>。</p>
+<h4>Operator 是什么</h4>
+<p>Operator 本质上是“理解某类业务资源生命周期的控制器”。它持续监听自定义资源状态，并把集群实际状态修正到期望状态。</p>
+<h4>Kubebuilder 的作用</h4>
+<ul>
+<li>帮你生成 Operator 项目的脚手架</li>
+<li>定义 API、Controller、RBAC、CRD 清单</li>
+<li>底层基于 <code>controller-runtime</code>，减少样板代码</li>
+</ul>
+<div class="key-point">一句话概括：CRD 定义“我要管理什么”，Operator 定义“怎么把它管好”。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./operator-reconcile-q-wpeuxb.html">Operator 的 Reconcile 循环是什么？为什么它必须保证幂等？</a></li>
+      <li><a href="./gpu-k8s-q-e20dxe.html">GPU 调度在 K8s 中怎么实现？资源管理有什么挑战？</a></li>
+      <li><a href="./k8s-master-node-q-1x5mfm2.html">K8s 的核心架构？Master 和 Node 各有哪些组件？</a></li>
+      <li><a href="./pod-init-q-dlfiam.html">Pod 的生命周期？init 容器、就绪探针、存活探针的作用？</a></li>
+      <li><a href="./k8s-service-cluster-ip-node-port-q-ssyycj.html">K8s 中 Service 的负载均衡原理？ClusterIP / NodePort / LoadBalancer 区别？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/kubernetes.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=14">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

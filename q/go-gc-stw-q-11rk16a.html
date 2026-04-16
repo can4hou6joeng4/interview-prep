@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="三色标记法 白色 ：未被访问的对象（GC 结束后被回收） 灰色 ：已被访问但其引用的对象尚未全部扫描 黑色 ：已被访问且其引用的对象全部扫描完毕 流程 Mark Setup (STW) ：开启写屏障，极短暂（通常 Marking（并发） ：从根对象出发，遍历引用图。GC goroutine 与用户 goroutine…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-gc-stw-q-11rk16a.html">
+<meta property="og:title" content="Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？ - Go 后端面试题库">
+<meta property="og:description" content="三色标记法 白色 ：未被访问的对象（GC 结束后被回收） 灰色 ：已被访问但其引用的对象尚未全部扫描 黑色 ：已被访问且其引用的对象全部扫描完毕 流程 Mark Setup (STW) ：开启写屏障，极短暂（通常 Marking（并发） ：从根对象出发，遍历引用图。GC goroutine 与用户 goroutine…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-gc-stw-q-11rk16a.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？ - Go 后端面试题库">
+<meta name="twitter:description" content="三色标记法 白色 ：未被访问的对象（GC 结束后被回收） 灰色 ：已被访问但其引用的对象尚未全部扫描 黑色 ：已被访问且其引用的对象全部扫描完毕 流程 Mark Setup (STW) ：开启写屏障，极短暂（通常 Marking（并发） ：从根对象出发，遍历引用图。GC goroutine 与用户 goroutine…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 的 GC 机制是怎样的？三色标记法的流程？STW 何时发生？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      
+    </p>
+    <section class="answer">
+<h4>三色标记法</h4>
+<ul>
+<li><b>白色</b>：未被访问的对象（GC 结束后被回收）</li>
+<li><b>灰色</b>：已被访问但其引用的对象尚未全部扫描</li>
+<li><b>黑色</b>：已被访问且其引用的对象全部扫描完毕</li>
+</ul>
+<h4>流程</h4>
+<ol>
+<li><b>Mark Setup (STW)</b>：开启写屏障，极短暂（通常 < 100μs）</li>
+<li><b>Marking（并发）</b>：从根对象出发，遍历引用图。GC goroutine 与用户 goroutine 并发执行</li>
+<li><b>Mark Termination (STW)</b>：关闭写屏障，完成最终标记，极短暂</li>
+<li><b>Sweeping（并发）</b>：回收白色对象的内存</li>
+</ol>
+<h4>写屏障 (Write Barrier)</h4>
+<p>Go 1.8+ 使用<b>混合写屏障</b>（插入 + 删除），确保并发标记阶段不会遗漏存活对象，大幅减少 STW 时间</p>
+<div class="key-point">GC 触发条件：(1) 堆内存增长到上次 GC 后的 2 倍（GOGC=100）(2) 2 分钟未触发 GC (3) 手动 runtime.GC()</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-sync-map-map-mutex-q-1cw0vwp.html">Go 中 sync.Map 和普通 map+mutex 的区别？各自适用场景？</a></li>
+      <li><a href="./errgroup-q-7hw7o6.html">errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</a></li>
+      <li><a href="./go-plugin-so-q-1f99wc9.html">Go Plugin (.so) 热加载的原理、限制和你的实践？</a></li>
+      <li><a href="./go-wait-group-q-16gf8u3.html">Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</a></li>
+      <li><a href="./select-case-for-select-q-m0larr.html">select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

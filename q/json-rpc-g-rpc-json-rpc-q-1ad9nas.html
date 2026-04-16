@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="对比 特性 JSON-RPC gRPC 传输格式 JSON (文本) Protobuf (二进制) 性能 中等 高（序列化快 3-10x） 调试 易（可读 JSON） 难（需要工具反序列化） 跨语言 天然（JSON） 需要 .proto + 代码生成 流式 不支持 支持双向流 选型理由 Go + PHP 混合架构，PH…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/json-rpc-g-rpc-json-rpc-q-1ad9nas.html">
+<meta property="og:title" content="微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？ - Go 后端面试题库">
+<meta property="og:description" content="对比 特性 JSON-RPC gRPC 传输格式 JSON (文本) Protobuf (二进制) 性能 中等 高（序列化快 3-10x） 调试 易（可读 JSON） 难（需要工具反序列化） 跨语言 天然（JSON） 需要 .proto + 代码生成 流式 不支持 支持双向流 选型理由 Go + PHP 混合架构，PH…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/json-rpc-g-rpc-json-rpc-q-1ad9nas.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？ - Go 后端面试题库">
+<meta name="twitter:description" content="对比 特性 JSON-RPC gRPC 传输格式 JSON (文本) Protobuf (二进制) 性能 中等 高（序列化快 3-10x） 调试 易（可读 JSON） 难（需要工具反序列化） 跨语言 天然（JSON） 需要 .proto + 代码生成 流式 不支持 支持双向流 选型理由 Go + PHP 混合架构，PH…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？</span>
+  </nav>
+
+  <article class="question">
+    <h1>微服务架构中 JSON-RPC 和 gRPC 的区别？你的项目为什么选 JSON-RPC？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>对比</h4>
+<table style="width:100%;font-size:13px;color:var(--text-dim);border-collapse:collapse">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">特性</th><th style="text-align:left;padding:6px">JSON-RPC</th><th style="text-align:left;padding:6px">gRPC</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">传输格式</td><td style="padding:6px">JSON (文本)</td><td style="padding:6px">Protobuf (二进制)</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">性能</td><td style="padding:6px">中等</td><td style="padding:6px">高（序列化快 3-10x）</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">调试</td><td style="padding:6px">易（可读 JSON）</td><td style="padding:6px">难（需要工具反序列化）</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">跨语言</td><td style="padding:6px">天然（JSON）</td><td style="padding:6px">需要 .proto + 代码生成</td></tr>
+<tr><td style="padding:6px">流式</td><td style="padding:6px">不支持</td><td style="padding:6px">支持双向流</td></tr>
+</table>
+<h4>选型理由</h4>
+<ul>
+<li>Go + PHP 混合架构，PHP 生态对 JSON-RPC 支持最成熟</li>
+<li>业务场景不需要流式通信，JSON 可读性利于调试</li>
+<li>17 个服务规模下，JSON-RPC 的性能足够，无需引入 Protobuf 的复杂性</li>
+</ul>
+<div class="key-point">如果面试官追问扩展：未来服务规模增大、需要更高性能时，可逐步引入 gRPC 替换核心链路，JSON-RPC 保留给 PHP 遗留服务</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./graceful-shutdown-q-1ensob8.html">如何设计一个优雅关机 (Graceful Shutdown) 方案？</a></li>
+      <li><a href="./ddd-q-fi8niu.html">DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</a></li>
+      <li><a href="./go-ddd-q-10q1978.html">Go 项目如何实践 DDD？目录结构和分层怎么组织？</a></li>
+      <li><a href="./go-res-tful-q-1nhqd6a.html">Go 后端接口如何做 RESTful 设计和版本演进？</a></li>
+      <li><a href="./q-1ohx9b9.html">分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

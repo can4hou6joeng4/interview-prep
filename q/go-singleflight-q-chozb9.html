@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="type call struct { wg sync.WaitGroup val interface{} err error } type SingleFlight struct { mu sync.Mutex m map[string]*call } func (sf *SingleFlight) Do(key st…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-singleflight-q-chozb9.html">
+<meta property="og:title" content="用 Go 实现 singleflight（合并并发请求） - Go 后端面试题库">
+<meta property="og:description" content="type call struct { wg sync.WaitGroup val interface{} err error } type SingleFlight struct { mu sync.Mutex m map[string]*call } func (sf *SingleFlight) Do(key st…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-singleflight-q-chozb9.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="用 Go 实现 singleflight（合并并发请求） - Go 后端面试题库">
+<meta name="twitter:description" content="type call struct { wg sync.WaitGroup val interface{} err error } type SingleFlight struct { mu sync.Mutex m map[string]*call } func (sf *SingleFlight) Do(key st…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>用 Go 实现 singleflight（合并并发请求） - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>用 Go 实现 singleflight（合并并发请求）</span>
+  </nav>
+
+  <article class="question">
+    <h1>用 Go 实现 singleflight（合并并发请求）</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      
+    </p>
+    <section class="answer">
+<pre><code>type call struct {
+    wg  sync.WaitGroup
+    val interface{}
+    err error
+}
+
+type SingleFlight struct {
+    mu sync.Mutex
+    m  map[string]*call
+}
+
+func (sf *SingleFlight) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
+    sf.mu.Lock()
+    if sf.m == nil {
+        sf.m = make(map[string]*call)
+    }
+
+    // 如果已有相同 key 的请求在执行，等待结果
+    if c, ok := sf.m[key]; ok {
+        sf.mu.Unlock()
+        c.wg.Wait()           // 等待第一个请求完成
+        return c.val, c.err   // 共享结果
+    }
+
+    // 第一个请求，创建 call 并执行
+    c := &call{}
+    c.wg.Add(1)
+    sf.m[key] = c
+    sf.mu.Unlock()
+
+    c.val, c.err = fn()  // 实际执行
+    c.wg.Done()           // 唤醒等待者
+
+    sf.mu.Lock()
+    delete(sf.m, key)     // 清理
+    sf.mu.Unlock()
+
+    return c.val, c.err
+}
+
+// 使用场景：缓存击穿防护
+val, err := sf.Do(cacheKey, func() (interface{}, error) {
+    return db.Query(...)  // 只有一个请求打到 DB
+})</code></pre>
+<div class="key-point">这就是 <code>golang.org/x/sync/singleflight</code> 的核心实现。理解它对回答缓存击穿问题非常加分</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./top-k-k-q-i5famw.html">实现 Top K 问题（海量数据中找前 K 大的元素）</a></li>
+      <li><a href="./bloom-filter-q-dxyqet.html">实现一个简单的布隆过滤器（Bloom Filter）</a></li>
+      <li><a href="./go-channel-select-q-15zi8zt.html">用 Go 实现生产者-消费者模型（channel + select）</a></li>
+      <li><a href="./go-skip-list-q-blkq5.html">实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</a></li>
+      <li><a href="./go-q-71dk9x.html">用 Go 实现环形链表入口检测（快慢指针）</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="幂等性保证 唯一订单号 ：每个支付请求携带唯一 order_no，网关端去重 状态机前置判断 ：处理回调前先检查订单状态，已完成的直接返回成功 数据库唯一约束 ：payment_trade 表对 (gateway, trade_no) 建唯一索引 Webhook 处理流程 func HandleWebhook(c *f…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/webhook-q-15z7zx.html">
+<meta property="og:title" content="支付系统如何保证幂等性？Webhook 重复回调怎么处理？ - Go 后端面试题库">
+<meta property="og:description" content="幂等性保证 唯一订单号 ：每个支付请求携带唯一 order_no，网关端去重 状态机前置判断 ：处理回调前先检查订单状态，已完成的直接返回成功 数据库唯一约束 ：payment_trade 表对 (gateway, trade_no) 建唯一索引 Webhook 处理流程 func HandleWebhook(c *f…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/webhook-q-15z7zx.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="支付系统如何保证幂等性？Webhook 重复回调怎么处理？ - Go 后端面试题库">
+<meta name="twitter:description" content="幂等性保证 唯一订单号 ：每个支付请求携带唯一 order_no，网关端去重 状态机前置判断 ：处理回调前先检查订单状态，已完成的直接返回成功 数据库唯一约束 ：payment_trade 表对 (gateway, trade_no) 建唯一索引 Webhook 处理流程 func HandleWebhook(c *f…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>支付系统如何保证幂等性？Webhook 重复回调怎么处理？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/payment.html">支付与交易系统</a> ›
+    <span>支付系统如何保证幂等性？Webhook 重复回调怎么处理？</span>
+  </nav>
+
+  <article class="question">
+    <h1>支付系统如何保证幂等性？Webhook 重复回调怎么处理？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>幂等性保证</h4>
+<ul>
+<li><b>唯一订单号</b>：每个支付请求携带唯一 order_no，网关端去重</li>
+<li><b>状态机前置判断</b>：处理回调前先检查订单状态，已完成的直接返回成功</li>
+<li><b>数据库唯一约束</b>：payment_trade 表对 (gateway, trade_no) 建唯一索引</li>
+</ul>
+<h4>Webhook 处理流程</h4>
+<pre><code>func HandleWebhook(c *fiber.Ctx) error {
+    // 1. 验签（每个网关签名方式不同）
+    payload, err := gateway.Verify(c.Request())
+
+    // 2. 解析事件
+    event, err := gateway.Parse(payload)
+
+    // 3. 幂等检查
+    trade, err := findTrade(event.TradeNo)
+    if trade.Status == "completed" {
+        return c.SendStatus(200) // 已处理，直接返回成功
+    }
+
+    // 4. 加分布式锁（防止并发回调）
+    lock := redis.Lock("webhook:" + event.TradeNo, 30*time.Second)
+    if !lock.Acquire() { return c.SendStatus(200) }
+    defer lock.Release()
+
+    // 5. 业务处理（更新订单状态、触发发货等）
+    // 6. 返回 200（告诉网关不要重试）
+}</code></pre>
+<div class="key-point">PayPal/Stripe 都会在收到非 2xx 响应时重试 Webhook（最多重试数天），必须做好幂等处理</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./q-ro9kaq.html">优惠、运费、税费按商品行分摊时，为什么容易出错？如何处理精度、尾差和退款反算？</a></li>
+      <li><a href="./q-1bwu8at.html">为什么下单链路要做商品快照、地址快照、汇率快照？哪些字段必须冻结？</a></li>
+      <li><a href="./q-wf1rul.html">工作流引擎和规则引擎分别解决什么问题？跨境电商里哪些场景需要它们？</a></li>
+      <li><a href="./wms-tms-q-tms1wm.html">跨境电商的物流履约系统（WMS/TMS）后端需要关注哪些核心设计问题？</a></li>
+      <li><a href="./stripe-q-sp-stripe-refund.html">Stripe 自动退款是怎么接入统一退款网关的？如何保证多渠道退款的可扩展性？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/payment.html">浏览本分类全部 11 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=4">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

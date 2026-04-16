@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="多阶段构建 # 阶段一：编译 FROM golang:1.22-alpine AS builder WORKDIR /app COPY go.mod go.sum ./ RUN go mod download COPY . . RUN CGO_ENABLED=0 GOOS=linux go build -ldflags…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-dockerfile-q-7n8n2h.html">
+<meta property="og:title" content="Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？ - Go 后端面试题库">
+<meta property="og:description" content="多阶段构建 # 阶段一：编译 FROM golang:1.22-alpine AS builder WORKDIR /app COPY go.mod go.sum ./ RUN go mod download COPY . . RUN CGO_ENABLED=0 GOOS=linux go build -ldflags…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-dockerfile-q-7n8n2h.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？ - Go 后端面试题库">
+<meta name="twitter:description" content="多阶段构建 # 阶段一：编译 FROM golang:1.22-alpine AS builder WORKDIR /app COPY go.mod go.sum ./ RUN go mod download COPY . . RUN CGO_ENABLED=0 GOOS=linux go build -ldflags…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/docker.html">Docker 与部署</a> ›
+    <span>Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？</h1>
+    <p class="meta">
+      <span class="badge badge-easy">简单</span>
+      
+    </p>
+    <section class="answer">
+<h4>多阶段构建</h4>
+<pre><code># 阶段一：编译
+FROM golang:1.22-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/server
+
+# 阶段二：运行
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates tzdata
+COPY --from=builder /app/server /usr/local/bin/server
+COPY --from=builder /app/configs /etc/app/configs
+EXPOSE 8080
+ENTRYPOINT ["server"]</code></pre>
+<h4>好处</h4>
+<ul>
+<li>最终镜像不包含 Go 编译工具链，体积从 ~1GB 缩减到 ~20MB</li>
+<li><code>CGO_ENABLED=0</code> 生成静态二进制，可用 <code>scratch</code> 或 <code>distroless</code> 更小的基础镜像</li>
+<li><code>-ldflags="-s -w"</code> 去掉符号表和调试信息，进一步缩小</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./k8s-q-1ry7gt7.html">容器健康检查 + 优雅关机如何配合 K8s 的滚动更新？</a></li>
+      <li><a href="./go-ci-cd-q-1h0a9vw.html">Go 项目的 CI/CD 流程一般怎么设计？</a></li>
+      <li><a href="./q-1dy8w42.html">灰度发布和金丝雀发布怎么实现？</a></li>
+      <li><a href="./aws-ec2-s3-rds-lambda-q-1snbf9s.html">AWS 核心服务有哪些？EC2、S3、RDS、Lambda 分别适合什么场景？</a></li>
+      <li><a href="./aws-q-1aoeo63.html">如何设计一个可靠的 AWS 部署架构？高可用和容灾怎么做？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/docker.html">浏览本分类全部 7 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=8">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="一个常见的模块拆分 房间服务 ：创建房间、上下线、状态流转、权限控制 在线状态服务 ：管理用户进房、离房、心跳和在线人数 消息服务 ：处理聊天消息、系统通知、礼物消息、禁言踢人广播 互动与风控 ：礼物、连麦、禁言、黑名单、限流、防刷 统计链路 ：在线峰值、消息吞吐、礼物流水、房间活跃度 一致性怎么做 房间状态 ：要有明…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/q-1s009sz.html">
+<meta property="og:title" content="语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？ - Go 后端面试题库">
+<meta property="og:description" content="一个常见的模块拆分 房间服务 ：创建房间、上下线、状态流转、权限控制 在线状态服务 ：管理用户进房、离房、心跳和在线人数 消息服务 ：处理聊天消息、系统通知、礼物消息、禁言踢人广播 互动与风控 ：礼物、连麦、禁言、黑名单、限流、防刷 统计链路 ：在线峰值、消息吞吐、礼物流水、房间活跃度 一致性怎么做 房间状态 ：要有明…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/q-1s009sz.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？ - Go 后端面试题库">
+<meta name="twitter:description" content="一个常见的模块拆分 房间服务 ：创建房间、上下线、状态流转、权限控制 在线状态服务 ：管理用户进房、离房、心跳和在线人数 消息服务 ：处理聊天消息、系统通知、礼物消息、禁言踢人广播 互动与风控 ：礼物、连麦、禁言、黑名单、限流、防刷 统计链路 ：在线峰值、消息吞吐、礼物流水、房间活跃度 一致性怎么做 房间状态 ：要有明…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/websocket.html">WebSocket 与实时通信</a> ›
+    <span>语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？</span>
+  </nav>
+
+  <article class="question">
+    <h1>语音房 / 直播间服务端的核心模块有哪些？房间状态、在线人数、消息投递如何保证一致性？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>一个常见的模块拆分</h4>
+<ul>
+<li><b>房间服务</b>：创建房间、上下线、状态流转、权限控制</li>
+<li><b>在线状态服务</b>：管理用户进房、离房、心跳和在线人数</li>
+<li><b>消息服务</b>：处理聊天消息、系统通知、礼物消息、禁言踢人广播</li>
+<li><b>互动与风控</b>：礼物、连麦、禁言、黑名单、限流、防刷</li>
+<li><b>统计链路</b>：在线峰值、消息吞吐、礼物流水、房间活跃度</li>
+</ul>
+<h4>一致性怎么做</h4>
+<ul>
+<li><b>房间状态</b>：要有明确 source of truth，不能完全依赖前端上报</li>
+<li><b>在线人数</b>：通常采用“缓存实时值 + 异步校准”的思路，而不是每次都强依赖数据库精确计数</li>
+<li><b>消息投递</b>：房间广播和状态通知要区分可靠性等级，关键控制消息优先保证送达和顺序</li>
+<li><b>加入 / 离开幂等</b>：重复进房、断线重连、心跳丢失都要能安全重放</li>
+</ul>
+<div class="key-point">这题不是考你背 IM 架构，而是看你能不能讲清：实时系统里“在线态、房间态、消息流”是三条不同的一致性问题。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./tcp-udp-web-socket-http-q-szt6bc.html">TCP、UDP、WebSocket、HTTP/2 在实时社交产品里怎么选？分别适合什么链路？</a></li>
+      <li><a href="./web-socket-http-web-socket-q-u0lewn.html">WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？</a></li>
+      <li><a href="./web-socket-q-10vreb4.html">WebSocket 连接管理：如何处理断线重连、心跳、多实例广播？</a></li>
+      <li><a href="./sse-web-socket-ai-q-1g7gty9.html">SSE 和 WebSocket 的区别？AI 流式输出场景怎么选？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/websocket.html">浏览本分类全部 5 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=7">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

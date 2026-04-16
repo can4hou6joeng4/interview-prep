@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么面试会问全栈架构 全栈岗位不是&quot;前端后端都会一点&quot;，而是要求你能 设计整体方案并独立交付 。面试官要看你对前后端边界、数据流向、部署方式有清晰认知。 典型 SaaS 全栈架构 用户浏览器 ↓ Next.js (SSR/SSG + API Routes / Server Actions) ↓ 内部 API 调用 后…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/next-js-api-q-xm41mo.html">
+<meta property="og:title" content="全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？ - Go 后端面试题库">
+<meta property="og:description" content="为什么面试会问全栈架构 全栈岗位不是&quot;前端后端都会一点&quot;，而是要求你能 设计整体方案并独立交付 。面试官要看你对前后端边界、数据流向、部署方式有清晰认知。 典型 SaaS 全栈架构 用户浏览器 ↓ Next.js (SSR/SSG + API Routes / Server Actions) ↓ 内部 API 调用 后…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/next-js-api-q-xm41mo.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么面试会问全栈架构 全栈岗位不是&quot;前端后端都会一点&quot;，而是要求你能 设计整体方案并独立交付 。面试官要看你对前后端边界、数据流向、部署方式有清晰认知。 典型 SaaS 全栈架构 用户浏览器 ↓ Next.js (SSR/SSG + API Routes / Server Actions) ↓ 内部 API 调用 后…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/project.html">项目场景深挖</a> ›
+    <span>全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？</span>
+  </nav>
+
+  <article class="question">
+    <h1>全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么面试会问全栈架构</h4>
+<p>全栈岗位不是"前端后端都会一点"，而是要求你能<b>设计整体方案并独立交付</b>。面试官要看你对前后端边界、数据流向、部署方式有清晰认知。</p>
+<h4>典型 SaaS 全栈架构</h4>
+<pre><code>用户浏览器
+  ↓
+Next.js (SSR/SSG + API Routes / Server Actions)
+  ↓ 内部 API 调用
+后端服务 (Go/Python/Java)
+  ├─ 核心业务 API
+  ├─ AI 服务（LLM 调用、内容生成）
+  └─ 异步任务（邮件、数据处理）
+  ↓
+MySQL + Redis + MQ + OSS</code></pre>
+<h4>各层职责划分</h4>
+<ul>
+<li><b>Next.js 层</b>：页面渲染（SSR/SSG）、BFF 聚合（把多个后端接口合成前端需要的数据结构）、鉴权中间件、静态资源</li>
+<li><b>后端 API 层</b>：核心业务逻辑、数据校验、事务处理、支付/订单等强一致性操作</li>
+<li><b>AI 服务层</b>：LLM API 调用封装、Prompt 管理、流式输出、结果缓存</li>
+</ul>
+<h4>前后端分离 vs Next.js 全栈</h4>
+<ul>
+<li><b>纯前后端分离</b>（React SPA + 独立后端）：适合大团队、前后端独立部署和迭代</li>
+<li><b>Next.js 全栈</b>（API Routes / Server Actions）：适合小团队快速迭代、SEO 友好、减少部署复杂度</li>
+<li><b>混合方案</b>：Next.js 做 BFF + SSR，核心业务仍由独立后端服务处理——<b>这是出海 SaaS 最常见的架构</b></li>
+</ul>
+<h4>你的经验怎么关联</h4>
+<p>Shoply 项目中你做了前后端全链路：Go 后端 + C 端 Vue 页面 Apple Pay/Google Pay 3DS 集成。这证明你有全栈交付能力，只是前端框架从 Vue 换成 React/Next.js。</p>
+<div class="key-point">全栈面试核心：不是"我会写前端也会写后端"，而是"我能设计整体方案、划清职责边界、独立交付完整功能"。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./visitor-id-q-vid-design.html">系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？</a></li>
+      <li><a href="./saa-s-q-stat-pipeline.html">电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？</a></li>
+      <li><a href="./id-q-orderid-design.html">订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？</a></li>
+      <li><a href="./checkout-id-trade-id-webhook-q-idempotent-design.html">支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？</a></li>
+      <li><a href="./decimal-vs-vs-float-q-currency-storage.html">多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/project.html">浏览本分类全部 45 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=9">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

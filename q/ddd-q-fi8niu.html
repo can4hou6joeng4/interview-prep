@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="四个高频概念 实体 (Entity) ：有唯一身份标识，关注“它是谁”，即使属性变化也还是同一个对象，比如订单、用户 值对象 (Value Object) ：没有独立身份，关注“它是什么”，通常不可变，比如金额、地址、时间区间 聚合根 (Aggregate Root) ：聚合的一致性边界入口，外部只能通过聚合根访问内部…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/ddd-q-fi8niu.html">
+<meta property="og:title" content="DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？ - Go 后端面试题库">
+<meta property="og:description" content="四个高频概念 实体 (Entity) ：有唯一身份标识，关注“它是谁”，即使属性变化也还是同一个对象，比如订单、用户 值对象 (Value Object) ：没有独立身份，关注“它是什么”，通常不可变，比如金额、地址、时间区间 聚合根 (Aggregate Root) ：聚合的一致性边界入口，外部只能通过聚合根访问内部…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/ddd-q-fi8niu.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？ - Go 后端面试题库">
+<meta name="twitter:description" content="四个高频概念 实体 (Entity) ：有唯一身份标识，关注“它是谁”，即使属性变化也还是同一个对象，比如订单、用户 值对象 (Value Object) ：没有独立身份，关注“它是什么”，通常不可变，比如金额、地址、时间区间 聚合根 (Aggregate Root) ：聚合的一致性边界入口，外部只能通过聚合根访问内部…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/architecture.html">设计模式与架构</a> ›
+    <span>DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</span>
+  </nav>
+
+  <article class="question">
+    <h1>DDD 的核心概念是什么？实体、值对象、聚合根、领域事件分别怎么理解？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>四个高频概念</h4>
+<ul>
+<li><b>实体 (Entity)</b>：有唯一身份标识，关注“它是谁”，即使属性变化也还是同一个对象，比如订单、用户</li>
+<li><b>值对象 (Value Object)</b>：没有独立身份，关注“它是什么”，通常不可变，比如金额、地址、时间区间</li>
+<li><b>聚合根 (Aggregate Root)</b>：聚合的一致性边界入口，外部只能通过聚合根访问内部对象，比如订单聚合根统一管理订单项和状态流转</li>
+<li><b>领域事件 (Domain Event)</b>：领域内已经发生的重要事实，用来解耦副作用逻辑，比如“订单已支付”触发积分发放和通知</li>
+</ul>
+<h4>怎么理解更像工程师</h4>
+<p>DDD 不是为了把目录改花，而是先定义业务边界，再让代码结构围绕边界组织，减少跨模块的隐式耦合。</p>
+<div class="key-point">面试里别只背定义，最好顺手举一个电商场景：订单是实体，金额是值对象，订单是聚合根，“订单已支付”是领域事件。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-ddd-q-10q1978.html">Go 项目如何实践 DDD？目录结构和分层怎么组织？</a></li>
+      <li><a href="./go-res-tful-q-1nhqd6a.html">Go 后端接口如何做 RESTful 设计和版本演进？</a></li>
+      <li><a href="./q-1ohx9b9.html">分布式存储系统设计要先回答哪几个核心问题？副本、一致性、分片、扩缩容分别怎么权衡？</a></li>
+      <li><a href="./q-17pttmy.html">自动化工单系统如何设计状态机、审批流、幂等和审计？</a></li>
+      <li><a href="./q-5ortqw.html">资源管理系统的数据模型怎么设计？资源、机房、节点、标签、配额、工单之间是什么关系？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/architecture.html">浏览本分类全部 13 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=3">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

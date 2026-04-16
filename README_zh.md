@@ -21,6 +21,7 @@
 - 支持分类、难度、未掌握、随机顺序、关键词搜索等组合筛选
 - 学习进度保存在本地浏览器，并带有稳定题目 ID 与旧版进度迁移逻辑
 - 零构建、零依赖，可直接部署到 GitHub Pages
+- 每道题和每个分类都有独立的静态页面（`q/*.html`、`c/*.html`），便于搜索引擎独立索引长尾流量
 - 仓库级校验会自动检查题库统计、SEO 元信息和站点关键配套文件
 
 ## 在线访问
@@ -40,15 +41,20 @@ python3 -m http.server 4173
 
 ```text
 .
+├── q/                         # 203 个题目独立页（构建生成）
+├── c/                         # 19 个分类聚合页（构建生成）
 ├── assets/
 │   ├── app.js
 │   ├── data.js
 │   ├── favicon.svg
 │   └── styles.css
 ├── scripts/
+│   ├── build-pages.mjs
 │   ├── check-fast.sh
 │   ├── check-full.sh
+│   ├── slug.mjs
 │   ├── validate-data.mjs
+│   ├── validate-pages.mjs
 │   └── validate-site.mjs
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
@@ -84,6 +90,17 @@ python3 -m http.server 4173
 ./scripts/check-fast.sh
 ./scripts/check-full.sh
 ```
+
+## 静态页构建
+
+修改 `assets/data.js` 后，重新生成题目页、分类页和 sitemap：
+
+```bash
+node scripts/build-pages.mjs              # 重新生成 q/ c/ sitemap.xml
+node scripts/build-pages.mjs --dry-run    # 仅预览不落盘
+```
+
+`q/` 和 `c/` 下的文件会被提交到 git，因为 GitHub Pages 不会跑构建步骤。CI 会拒绝「改了 data.js 但没重新 build」的提交。
 
 ## JD 覆盖率巡检
 

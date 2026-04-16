@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="单元测试 vs 集成测试 单元测试 ：只测一个函数或方法的逻辑，外部依赖全部 mock 掉，跑得快、确定性高 集成测试 ：真实连接数据库、Redis、消息队列等外部服务，验证多个组件协作是否正确 两者互补，不能用集成测试替代单元测试，也不能只靠 mock 就觉得万事大吉 testcontainers-go 的使用场景…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-testcontainers-q-tc1int.html">
+<meta property="og:title" content="Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？ - Go 后端面试题库">
+<meta property="og:description" content="单元测试 vs 集成测试 单元测试 ：只测一个函数或方法的逻辑，外部依赖全部 mock 掉，跑得快、确定性高 集成测试 ：真实连接数据库、Redis、消息队列等外部服务，验证多个组件协作是否正确 两者互补，不能用集成测试替代单元测试，也不能只靠 mock 就觉得万事大吉 testcontainers-go 的使用场景…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-testcontainers-q-tc1int.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？ - Go 后端面试题库">
+<meta name="twitter:description" content="单元测试 vs 集成测试 单元测试 ：只测一个函数或方法的逻辑，外部依赖全部 mock 掉，跑得快、确定性高 集成测试 ：真实连接数据库、Redis、消息队列等外部服务，验证多个组件协作是否正确 两者互补，不能用集成测试替代单元测试，也不能只靠 mock 就觉得万事大吉 testcontainers-go 的使用场景…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/testing.html">测试与工程质量</a> ›
+    <span>Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？</span>
+  </nav>
+
+  <article class="question">
+    <h1>Go 项目里集成测试和单元测试怎么区分？什么时候该用 testcontainers？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>单元测试 vs 集成测试</h4>
+<ul>
+<li><b>单元测试</b>：只测一个函数或方法的逻辑，外部依赖全部 mock 掉，跑得快、确定性高</li>
+<li><b>集成测试</b>：真实连接数据库、Redis、消息队列等外部服务，验证多个组件协作是否正确</li>
+<li>两者互补，不能用集成测试替代单元测试，也不能只靠 mock 就觉得万事大吉</li>
+</ul>
+<h4>testcontainers-go 的使用场景</h4>
+<ul>
+<li>在 CI 或本地用 Docker 启动真实的 MySQL、Redis、Kafka 容器</li>
+<li>每次测试创建全新容器，测完销毁，避免环境污染</li>
+<li>适合验证 SQL 迁移、Redis 命令兼容性、消息消费逻辑等 mock 无法覆盖的场景</li>
+</ul>
+<h4>实践建议</h4>
+<ul>
+<li>单元测试放 <code>_test.go</code>，集成测试用 <code>// +build integration</code> tag 隔离</li>
+<li>CI 中先跑单元测试（快），再跑集成测试（慢）</li>
+<li>不要对所有东西都上 testcontainers——简单逻辑用 mock 就够了</li>
+</ul>
+<div class="key-point">面试加分点：能说出你在什么场景下从 mock 切到了真实容器测试，以及这个切换避免了什么线上问题。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-table-driven-tests-mock-q-zwrzuz.html">Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？</a></li>
+      <li><a href="./tdd-red-green-refactor-q-ktllce.html">TDD（测试驱动开发）的流程是什么？Red-Green-Refactor 分别代表什么？</a></li>
+      <li><a href="./qps-q-izu016.html">压测方案怎么设计才有意义？除了 QPS，还要看哪些指标才能真正定位瓶颈？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/testing.html">浏览本分类全部 4 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=11">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

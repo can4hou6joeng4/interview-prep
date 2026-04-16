@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="errgroup 原理 type Group struct { cancel func() // 关联 context 的 cancel wg sync.WaitGroup errOnce sync.Once // 只记录第一个错误 err error } // Go() 启动 goroutine, Wait() 等待…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/errgroup-q-7hw7o6.html">
+<meta property="og:title" content="errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？ - Go 后端面试题库">
+<meta property="og:description" content="errgroup 原理 type Group struct { cancel func() // 关联 context 的 cancel wg sync.WaitGroup errOnce sync.Once // 只记录第一个错误 err error } // Go() 启动 goroutine, Wait() 等待…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/errgroup-q-7hw7o6.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？ - Go 后端面试题库">
+<meta name="twitter:description" content="errgroup 原理 type Group struct { cancel func() // 关联 context 的 cancel wg sync.WaitGroup errOnce sync.Once // 只记录第一个错误 err error } // Go() 启动 goroutine, Wait() 等待…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/go-core.html">Go 语言核心</a> ›
+    <span>errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</span>
+  </nav>
+
+  <article class="question">
+    <h1>errgroup 的实现原理？你的框架中如何用它管理 18 步初始化链的并发与错误传播？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      <span class="badge badge-tag">project</span><span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>errgroup 原理</h4>
+<pre><code>type Group struct {
+    cancel  func()          // 关联 context 的 cancel
+    wg      sync.WaitGroup
+    errOnce sync.Once       // 只记录第一个错误
+    err     error
+}
+// Go() 启动 goroutine, Wait() 等待所有完成并返回第一个错误</code></pre>
+<h4>框架初始化链设计</h4>
+<pre><code>func (app *App) Bootstrap() error {
+    // 阶段一：串行有序初始化（有依赖关系）
+    steps := []func() error{
+        app.initConfig,    // 1. conf
+        app.initDB,        // 2. db（依赖 conf）
+        app.initRedis,     // 3. redis（依赖 conf）
+        app.initCache,     // 4. cache（依赖 redis）
+    }
+    for _, step := range steps {
+        if err := step(); err != nil { return err }
+    }
+
+    // 阶段二：并行初始化（无依赖关系）
+    g, ctx := errgroup.WithContext(app.ctx)
+    g.Go(func() error { return app.initRPC(ctx) })
+    g.Go(func() error { return app.initJob(ctx) })
+    g.Go(func() error { return app.initWorker(ctx) })
+    g.Go(func() error { return app.initListener(ctx) })
+    return g.Wait() // 任一失败，ctx 取消，其他收到信号
+}</code></pre>
+<h4>优雅关机配合</h4>
+<pre><code>// 10 秒超时保护
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+// 并行关闭各组件
+g, ctx := errgroup.WithContext(ctx)
+g.Go(func() error { return app.server.ShutdownWithContext(ctx) })
+g.Go(func() error { return app.db.Close() })
+g.Go(func() error { return app.rdb.Close() })
+return g.Wait()</code></pre>
+<div class="project-link">简历关联：go-fast 框架 18 步有序初始化链 + errgroup 并发管理 + 10 秒超时优雅关机</div>
+<div class="key-point">面试时能画出「串行有依赖 → 并行无依赖」的两阶段图，再加上 errgroup 的 ctx cancel 传播，就是完整回答。</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-plugin-so-q-1f99wc9.html">Go Plugin (.so) 热加载的原理、限制和你的实践？</a></li>
+      <li><a href="./go-wait-group-q-16gf8u3.html">Go 里的 WaitGroup 是怎么工作的？常见误用有哪些？</a></li>
+      <li><a href="./select-case-for-select-q-m0larr.html">select 同时多个 case 就绪时会怎么选？for-select 循环有哪些坑？</a></li>
+      <li><a href="./sync-map-q-1arld6w.html">sync.Map 里存的是引用类型时，为什么并发修改字段仍然可能不安全？</a></li>
+      <li><a href="./go-goroutine-q-1cuk3uh.html">为什么 Go 里要用 goroutine，而不是线程？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/go-core.html">浏览本分类全部 21 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=0">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

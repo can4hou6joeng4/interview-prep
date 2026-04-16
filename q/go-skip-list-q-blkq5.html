@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="核心结构 跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。 type Node struct { score float64 value string next []*Node } func search(head *Node, score float64) *Node…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/go-skip-list-q-blkq5.html">
+<meta property="og:title" content="实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？ - Go 后端面试题库">
+<meta property="og:description" content="核心结构 跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。 type Node struct { score float64 value string next []*Node } func search(head *Node, score float64) *Node…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/go-skip-list-q-blkq5.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？ - Go 后端面试题库">
+<meta name="twitter:description" content="核心结构 跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。 type Node struct { score float64 value string next []*Node } func search(head *Node, score float64) *Node…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/coding.html">高频手撕代码</a> ›
+    <span>实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</span>
+  </nav>
+
+  <article class="question">
+    <h1>实现一个 Go 版本的跳表（Skip List），为什么它适合有序集合？</h1>
+    <p class="meta">
+      <span class="badge badge-hard">困难</span>
+      
+    </p>
+    <section class="answer">
+<h4>核心结构</h4>
+<p>跳表本质上是“多层有序链表”。底层保存完整数据，上层作为索引层，查询时先从高层快速跳，再逐层下探。</p>
+<pre><code>type Node struct {
+    score float64
+    value string
+    next  []*Node
+}
+
+func search(head *Node, score float64) *Node {
+    cur := head
+    for level := len(head.next) - 1; level >= 0; level-- {
+        for cur.next[level] != nil && cur.next[level].score < score {
+            cur = cur.next[level]
+        }
+    }
+    return cur.next[0]
+}</code></pre>
+<h4>为什么适合有序集合</h4>
+<ul>
+<li>查询、插入、删除的平均复杂度都是 <code>O(log n)</code></li>
+<li>比平衡树更容易实现区间遍历和顺序扫描</li>
+<li>Redis 的 ZSet 在一定规模下就采用了 skiplist + hash 的组合</li>
+</ul>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./go-q-71dk9x.html">用 Go 实现环形链表入口检测（快慢指针）</a></li>
+      <li><a href="./go-lru-cache-q-hkgo2f.html">用 Go 实现一个并发安全的 LRU Cache</a></li>
+      <li><a href="./go-worker-pool-q-qpqv9v.html">用 Go 实现一个简单的 Worker Pool（限制并发数）</a></li>
+      <li><a href="./go-singleflight-q-chozb9.html">用 Go 实现 singleflight（合并并发请求）</a></li>
+      <li><a href="./top-k-k-q-i5famw.html">实现 Top K 问题（海量数据中找前 K 大的元素）</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/coding.html">浏览本分类全部 8 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=10">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>

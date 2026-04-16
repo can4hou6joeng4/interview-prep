@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="为什么需要链路追踪 微服务架构下一个请求可能跨越多个服务（如你的 17 个服务），出问题时需要知道：哪个服务慢了？哪个调用链出错了？ 核心概念 Trace ：一次完整请求的调用链（从入口到所有下游） Span ：Trace 中的一个操作（如一次 RPC 调用、一次 DB 查询） TraceID ：贯穿整个调用链的唯一…">
+<meta name="theme-color" content="#fffdf7">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://can4hou6joeng4.github.io/interview-prep/q/open-telemetry-q-agdyxq.html">
+<meta property="og:title" content="分布式链路追踪是什么？OpenTelemetry 怎么用？ - Go 后端面试题库">
+<meta property="og:description" content="为什么需要链路追踪 微服务架构下一个请求可能跨越多个服务（如你的 17 个服务），出问题时需要知道：哪个服务慢了？哪个调用链出错了？ 核心概念 Trace ：一次完整请求的调用链（从入口到所有下游） Span ：Trace 中的一个操作（如一次 RPC 调用、一次 DB 查询） TraceID ：贯穿整个调用链的唯一…">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Go 后端面试题库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://can4hou6joeng4.github.io/interview-prep/q/open-telemetry-q-agdyxq.html">
+<meta property="og:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="分布式链路追踪是什么？OpenTelemetry 怎么用？ - Go 后端面试题库">
+<meta name="twitter:description" content="为什么需要链路追踪 微服务架构下一个请求可能跨越多个服务（如你的 17 个服务），出问题时需要知道：哪个服务慢了？哪个调用链出错了？ 核心概念 Trace ：一次完整请求的调用链（从入口到所有下游） Span ：Trace 中的一个操作（如一次 RPC 调用、一次 DB 查询） TraceID ：贯穿整个调用链的唯一…">
+<meta name="twitter:image" content="https://can4hou6joeng4.github.io/interview-prep/assets/social-preview.png">
+<title>分布式链路追踪是什么？OpenTelemetry 怎么用？ - Go 后端面试题库</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<main class="detail">
+  <nav class="breadcrumb">
+    <a href="../index.html">首页</a> ›
+    <a href="../c/microservices.html">微服务治理</a> ›
+    <span>分布式链路追踪是什么？OpenTelemetry 怎么用？</span>
+  </nav>
+
+  <article class="question">
+    <h1>分布式链路追踪是什么？OpenTelemetry 怎么用？</h1>
+    <p class="meta">
+      <span class="badge badge-medium">中等</span>
+      <span class="badge badge-tag">scene</span>
+    </p>
+    <section class="answer">
+<h4>为什么需要链路追踪</h4>
+<p>微服务架构下一个请求可能跨越多个服务（如你的 17 个服务），出问题时需要知道：哪个服务慢了？哪个调用链出错了？</p>
+<h4>核心概念</h4>
+<ul>
+<li><b>Trace</b>：一次完整请求的调用链（从入口到所有下游）</li>
+<li><b>Span</b>：Trace 中的一个操作（如一次 RPC 调用、一次 DB 查询）</li>
+<li><b>TraceID</b>：贯穿整个调用链的唯一 ID</li>
+<li><b>SpanID + ParentSpanID</b>：构建调用树</li>
+</ul>
+<h4>Go 中接入 OpenTelemetry</h4>
+<pre><code>import "go.opentelemetry.io/otel"
+
+// 中间件自动创建 Span
+func TracingMiddleware(c *fiber.Ctx) error {
+    tracer := otel.Tracer("myservice")
+    ctx, span := tracer.Start(c.Context(), c.Path())
+    defer span.End()
+
+    span.SetAttributes(
+        attribute.String("http.method", c.Method()),
+        attribute.Int("http.status_code", c.Response().StatusCode()),
+    )
+    c.SetUserContext(ctx) // 传播 context
+    return c.Next()
+}
+
+// 下游 RPC 调用时 context 透传 TraceID
+func callOrderService(ctx context.Context) {
+    _, span := otel.Tracer("myservice").Start(ctx, "rpc.order.create")
+    defer span.End()
+    // RPC 请求自动携带 TraceID
+}</code></pre>
+<div class="key-point">面试加分：提到你的 17 个业务服务如果引入链路追踪，可以快速定位跨服务调用中的性能瓶颈</div>
+    </section>
+  </article>
+
+  <aside class="related">
+    <h2>本分类其他题目</h2>
+    <ul>
+      <li><a href="./saga-q-1yahdcj.html">微服务中如何处理分布式事务？Saga 模式是什么？</a></li>
+      <li><a href="./g-rpc-q-1wl8hrc.html">gRPC 的四种通信模式是什么？分别适合什么场景？</a></li>
+      <li><a href="./protobuf-json-q-1154leh.html">Protobuf 的编码原理是什么？为什么通常比 JSON 更快？</a></li>
+      <li><a href="./g-rpc-http-q-1f937c9.html">gRPC 的拦截器怎么用？和 HTTP 中间件有什么对应关系？</a></li>
+      <li><a href="./g-rpc-q-qbpll5.html">gRPC 的负载均衡方案有哪些？客户端负载和代理负载怎么选？</a></li>
+    </ul>
+  </aside>
+
+  <nav class="cta">
+    <a class="cta-btn" href="../c/microservices.html">浏览本分类全部 14 题</a>
+    <a class="cta-btn" href="../study.html?mode=card&amp;cat=17">进入 SPA 学习本分类</a>
+  </nav>
+
+  <footer class="ft">
+    <a href="../index.html">返回首页</a> ·
+    <a href="https://github.com/can4hou6joeng4/interview-prep">GitHub 源码</a> ·
+    <a href="../index.html#updates">查看更新</a>
+  </footer>
+</main>
+</body>
+</html>
