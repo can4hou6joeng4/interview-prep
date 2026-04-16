@@ -21,6 +21,7 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 - Combined filters for category, difficulty, search, unknown items, and random order
 - Stable question IDs with browser-side progress persistence and legacy progress migration
 - Zero-build static architecture, designed for GitHub Pages deployment
+- Every question and category now has a dedicated static page (`q/*.html`, `c/*.html`) for long-tail search indexing
 - Repository-level validation keeps README stats, SEO metadata, and required site assets in sync
 
 ## Live Demo
@@ -40,15 +41,20 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
 ```text
 .
+├── q/                         # 203 static question pages (generated)
+├── c/                         # 19 static category pages (generated)
 ├── assets/
 │   ├── app.js
 │   ├── data.js
 │   ├── favicon.svg
 │   └── styles.css
 ├── scripts/
+│   ├── build-pages.mjs
 │   ├── check-fast.sh
 │   ├── check-full.sh
+│   ├── slug.mjs
 │   ├── validate-data.mjs
+│   ├── validate-pages.mjs
 │   └── validate-site.mjs
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
@@ -85,6 +91,17 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 ./scripts/check-fast.sh
 ./scripts/check-full.sh
 ```
+
+## Static Page Build
+
+Every time `assets/data.js` changes, regenerate the static question/category pages and sitemap:
+
+```bash
+node scripts/build-pages.mjs              # regenerate q/ c/ sitemap.xml
+node scripts/build-pages.mjs --dry-run    # preview without writing
+```
+
+Generated files under `q/` and `c/` are checked into git because GitHub Pages does not run build steps. CI will fail if the committed output drifts from `data.js`.
 
 ## JD Coverage Audit
 
