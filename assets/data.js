@@ -1125,6 +1125,124 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>为什么面试会问全栈架构</h4>\n<p>全栈岗位不是\"前端后端都会一点\"，而是要求你能<b>设计整体方案并独立交付</b>。面试官要看你对前后端边界、数据流向、部署方式有清晰认知。</p>\n<h4>典型 SaaS 全栈架构</h4>\n<pre><code>用户浏览器\n  ↓\nNext.js (SSR/SSG + API Routes / Server Actions)\n  ↓ 内部 API 调用\n后端服务 (Go/Python/Java)\n  ├─ 核心业务 API\n  ├─ AI 服务（LLM 调用、内容生成）\n  └─ 异步任务（邮件、数据处理）\n  ↓\nMySQL + Redis + MQ + OSS</code></pre>\n<h4>各层职责划分</h4>\n<ul>\n<li><b>Next.js 层</b>：页面渲染（SSR/SSG）、BFF 聚合（把多个后端接口合成前端需要的数据结构）、鉴权中间件、静态资源</li>\n<li><b>后端 API 层</b>：核心业务逻辑、数据校验、事务处理、支付/订单等强一致性操作</li>\n<li><b>AI 服务层</b>：LLM API 调用封装、Prompt 管理、流式输出、结果缓存</li>\n</ul>\n<h4>前后端分离 vs Next.js 全栈</h4>\n<ul>\n<li><b>纯前后端分离</b>（React SPA + 独立后端）：适合大团队、前后端独立部署和迭代</li>\n<li><b>Next.js 全栈</b>（API Routes / Server Actions）：适合小团队快速迭代、SEO 友好、减少部署复杂度</li>\n<li><b>混合方案</b>：Next.js 做 BFF + SSR，核心业务仍由独立后端服务处理——<b>这是出海 SaaS 最常见的架构</b></li>\n</ul>\n<h4>你的经验怎么关联</h4>\n<p>Shoply 项目中你做了前后端全链路：Go 后端 + C 端 Vue 页面 Apple Pay/Google Pay 3DS 集成。这证明你有全栈交付能力，只是前端框架从 Vue 换成 React/Next.js。</p>\n<div class=\"key-point\">全栈面试核心：不是\"我会写前端也会写后端\"，而是\"我能设计整体方案、划清职责边界、独立交付完整功能\"。</div>",
         "id": "q-xm41mo"
+      },
+      {
+        "q": "系统中 visitorId 是怎么设计的？生成策略、存储方式、过期机制和安全性分别怎么考虑？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>生成策略</h4>\n<ul>\n<li>前端生成 UUID v4，首次访问时写入 Cookie（<code>visitor_id</code>），后续请求自动携带</li>\n<li>为什么不用浏览器指纹（fingerprint）：指纹依赖 Canvas/WebGL 等 API，同一设备不同浏览器会生成不同值，且隐私法规（GDPR）对指纹追踪限制越来越严。Cookie 方案更简单、用户可感知、可清除</li>\n</ul>\n<h4>存储方式</h4>\n<ul>\n<li>Cookie 端：<code>HttpOnly=false</code>（前端需读取用于加购等操作），<code>SameSite=Lax</code>，<code>Secure=true</code></li>\n<li>服务端：购物车和订单表的 <code>visitor_id</code> 字段关联游客数据，WAF 访客表用 <code>visitor_hash</code>（IP+UA+Accept-Language 的 MD5）做风控维度的去重</li>\n<li>两者区别：Cookie 的 visitorId 用于业务归户，visitor_hash 用于安全风控，职责分离</li>\n</ul>\n<h4>过期与清理</h4>\n<ul>\n<li>Cookie 过期时间 30 天，覆盖大多数购买决策周期</li>\n<li>登录归户后清除 visitorId 与旧数据的绑定关系，防止下一个游客串数据</li>\n<li>WAF 侧的 visitor_hash 通过冷热迁移定期归档，热表只保留近 7 天</li>\n</ul>\n<h4>安全性</h4>\n<ul>\n<li>visitorId 本身不含敏感信息（纯随机 UUID），泄露不会造成数据风险</li>\n<li>归户操作在事务内执行，防止并发归户导致数据错乱</li>\n<li>公共设备场景：登录时只归户当前 session 的 visitorId 数据，而非所有历史</li>\n</ul>\n<div class=\"key-point\">面试追问重点：visitorId 和 session 的区别是什么？答：visitorId 跨 session 持久化（30 天 Cookie），用于长周期行为追踪；session 是单次会话，关闭浏览器即失效。</div>",
+        "id": "q-vid-design"
+      },
+      {
+        "q": "电商 SaaS 的数据统计链路怎么设计？埋点采集、实时聚合、冷热分离分别怎么做？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>采集层</h4>\n<ul>\n<li><b>前端埋点</b>：页面浏览（PV）、商品曝光、加购、结账、支付等关键事件通过 JS SDK 上报</li>\n<li><b>后端埋点</b>：WAF 中间件拦截每个请求，提取 IP、UA、Referer、Cookie 等维度，写入内存 channel</li>\n<li><b>关键设计</b>：主链路只做数据入队（纳秒级），不阻塞 HTTP 响应。后台 Worker 从 channel 批量消费写库</li>\n</ul>\n<h4>聚合层</h4>\n<ul>\n<li><b>实时聚合</b>：Redis INCR 计数器实现当日 PV/UV/转化率等指标，按 <code>store_id:date:metric</code> 维度存储</li>\n<li><b>离线聚合</b>：每日定时任务将 Redis 计数器落盘到 MySQL 统计表，生成日报/周报/月报</li>\n<li><b>UV 去重</b>：基于 visitor_hash（IP+UA+Accept-Language MD5）在 Redis HyperLogLog 中去重，内存占用极小</li>\n</ul>\n<h4>冷热分离</h4>\n<ul>\n<li>热表存近 7 天数据，支撑实时看板查询</li>\n<li>冷表存历史归档数据，按日播种 + 分钟级微批迁移，避免大 IO 冲击</li>\n<li>查询时根据时间范围自动路由：近期查热表，历史查冷表</li>\n</ul>\n<div class=\"project-link\">简历关联：Shoply 的访客统计采用 WAF 中间件采集 + channel 异步批写 + Redis 实时聚合 + 冷热分表归档的四层链路</div>",
+        "id": "q-stat-pipeline"
+      },
+      {
+        "q": "订单号和交易号的生成规则是什么？为什么不直接用数据库自增 ID？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>为什么不用自增 ID</h4>\n<ul>\n<li><b>安全性</b>：自增 ID 可被外部推测订单量和业务规模，竞品可以通过连续下单估算日单量</li>\n<li><b>分库分表</b>：多租户 Sharding 场景下，不同分片的自增 ID 会冲突</li>\n<li><b>业务语义</b>：订单号通常需要包含时间、渠道等业务信息，纯数字自增无法承载</li>\n</ul>\n<h4>常见生成方案对比</h4>\n<table>\n<tr><th>方案</th><th>优点</th><th>缺点</th><th>适用场景</th></tr>\n<tr><td>UUID v4</td><td>全局唯一、无中心依赖</td><td>无序、索引性能差、不可读</td><td>内部关联 ID</td></tr>\n<tr><td>Snowflake</td><td>有序、高性能、可分布式</td><td>依赖时钟、需要 worker ID 分配</td><td>高并发订单号</td></tr>\n<tr><td>前缀+时间+随机</td><td>可读、含业务语义</td><td>需处理并发冲突</td><td>对外展示的单号</td></tr>\n</table>\n<h4>项目中的实践</h4>\n<ul>\n<li><b>订单号</b>：时间戳前缀 + 店铺标识 + 随机后缀，保证可读且全局唯一</li>\n<li><b>交易号（Trade ID）</b>：每次支付尝试生成独立 Trade ID，同一个 Checkout 可能产生多条 Trade 记录（用户切换支付方式或重试），每条 Trade 是独立的支付凭证</li>\n<li><b>幂等保证</b>：支付网关用 Checkout ID 做幂等 key，同一个 Checkout 不会重复扣款</li>\n</ul>\n<div class=\"key-point\">面试加分：能说清订单号（面向用户展示）和交易号（面向支付网关对账）的区别，说明你理解支付链路的完整模型。</div>",
+        "id": "q-orderid-design"
+      },
+      {
+        "q": "支付场景下的幂等怎么设计？Checkout ID、Trade ID 和 Webhook 去重分别怎么保证？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三层幂等机制</h4>\n<ul>\n<li><b>Checkout 层</b>：同一个 Checkout ID 只允许创建一笔成功的 Payment，重复提交直接返回已有结果</li>\n<li><b>Trade 层</b>：每次支付尝试生成唯一 Trade ID 传给支付网关（PayPal/Stripe），网关侧保证同一 Trade ID 不会重复扣款</li>\n<li><b>Webhook 层</b>：支付网关可能重复推送回调通知，用 <code>webhook_event_id</code> 做去重，已处理过的事件直接返回 200 不重复执行</li>\n</ul>\n<h4>为什么需要三层而不是一层</h4>\n<ul>\n<li>Checkout 层防的是<b>用户重复点击</b>提交按钮</li>\n<li>Trade 层防的是<b>网络超时重试</b>导致网关侧重复扣款</li>\n<li>Webhook 层防的是<b>网关重复推送</b>导致本地重复处理订单状态</li>\n</ul>\n<h4>实现细节</h4>\n<pre><code>// Webhook 去重伪代码\nfunc HandleWebhook(eventId string, payload []byte) error {\n    // 1. 检查是否已处理\n    if exists := redis.SetNX(\"webhook:\"+eventId, 1, 24*time.Hour); !exists {\n        return nil // 已处理，直接返回成功\n    }\n    // 2. 处理业务逻辑\n    err := processPayment(payload)\n    if err != nil {\n        redis.Del(\"webhook:\" + eventId) // 处理失败，允许重试\n        return err\n    }\n    return nil\n}</code></pre>\n<div class=\"key-point\">面试核心：幂等不是\"加个唯一索引\"就完事，而是要在每一层分别防御不同来源的重复请求。</div>",
+        "id": "q-idempotent-design"
+      },
+      {
+        "q": "多币种场景下数据库金额字段怎么存？decimal 字段 vs 整数分存储 vs float，怎么选？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三种方案对比</h4>\n<table>\n<tr><th>方案</th><th>优点</th><th>缺点</th><th>适用场景</th></tr>\n<tr><td>DECIMAL(20,2)</td><td>精确、可读、SQL 直接聚合</td><td>运算比整数慢</td><td>电商、金融结算</td></tr>\n<tr><td>整数分存储（单位：分）</td><td>性能好、无精度问题</td><td>代码中频繁 ×100/÷100 转换容易出错；多币种小数位数不同（日元 0 位、科威特第纳尔 3 位）</td><td>单一币种、简单场景</td></tr>\n<tr><td>FLOAT/DOUBLE</td><td>性能最好</td><td>精度丢失（0.1+0.2≠0.3），金融场景不可接受</td><td>非金融统计数据</td></tr>\n</table>\n<h4>项目中的选择：DECIMAL + shopspring/decimal</h4>\n<ul>\n<li>数据库用 <code>DECIMAL(20,2)</code> 存储，保证持久化精度</li>\n<li>Go 代码中用 <code>shopspring/decimal</code> 做运算，避免 float 精度丢失</li>\n<li>为什么不用整数分：跨境电商涉及多币种，日元没有小数位，科威特第纳尔有三位小数，整数分方案需要对每种币种维护不同的倍率，复杂度反而更高</li>\n</ul>\n<h4>双轨金额设计</h4>\n<ul>\n<li>每个金额字段都有 Settle 对应字段：<code>PayPrice</code> / <code>SettlePayPrice</code></li>\n<li>所有计算在基础币种下完成，最后通过 <code>applyCurrency</code> 一次性转换到结算币种</li>\n<li>这样基础币种金额精确可对账，结算币种金额用于买家展示</li>\n</ul>\n<div class=\"project-link\">简历关联：Shoply 采用 DECIMAL + shopspring/decimal + 双轨金额体系，残差补偿算法保证分摊后金额之和严格等于原始金额</div>",
+        "id": "q-currency-storage"
+      },
+      {
+        "q": "AI Agent 模块的 WebSocket 连接管理怎么设计？心跳保活、断线重连和多任务隔离怎么做？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>连接管理</h4>\n<ul>\n<li>每个 WebSocket 连接绑定 <code>userId</code> + <code>sessionId</code>，用 <code>sync.Map</code> 维护在线连接池</li>\n<li>同一用户允许多个连接（多 tab 页），通过 sessionId 区分</li>\n<li>连接建立时注册到连接池，断开时自动清理</li>\n</ul>\n<h4>心跳保活</h4>\n<ul>\n<li>服务端每 30 秒发送 Ping 帧，客户端响应 Pong</li>\n<li>超过 60 秒未收到 Pong 则主动断开连接，释放资源</li>\n<li>为什么服务端主动 Ping 而不是客户端：服务端需要及时感知僵尸连接并释放资源，依赖客户端不可靠</li>\n</ul>\n<h4>多任务隔离</h4>\n<ul>\n<li>每个 AI 异步任务（文章生成、SEO 优化）有独立的 <code>taskId</code></li>\n<li>推送消息格式：<code>{taskId, status, data}</code>，前端按 taskId 路由到对应的 UI 组件</li>\n<li>任务完成/失败后不再推送该 taskId 的消息，避免过期数据干扰</li>\n</ul>\n<h4>断线重连</h4>\n<ul>\n<li>前端实现指数退避重连：1s → 2s → 4s → 8s → 最大 30s</li>\n<li>重连后服务端推送该用户所有进行中任务的最新状态快照，前端无需刷新页面即可恢复</li>\n</ul>\n<div class=\"project-link\">简历关联：Shoply AI Agent 模块通过 WebSocket 实时推送任务状态，支持多任务并行、断线状态恢复</div>",
+        "id": "q-ws-design"
+      },
+      {
+        "q": "营销召回为什么选 Asynq 而不是 Kafka 或 RabbitMQ？什么规模下应该切换？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>三者定位对比</h4>\n<table>\n<tr><th>维度</th><th>Asynq</th><th>Kafka</th><th>RabbitMQ</th></tr>\n<tr><td>底层依赖</td><td>Redis</td><td>独立集群</td><td>独立集群</td></tr>\n<tr><td>核心能力</td><td>延迟任务、定时任务、重试</td><td>高吞吐流式消息、消费组</td><td>灵活路由、消息确认</td></tr>\n<tr><td>运维成本</td><td>极低（复用 Redis）</td><td>高（ZK/KRaft + Broker 集群）</td><td>中（Erlang 运维门槛）</td></tr>\n<tr><td>适用规模</td><td>万级任务/天</td><td>百万级消息/秒</td><td>十万级消息/秒</td></tr>\n<tr><td>延迟任务</td><td>原生支持</td><td>不原生支持，需额外实现</td><td>通过 TTL + DLX 实现</td></tr>\n</table>\n<h4>项目中选 Asynq 的理由</h4>\n<ul>\n<li><b>场景匹配</b>：营销召回的核心需求是延迟任务（加购后 10 分钟触发），Asynq 原生支持，Kafka 需要额外开发</li>\n<li><b>运维成本</b>：系统已经依赖 Redis，Asynq 零额外基础设施。引入 Kafka 需要维护独立集群，SaaS 初期投入产出不合理</li>\n<li><b>任务量级</b>：召回邮件每天几千到几万封，远未到 Kafka 的适用场景</li>\n</ul>\n<h4>什么时候该切换</h4>\n<ul>\n<li>任务量突破 Redis 单机承载（通常百万级/天）时，考虑迁移到 Kafka</li>\n<li>需要消息回溯、多消费组、精确一次语义时，Kafka 更合适</li>\n<li>需要复杂路由规则（如按国家、语言分发）时，RabbitMQ 的 Exchange 模型更灵活</li>\n</ul>\n<div class=\"key-point\">面试核心：不是\"Kafka 比 Asynq 高级\"，而是在当前业务规模和团队能力下，哪个方案的投入产出比最高。过度设计和设计不足一样是问题。</div>",
+        "id": "q-asynq-vs-kafka"
+      },
+      {
+        "q": "go-storage 为什么要抽象 Storage 接口？直接写死 OSS SDK 和加一层适配器的取舍是什么？",
+        "diff": "medium",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>为什么不直接写死 OSS SDK</h4>\n<ul>\n<li><b>环境差异</b>：开发环境用本地磁盘，测试环境用 MinIO，生产环境用阿里云 OSS 或 AWS S3。写死 SDK 意味着每个环境都要配置真实的云存储账号</li>\n<li><b>云厂商切换</b>：SaaS 出海场景下可能从阿里云迁到 AWS，如果业务代码直接依赖阿里云 SDK，迁移成本极高</li>\n<li><b>测试困难</b>：单元测试中无法 mock 真实的 OSS 操作</li>\n</ul>\n<h4>适配器模式的设计</h4>\n<pre><code>type Storage interface {\n    Put(key string, r io.Reader) error\n    Get(key string) (io.ReadCloser, error)\n    Delete(key string) error\n    ChunkInit(name string, size int64) (string, error)\n    ChunkPart(uploadId string, partNum int, r io.ReadSeeker) error\n    ChunkComplete(uploadId string) (string, error)\n}</code></pre>\n<ul>\n<li>Local 实现：读写本地文件系统，分片上传用临时目录存放分片</li>\n<li>OSS 实现：封装阿里云 SDK，分片上传对接 MultipartUpload API</li>\n<li>业务代码只依赖 Storage 接口，通过配置切换具体实现</li>\n</ul>\n<h4>什么时候不该抽象</h4>\n<ul>\n<li>如果项目确定只用一个云厂商、没有本地开发需求，直接用 SDK 更简单</li>\n<li>过度抽象的代价：接口设计要覆盖不同厂商的能力差集，某些厂商特有功能（如 OSS 的图片处理）无法通过统一接口暴露</li>\n</ul>\n<div class=\"key-point\">面试追问\"适配器模式的代价是什么\"——答：最小公约数问题。接口只能定义所有实现都支持的操作，厂商特有能力需要类型断言或额外接口。</div>",
+        "id": "q-storage-adapter"
+      },
+      {
+        "q": "SaaS 多租户场景下为什么选 JWT+RSA 而不是 Session？两者在分布式环境下的核心差异？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>核心差异对比</h4>\n<table>\n<tr><th>维度</th><th>JWT + RSA</th><th>Session（服务端存储）</th></tr>\n<tr><td>状态</td><td>无状态，Token 自包含用户信息</td><td>有状态，需要 Redis/DB 存 session</td></tr>\n<tr><td>扩容</td><td>天然支持水平扩容，任何节点都能验证</td><td>需要共享 session 存储（Redis Cluster）</td></tr>\n<tr><td>性能</td><td>验签是本地 CPU 计算，无网络开销</td><td>每次请求需查 Redis/DB</td></tr>\n<tr><td>吊销</td><td>困难，需要黑名单机制</td><td>简单，删除 session 即可</td></tr>\n<tr><td>安全</td><td>RSA 公私钥分离，私钥只在签发端</td><td>依赖 session 存储的安全性</td></tr>\n</table>\n<h4>项目中选 JWT+RSA 的理由</h4>\n<ul>\n<li><b>多租户架构</b>：每个店铺是独立租户，JWT 的 payload 直接携带 <code>store_id</code> + <code>user_id</code> + <code>role</code>，中间件无需查库即可完成鉴权和租户隔离</li>\n<li><b>Go + PHP 跨服务验证</b>：Go 签发 Token，PHP 侧只需持有公钥即可验签，不需要共享 Redis session</li>\n<li><b>部署简单</b>：SaaS 多实例部署时无需配置 session 共享存储</li>\n</ul>\n<h4>JWT 的缺点和应对</h4>\n<ul>\n<li><b>Token 吊销</b>：用户改密码或被封禁时需要即时失效。通过 Redis 黑名单 + 短过期时间（如 2 小时）+ Refresh Token 轮转来解决</li>\n<li><b>Token 体积</b>：JWT 比 session ID 大，每次请求多传几百字节。对于 HTTP API 可接受，对于高频 WebSocket 可考虑首次认证后切换为轻量 session</li>\n</ul>\n<div class=\"key-point\">面试追问\"如果让你重新选，还会选 JWT 吗\"——答：SaaS 多租户 + 多语言服务场景下仍然选 JWT，但会增加 Refresh Token 轮转和更严格的黑名单机制。</div>",
+        "id": "q-jwt-vs-session"
+      },
+      {
+        "q": "项目中同时有 JSON-RPC 和 HTTP API，怎么决定哪些接口走 RPC 哪些走 HTTP？划分边界是什么？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>划分原则</h4>\n<ul>\n<li><b>HTTP API</b>：面向外部（前端、第三方、Webhook 回调），需要标准化的 RESTful 语义、CORS、鉴权中间件</li>\n<li><b>JSON-RPC</b>：面向内部服务间调用（Go ↔ PHP），不需要 HTTP 语义，追求调用简单和性能</li>\n</ul>\n<h4>项目中的具体边界</h4>\n<table>\n<tr><th>走 HTTP 的接口</th><th>走 RPC 的接口</th></tr>\n<tr><td>前端 CRUD API（商品/订单/用户）</td><td>PHP 调 Go 的高性能服务（ES 搜索/支付/邮件）</td></tr>\n<tr><td>支付网关 Webhook 回调</td><td>Go 调 PHP 的业务逻辑（插件执行/模板渲染）</td></tr>\n<tr><td>第三方平台对接（Shopify/1688 API）</td><td>内部数据同步（商品变更 → ES 索引更新）</td></tr>\n<tr><td>Apple Pay 域名验证文件托管</td><td>积分变更、能力校验等内部操作</td></tr>\n</table>\n<h4>为什么内部不用 gRPC 而选 JSON-RPC</h4>\n<ul>\n<li><b>协议轻量</b>：JSON-RPC 基于 JSON，PHP 端原生支持解析，不需要安装 Protobuf 编译器和额外依赖</li>\n<li><b>调试方便</b>：JSON 文本格式可直接抓包可读，gRPC 的二进制协议需要额外工具解码</li>\n<li><b>场景不需要</b>：内部通信不跨网络、不需要流式传输、不需要多语言 IDL，gRPC 的优势发挥不出来</li>\n</ul>\n<h4>什么场景应该换成 gRPC</h4>\n<ul>\n<li>服务数量超过 10 个，需要强类型接口契约（Protobuf IDL）防止联调出错</li>\n<li>需要双向流式传输（如实时数据推送）</li>\n<li>跨语言服务增多（Python/Java/Rust），Protobuf 的多语言代码生成价值更大</li>\n</ul>\n<div class=\"project-link\">简历关联：Shoply 用 Go net/rpc（JSON 编码）桥接 Go 和 PHP，25+ 个 RPC 服务覆盖商品、支付、搜索、邮件等模块</div>",
+        "id": "q-rpc-vs-http"
+      },
+      {
+        "q": "Go SSR 中 ThemeRuntimeStatic 和 ThemeRuntimeDynamic 两种模式怎么选择？切换策略背后的考量？",
+        "diff": "hard",
+        "tags": [
+          "project"
+        ],
+        "a": "<h4>两种渲染模式</h4>\n<ul>\n<li><b>ThemeRuntimeStatic</b>：主题编译为纯静态 HTML 文件直出，Go 层只做文件读取和响应。性能极高，适合内容固定的页面（关于我们、政策页）</li>\n<li><b>ThemeRuntimeDynamic</b>：Go 模板引擎实时渲染，支持动态数据注入（用户信息、实时库存、个性化推荐）。性能低于静态模式，但支持个性化内容</li>\n</ul>\n<h4>切换策略</h4>\n<ul>\n<li>主题配置中声明 <code>Runtime</code> 字段，SSR 中间件根据该字段自动路由</li>\n<li>同一个站点可以混合使用：首页走动态渲染（展示推荐商品），博客页走静态直出</li>\n<li>主题开发者在主题 JSON 配置中声明每个页面的渲染模式</li>\n</ul>\n<h4>为什么不全部用动态渲染</h4>\n<ul>\n<li><b>性能</b>：模板编译有 CPU 开销，SaaS 多租户场景下几千个店铺共享进程，静态直出可以大幅减少 CPU 压力</li>\n<li><b>缓存效率</b>：静态 HTML 可以直接被 CDN 缓存，命中率接近 100%。动态页面需要额外的缓存策略</li>\n<li><b>稳定性</b>：静态页面不会因为数据库查询失败导致渲染错误</li>\n</ul>\n<h4>为什么不全部用静态直出</h4>\n<ul>\n<li><b>实时性</b>：商品库存、价格、个性化推荐需要实时数据，静态页面无法满足</li>\n<li><b>构建成本</b>：每次内容更新需要重新生成静态文件，对频繁更新的电商站不现实</li>\n</ul>\n<div class=\"key-point\">面试加分：能说清\"不是 SSR vs SSG 的二选一，而是根据页面特征混合使用\"，体现你对渲染策略有工程级理解。</div>",
+        "id": "q-ssr-mode-tradeoff"
+      },
+      {
+        "q": "项目中 Redis String、Hash、Set、本地缓存分别用在什么场景？为什么不统一用一种结构？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>项目中的实际使用</h4>\n<table>\n<tr><th>数据结构</th><th>使用场景</th><th>为什么选它</th></tr>\n<tr><td>String + INCR</td><td>WAF 频率限制计数器、UV 计数</td><td>原子自增、可设过期时间，天然滑动窗口</td></tr>\n<tr><td>String + SetNX</td><td>分布式锁（冷热迁移、定时任务）</td><td>原子操作、自带 TTL 防死锁</td></tr>\n<tr><td>String（JSON）</td><td>套餐配置缓存、汇率缓存</td><td>整体读写、数据量小、结构简单</td></tr>\n<tr><td>Hash</td><td>用户 session 扩展信息、购物车勾选状态</td><td>需要读写单个字段而非整体，减少序列化开销</td></tr>\n<tr><td>Set + SMembers</td><td>购物车勾选列表、Webhook 去重</td><td>无序集合、自动去重、支持交集并集</td></tr>\n<tr><td>Sorted Set</td><td>Asynq 延迟任务队列（底层实现）</td><td>按时间戳排序、高效范围查询</td></tr>\n<tr><td>HyperLogLog</td><td>UV 去重统计</td><td>内存极小（12KB），亿级去重误差 &lt; 1%</td></tr>\n<tr><td>本地内存缓存</td><td>请求级汇率缓存、主题截图缓存（sync.Map）</td><td>同一请求内多次读取，避免重复查 Redis</td></tr>\n</table>\n<h4>为什么不统一用 String+JSON</h4>\n<ul>\n<li><b>性能</b>：购物车勾选状态如果用 String+JSON，每次修改一个商品的勾选都要读取→反序列化→修改→序列化→写回。用 Set 只需 SADD/SREM 一条命令</li>\n<li><b>原子性</b>：频率限制用 String+INCR 是原子操作，用 JSON 读写则需要加锁</li>\n<li><b>内存效率</b>：UV 去重如果用 Set 存所有 visitor_hash，百万用户占几十 MB。HyperLogLog 只要 12KB</li>\n</ul>\n<div class=\"key-point\">面试核心：不是\"我会用 Redis\"，而是能说清楚每个场景为什么选这个数据结构、换一个会有什么问题。这体现的是对 Redis 数据模型的工程理解。</div>",
+        "id": "q-redis-structures"
       }
     ]
   },
