@@ -4,13 +4,16 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+  ReleaseEnterprise: release
 settings:
   base:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
-    DEVELOPMENT_TEAM: ""
-    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_STYLE: Manual
 targets:
   InterviewPrep:
     type: application
@@ -23,14 +26,28 @@ targets:
       path: InterviewPrep/Info.plist
       properties:
         CFBundleDisplayName: 面经刷题
-        UILaunchScreen:
-          UIColorName: ""
+        UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.can4hou6joeng4.interviewprep
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1,2"
+      configs:
+        Debug:
+          # 开发者证书（Natalie Neuman）—— 能力全 iCloud/Siri/Widget，仅绑定 1 台设备
+          PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183
+          DEVELOPMENT_TEAM: R36U8N6X48
+          CODE_SIGN_IDENTITY: "Apple Development"
+          PROVISIONING_PROFILE_SPECIFIER: "00008130-001219640A98001CDA524Y"
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183
+          DEVELOPMENT_TEAM: R36U8N6X48
+          CODE_SIGN_IDENTITY: "Apple Development"
+          PROVISIONING_PROFILE_SPECIFIER: "00008130-001219640A98001CDA524Y"
+        ReleaseEnterprise:
+          # 企业证书（XL AXIATA）—— 任意设备，能力有限（无 iCloud）
+          PRODUCT_BUNDLE_IDENTIFIER: com.xl.MyXL.Giant-staging
+          DEVELOPMENT_TEAM: Q6SJUT5K5D
+          CODE_SIGN_IDENTITY: "iPhone Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "MyXL-UniversalDist"

@@ -1,9 +1,16 @@
 import SwiftUI
+import SwiftData
 import WebKit
 
 struct QuestionDetailView: View {
     let category: Category
     let question: Question
+    @Environment(\.modelContext) private var ctx
+    @Query private var all: [UserProgress]
+
+    private var progress: UserProgress? {
+        all.first { $0.questionId == question.id }
+    }
 
     var body: some View {
         ScrollView {
@@ -12,7 +19,24 @@ struct QuestionDetailView: View {
                 HStack {
                     DifficultyBadge(diff: question.diff)
                     Text(category.cat).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button {
+                        toggleFavorite()
+                    } label: {
+                        Image(systemName: (progress?.favorited ?? false) ? "star.fill" : "star")
+                            .foregroundStyle(.yellow)
+                    }
                 }
+                Picker("掌握度", selection: Binding(
+                    get: { progress?.status ?? 0 },
+                    set: { updateStatus($0) }
+                )) {
+                    Text("未学").tag(0)
+                    Text("学习中").tag(1)
+                    Text("已掌握").tag(2)
+                }
+                .pickerStyle(.segmented)
+
                 Divider()
                 AnswerWebView(html: wrappedHTML)
                     .frame(minHeight: 400)
@@ -21,6 +45,32 @@ struct QuestionDetailView: View {
         }
         .navigationTitle("题目详情")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { touch() }
+    }
+
+    private func ensureProgress() -> UserProgress {
+        if let p = progress { return p }
+        let p = UserProgress(questionId: question.id)
+        ctx.insert(p)
+        return p
+    }
+
+    private func touch() {
+        let p = ensureProgress()
+        p.lastViewedAt = Date()
+        try? ctx.save()
+    }
+
+    private func toggleFavorite() {
+        let p = ensureProgress()
+        p.favorited.toggle()
+        try? ctx.save()
+    }
+
+    private func updateStatus(_ s: Int) {
+        let p = ensureProgress()
+        p.status = s
+        try? ctx.save()
     }
 
     private var wrappedHTML: String {

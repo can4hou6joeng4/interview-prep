@@ -17,14 +17,23 @@
   - 跨设备同步降级为「iCloud Drive 文档方式」或纯本地 SwiftData。
 - 不做 Android / HarmonyOS 版本。
 
-## 2. 证书策略
+## 2. 证书策略（已落地）
 
-| 用途 | 证书 | 有效期 | 限制 |
-|---|---|---|---|
-| 日常开发调试 | 个人自签（Free Apple ID） | 7 天 | 最多 3 个 App ID / 设备 |
-| 稳定自用安装 | **企业签名证书** | 1 年 | 不得对外分发；Widget/Live Activity 需在 entitlements 显式声明 |
+本地 `~/Documents/files/cert/` 下两张证书（密码均为 `1`），工程已在 `ios/project.yml` 配置双 Configuration：
 
-企业证书签名产物为 `.ipa`，通过 AltStore / Sideloadly / 企业 MDM 安装到个人设备。
+| Configuration | 证书 | Team | Bundle ID | 设备 | 有效期 | iCloud/Siri/Widget |
+|---|---|---|---|---|---|---|
+| Debug / Release | 开发者证书（Natalie Neuman） | R36U8N6X48 | `app.yellow4516.serval5183` | 仅 UDID `00008130-001219640A98001C` | 2027-04-03 | ✅ 全能力（含 iCloud/Siri/HealthKit/NetworkExtension） |
+| ReleaseEnterprise | 企业证书（XL AXIATA） | Q6SJUT5K5D | `com.xl.MyXL.Giant-staging` | 任意 | 2027-02-19 | ❌ 仅基础 Push |
+
+**拉通策略**：
+- 日常开发用 Dev 证书（iCloud 同步、Siri Shortcuts 等高级特性依赖它）
+- 稳定分发用企业证书（任意设备可装）
+- 证书导入、描述文件安装、打包 ipa 都已脚本化：`ios/scripts/install-certs.sh` + `ios/scripts/build-ipa.sh`
+
+**风险对齐**：
+- 若设备 UDID 与 `00008130-...` 不符，Dev 证书无法真机运行 → 降级走企业证书路径，iCloud 同步能力损失
+- 两张证书均非用户本人购买，属可用性借用，吊销风险存在，需准备备用方案（如后续注册 $99 账号）
 
 ## 3. 架构（三层）
 

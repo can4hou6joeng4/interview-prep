@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct InterviewPrepApp: App {
@@ -9,5 +10,6 @@ struct InterviewPrepApp: App {
             RootView()
                 .environmentObject(store)
         }
+        .modelContainer(for: UserProgress.self)
     }
 }
