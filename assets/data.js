@@ -147,6 +147,43 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>什么是 Goroutine 泄漏</h4>\n<p>goroutine 启动后因为某种原因永远无法退出，持续占用内存和调度资源。累积下去会导致内存持续增长，最终 OOM。</p>\n<h4>五种典型泄漏场景</h4>\n<ul>\n<li><b>无缓冲 channel 读写未配对</b>：发送端没有接收者，或接收端没有发送者，goroutine 永久阻塞</li>\n<li><b>锁未释放</b>：<code>mu.Lock()</code> 后没有 <code>Unlock()</code>（panic 导致跳过 defer），等待该锁的所有 goroutine 永久阻塞</li>\n<li><b>WaitGroup 计数错误</b>：<code>Add(1)</code> 但 <code>Done()</code> 少调一次，<code>Wait()</code> 永远不返回</li>\n<li><b>网络 I/O 无超时</b>：<code>conn.Read</code> 对方不响应，goroutine 永久阻塞在 netpoller</li>\n<li><b>for-select 无退出条件</b>：循环里没有监听 <code>ctx.Done()</code>，goroutine 无法被通知停止</li>\n</ul>\n<h4>排查方法</h4>\n<ul>\n<li><code>runtime.NumGoroutine()</code> 暴露为监控指标，观察是否持续增长</li>\n<li><code>pprof goroutine</code> profile：<code>go tool pprof http://localhost:6060/debug/pprof/goroutine</code></li>\n<li>查看阻塞位置的栈信息，定位到具体代码行</li>\n</ul>\n<h4>预防套路</h4>\n<ul>\n<li>所有阻塞操作加超时：<code>context.WithTimeout</code>、<code>time.After</code></li>\n<li>用 <code>defer</code> 保证 Unlock / Done / Close</li>\n<li>for-select 循环里必须有 <code>case <-ctx.Done(): return</code></li>\n<li>启动 goroutine 时想清楚\"它什么时候退出\"</li>\n</ul>\n<div class=\"key-point\">面试时最好补一句：线上监控 goroutine 数量是发现泄漏的第一道防线，pprof 是定位具体代码的工具。</div>",
         "id": "q-ha99tv"
+      },
+      {
+        "q": "从 Java 转 Go 的动机是什么？两种语言在后端开发中各自的优势和局限？",
+        "diff": "medium",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>为什么要转</h4>\n<p>这个问题面试官一定会问，因为你的简历有明确的 Java→Go 迁移轨迹。回答要诚恳且有技术判断，不能只说\"Go 更火\"。</p>\n<h4>Go 相比 Java 的优势</h4>\n<ul>\n<li><b>并发模型更轻量</b>：goroutine 初始栈 2KB，Java 线程默认 1MB。同样的机器 Go 能轻松跑几十万 goroutine，Java 线程池通常几百到几千</li>\n<li><b>编译部署简单</b>：Go 编译成单一静态二进制，不需要 JVM，Docker 镜像可以做到几十 MB；Java 需要打包 JAR + JVM 环境，镜像动辄几百 MB</li>\n<li><b>启动速度快</b>：Go 服务毫秒级启动，适合 K8s 弹性扩缩容；Java 有 JVM 预热、类加载开销，冷启动慢</li>\n<li><b>内存占用低</b>：没有 JVM 的堆外开销，适合多实例微服务部署</li>\n<li><b>语法简洁</b>：没有继承、没有泛型滥用（Go 1.18 后有限泛型），代码风格统一（gofmt 强制格式化）</li>\n</ul>\n<h4>Java 相比 Go 的优势</h4>\n<ul>\n<li><b>生态更成熟</b>：Spring 全家桶、Hibernate、各种中间件客户端，企业级方案经过数十年验证</li>\n<li><b>OOP 表达力更强</b>：继承、接口默认方法、注解处理器、AOP 切面，适合大型复杂业务建模</li>\n<li><b>JVM 调优空间大</b>：G1/ZGC 等 GC 算法可精细调优，Go 的 GC 调优手段相对有限</li>\n<li><b>IDE 支持更好</b>：重构、代码导航、调试体验 Java 生态领先</li>\n<li><b>泛型和类型系统更完整</b>：Java 泛型虽然有擦除问题，但表达力远超 Go 的有限泛型</li>\n</ul>\n<h4>你的实际转型经历怎么讲</h4>\n<p>结合简历：在佑安做仓储系统用 Spring Boot + MyBatis-Plus + Activiti7，后来转到快勤做跨境电商 SaaS 用 Go + Fiber + GORM。转型动机：跨境电商 SaaS 需要高并发、多租户、轻量部署，Go 的并发模型和部署优势更匹配这种场景。</p>\n<div class=\"project-link\">简历关联：佑安土木（Java/Spring Boot）→ 快勤技术（Go/Fiber），有从 Java 到 Go 的技术栈迁移实践</div>\n<div class=\"key-point\">不要贬低 Java 来抬高 Go，面试官可能就是 Java 背景。正确的表达是\"根据业务场景选择更合适的工具\"。</div>",
+        "id": "q-3jsw8b"
+      },
+      {
+        "q": "Go 和 Java 在并发模型上有什么本质区别？goroutine vs 线程池，channel vs synchronized？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>并发原语对比</h4>\n<table>\n<tr><th>维度</th><th>Java</th><th>Go</th></tr>\n<tr><td>基本并发单元</td><td>Thread（OS 线程），或 Virtual Thread（Java 21+）</td><td>goroutine（用户态轻量级线程）</td></tr>\n<tr><td>创建开销</td><td>线程 ~1MB 栈，创建涉及内核态</td><td>goroutine ~2KB 栈，纯用户态创建</td></tr>\n<tr><td>并发数量级</td><td>线程池通常几百~几千</td><td>goroutine 轻松几十万</td></tr>\n<tr><td>通信方式</td><td>共享内存 + 锁（synchronized/ReentrantLock）</td><td>优先 channel 通信，也支持 sync.Mutex</td></tr>\n<tr><td>并发安全集合</td><td>ConcurrentHashMap / CopyOnWriteArrayList</td><td>sync.Map / 普通 map + mutex</td></tr>\n<tr><td>异步编程</td><td>CompletableFuture / Reactor</td><td>goroutine + channel 天然异步</td></tr>\n</table>\n<h4>核心理念差异</h4>\n<ul>\n<li><b>Java</b>：共享内存 + 锁保护 → 需要小心死锁、竞态条件，代码复杂度随并发量上升</li>\n<li><b>Go</b>：\"Don't communicate by sharing memory, share memory by communicating\" → channel 传递数据所有权，减少锁的使用</li>\n</ul>\n<h4>Java 21 Virtual Thread 的影响</h4>\n<p>Java 21 引入虚拟线程，概念上接近 goroutine——轻量、大量创建、用户态调度。但 Go 的 channel + select 多路复用在语言层面集成更深，而 Java 虚拟线程仍然依赖传统的 synchronized/Lock 做同步。</p>\n<h4>实际项目中的体感</h4>\n<p>在 Java 项目中做并发通常靠线程池 + Future + 加锁；在 Go 项目中同样的功能用 goroutine + channel + errgroup 更简洁直观。比如框架的 18 步初始化链，用 errgroup 几行代码就能实现\"串行有依赖 + 并行无依赖\"的两阶段模型。</p>\n<div class=\"key-point\">如果被追问\"Java Virtual Thread 出来后 Go 的并发优势还在吗\"——答：虚拟线程缩小了差距，但 Go 的 channel/select 语言级集成、GMP 调度成熟度、以及整体部署轻量性仍是优势。</div>",
+        "id": "q-dbi34y"
+      },
+      {
+        "q": "Go 和 Java 的错误处理有什么区别？为什么 Go 选择 error 返回值而不是 try-catch？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>两种错误处理模型</h4>\n<ul>\n<li><b>Java</b>：异常机制（try-catch-finally），分 Checked Exception 和 Unchecked Exception。错误沿调用栈向上抛出，可以在任意层捕获</li>\n<li><b>Go</b>：函数返回值（<code>value, error</code>），错误作为普通返回值显式处理。<code>panic/recover</code> 只用于真正不可恢复的异常</li>\n</ul>\n<h4>Go 为什么这样设计</h4>\n<ul>\n<li><b>显式优于隐式</b>：每个可能出错的调用点都要求你写 <code>if err != nil</code>，逼你思考这个错误该怎么处理</li>\n<li><b>避免异常滥用</b>：Java 中经常看到用异常做流程控制（如 NumberFormatException），性能差且语义不清</li>\n<li><b>更可预测的控制流</b>：函数签名就能看出会不会出错，不像 Java 可能在任何地方抛出 RuntimeException</li>\n</ul>\n<h4>Go 错误处理的痛点</h4>\n<ul>\n<li><code>if err != nil</code> 写得太多，代码啰嗦——这是社区最常见的抱怨</li>\n<li>缺少堆栈信息，需要 <code>fmt.Errorf(\"xxx: %w\", err)</code> 手动包装或用 <code>pkg/errors</code></li>\n<li>没有 finally 对应物，靠 <code>defer</code> 来做资源清理</li>\n</ul>\n<h4>Go 1.13+ 的改进</h4>\n<pre><code>// 错误包装\nreturn fmt.Errorf(\"query user failed: %w\", err)\n// 错误断言\nif errors.Is(err, sql.ErrNoRows) { ... }\n// 错误类型提取\nvar myErr *MyError\nif errors.As(err, &myErr) { ... }</code></pre>\n<div class=\"key-point\">面试时可以对比着说：Java 的异常更方便但容易被滥用，Go 的 error 更显式但写起来啰嗦。各有取舍，不是谁绝对更好。</div>",
+        "id": "q-ueisf2"
+      },
+      {
+        "q": "Go 和 Java 在内存管理和 GC 上有什么区别？对线上服务有什么影响？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>内存模型对比</h4>\n<table>\n<tr><th>维度</th><th>Java</th><th>Go</th></tr>\n<tr><td>内存区域</td><td>堆 + 栈 + 方法区 + 元空间，JVM 统一管理</td><td>堆 + 栈，编译器通过逃逸分析决定分配位置</td></tr>\n<tr><td>GC 算法</td><td>多种可选：G1（默认）、ZGC、Shenandoah</td><td>并发三色标记清除 + 混合写屏障</td></tr>\n<tr><td>GC 调优</td><td>丰富：堆大小、新生代比例、GC 线程数、停顿目标等几十个参数</td><td>简单：GOGC（控制堆增长比例）、GOMEMLIMIT（Go 1.19+）</td></tr>\n<tr><td>STW 停顿</td><td>G1 目标 <200ms，ZGC 目标 <1ms</td><td>通常 <1ms（Mark Setup + Mark Termination）</td></tr>\n<tr><td>逃逸分析</td><td>JIT 编译器做标量替换和栈上分配</td><td>编译期逃逸分析，<code>-gcflags=\"-m\"</code> 可查看</td></tr>\n</table>\n<h4>对线上服务的影响</h4>\n<ul>\n<li><b>Java</b>：需要预留 JVM 堆外内存，容器内存限制要设得比 -Xmx 大；GC 调优是性能优化的重要环节，调得好可以跑得很快，调不好容易 Full GC 导致停顿</li>\n<li><b>Go</b>：内存占用更可预测，GC 几乎不需要调（默认 GOGC=100 就够用）；但如果分配过多短命对象，GC 频率高，可以用 sync.Pool 缓解</li>\n</ul>\n<h4>从 Java 转 Go 的体感</h4>\n<p>Java 服务动辄几百 MB 内存起步（JVM 本身的开销），Go 服务几十 MB 就能跑。在多租户 SaaS 场景下，Go 的低内存占用意味着同一台机器能跑更多实例，基础设施成本更低。</p>\n<div class=\"key-point\">面试追问\"Go 的 GC 够用吗\"——答：对 99% 的后端服务足够了，STW 在亚毫秒级。只有少数极低延迟场景（如量化交易）才需要考虑更精细的 GC 控制，那种场景可能 Rust/C++ 更合适。</div>",
+        "id": "q-5cwrb2"
       }
     ]
   },
@@ -212,6 +249,16 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>先区分两个概念</h4>\n<ul>\n<li><b>不可重复读</b>：同一行数据被其他事务 UPDATE，两次读结果不同</li>\n<li><b>幻读</b>：同一条件查询，第二次多出或少了几行（其他事务 INSERT/DELETE）</li>\n</ul>\n<h4>快照读 vs 当前读</h4>\n<ul>\n<li><b>快照读</b>（普通 SELECT）：通过 <b>MVCC</b>（ReadView + undo log 版本链）读取事务开始时的快照。其他事务新插入的行对当前事务不可见，天然避免幻读</li>\n<li><b>当前读</b>（SELECT ... FOR UPDATE / INSERT / UPDATE / DELETE）：读取最新已提交数据，通过 <b>Next-Key Lock</b>（记录锁 + 间隙锁）锁住查询范围，阻止其他事务在范围内插入新行</li>\n</ul>\n<h4>Next-Key Lock 怎么防幻读</h4>\n<pre><code>-- 事务 A\nSELECT * FROM orders WHERE amount > 100 FOR UPDATE;\n-- 锁住 amount > 100 的所有已有记录（Record Lock）\n-- 同时锁住 (100, +∞) 的间隙（Gap Lock）\n-- 事务 B 想 INSERT amount=150 → 被间隙锁阻塞</code></pre>\n<h4>一个常见误区</h4>\n<p>\"可重复读不能防幻读，只有串行化才行\"——这在 SQL 标准里是对的，但 <b>InnoDB 的可重复读通过 MVCC + Next-Key Lock 在绝大多数场景下已经解决了幻读</b>。只有极少数边界场景（如同一事务内先快照读再当前读）可能看到不一致。</p>\n<div class=\"key-point\">面试时最好说清：快照读靠 MVCC 天然防幻读，当前读靠 Next-Key Lock 锁范围防幻读。两种机制配合，而不是只有一种。</div>",
         "id": "q-usbl7u"
+      },
+      {
+        "q": "分表之后，跨分片的范围查询和分页怎么做？有哪些常见方案和取舍？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>为什么分表后查询变难</h4>\n<p>单表时 <code>ORDER BY created_at DESC LIMIT 10 OFFSET 100</code> 很简单。分表后数据散落在多个物理表中，无法直接跨表排序和分页。</p>\n<h4>常见方案</h4>\n<ul>\n<li><b>方案一：归并排序法</b>\n  <ul>\n  <li>每个分片执行相同查询（带排序），应用层对多个结果集做归并排序，取前 N 条</li>\n  <li>问题：深分页时每个分片都要取 offset+limit 条数据，内存和性能随页码线性增长</li>\n  </ul>\n</li>\n<li><b>方案二：禁止跳页 + 游标分页</b>\n  <ul>\n  <li>不允许直接跳到第 100 页，只支持\"下一页\"</li>\n  <li>用上一页最后一条的排序字段值做游标：<code>WHERE created_at < ? ORDER BY created_at DESC LIMIT 10</code></li>\n  <li>每个分片只需返回 limit 条数据，内存开销恒定</li>\n  <li>这是<b>生产中最推荐的方案</b></li>\n  </ul>\n</li>\n<li><b>方案三：二次查询法</b>\n  <ul>\n  <li>第一轮：每个分片查 <code>LIMIT offset/N, limit</code>（N 是分片数），收集边界值</li>\n  <li>第二轮：根据全局排序范围精确查询各分片</li>\n  <li>适合数据分布均匀的场景</li>\n  </ul>\n</li>\n<li><b>方案四：异构索引表</b>\n  <ul>\n  <li>维护一张全局排序索引表（只存 ID + 排序字段），用它做分页定位，再回源分片取完整数据</li>\n  <li>适合查询维度固定、写入频率可控的场景</li>\n  </ul>\n</li>\n</ul>\n<h4>你的项目实践</h4>\n<p>Shoply 按 store_id 分片，大多数查询天然带 store_id 条件，所以路由到单个分片后就是单表查询，不涉及跨分片。只有后台运营统计类查询需要跨分片，这类场景用异步聚合 + 缓存解决，不做实时跨分片分页。</p>\n<div class=\"project-link\">简历关联：自定义 GORM Sharding 按租户 ID 分片，大部分查询路由到单分片避免跨片问题</div>\n<div class=\"key-point\">面试最佳回答：先说\"我的分片策略让大多数查询不需要跨分片\"，再展开\"如果确实需要跨分片，生产上推荐游标分页\"。</div>",
+        "id": "q-yq4cwq"
       }
     ]
   },
@@ -748,6 +795,15 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>基础高可用</h4>\n<ul>\n<li>计算层跨多个 Availability Zone 部署，前面挂 ALB 或 NLB</li>\n<li>数据库用 RDS Multi-AZ，关键数据定期快照</li>\n<li>静态资源放 S3 + CloudFront，减少源站压力</li>\n<li>配置和密钥交给 Parameter Store 或 Secrets Manager</li>\n</ul>\n<h4>容灾设计</h4>\n<ul>\n<li>同 Region 内做 AZ 级容灾，防单机房故障</li>\n<li>跨 Region 做异地备份或热备，防区域级故障</li>\n<li>提前定义 RPO / RTO，别把容灾答成“多备几份”</li>\n</ul>\n<h4>发布与回滚</h4>\n<p>可以用蓝绿或金丝雀发布，配合 Route 53、ALB 权重或应用层开关；回滚时优先切流，再回退镜像或版本。</p>",
         "id": "q-1aoeo63"
+      },
+      {
+        "q": "Docker 容器和虚拟机的核心区别是什么？namespace 和 cgroup 分别解决什么问题？",
+        "diff": "easy",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>核心区别</h4>\n<table>\n<tr><th>维度</th><th>虚拟机</th><th>Docker 容器</th></tr>\n<tr><td>隔离级别</td><td>硬件虚拟化，每个 VM 有独立 OS 内核</td><td>OS 级隔离，共享宿主机内核</td></tr>\n<tr><td>启动速度</td><td>分钟级（要启动完整 OS）</td><td>秒级甚至毫秒级</td></tr>\n<tr><td>资源开销</td><td>重（每个 VM 需要独立的内核、系统进程）</td><td>轻（只有应用进程和依赖）</td></tr>\n<tr><td>镜像大小</td><td>GB 级</td><td>MB 级（多阶段构建后）</td></tr>\n<tr><td>安全隔离</td><td>更强（独立内核，攻击面小）</td><td>较弱（共享内核，存在逃逸风险）</td></tr>\n<tr><td>典型用途</td><td>不同 OS 环境、强隔离需求</td><td>微服务部署、CI/CD、快速扩缩容</td></tr>\n</table>\n<h4>Linux 两大隔离技术</h4>\n<ul>\n<li><b>namespace</b>：实现资源视图隔离。不同容器看到独立的 PID、网络栈、文件系统、用户等\n  <ul>\n  <li><code>PID namespace</code>：容器内进程 PID 从 1 开始</li>\n  <li><code>Network namespace</code>：独立网络栈、IP、端口</li>\n  <li><code>Mount namespace</code>：独立文件系统挂载点</li>\n  <li><code>UTS namespace</code>：独立主机名</li>\n  </ul>\n</li>\n<li><b>cgroup (Control Group)</b>：实现资源用量限制。防止某个容器占用过多资源\n  <ul>\n  <li>限制 CPU 使用率、内存上限、磁盘 I/O 带宽、网络带宽</li>\n  <li>K8s 的 <code>resources.limits</code> 底层就是 cgroup</li>\n  </ul>\n</li>\n</ul>\n<h4>一句话总结</h4>\n<p>namespace 让容器\"看到\"自己独立的世界，cgroup 让容器\"用到\"有限的资源。两者结合实现了轻量级隔离。</p>\n<div class=\"key-point\">面试追问\"容器比虚拟机不安全在哪\"——答：共享内核意味着内核漏洞可能导致容器逃逸。生产环境通常通过 seccomp、AppArmor、只读文件系统等加固。</div>",
+        "id": "q-1juftm"
       }
     ]
   },
@@ -1023,6 +1079,52 @@ window.INTERVIEW_DATA = [
         ],
         "a": "<h4>推荐用 UUFind 项目（STAR 法）</h4>\n<ul>\n<li><b>S</b>：UUFind 需要聚合 1688/淘宝多渠道商品，各平台 ID 和数据结构不同</li>\n<li><b>T</b>：独立负责设计整个平台的数据模型和后端业务（210+ commits）</li>\n<li><b>A</b>：设计 UufindProduct 统一商品标识 + AgentLink 跨渠道关联；构建 ExternalGoodsService 实现 URL 实时解析落库 + 原站优先查询；引入请求级汇率缓存</li>\n<li><b>R</b>：平台上线稳定运行，商品列表响应时间显著下降</li>\n</ul>\n<h4>备选：支付串单问题</h4>\n<ul>\n<li><b>S</b>：游客在公用设备下单后，下一个游客购物车出现前人商品</li>\n<li><b>A</b>：排查发现 visitorId Cookie 未在登录时清除 → 重构归户逻辑：只归户当前 session 的 visitorId 并清除旧绑定</li>\n<li><b>R</b>：线上串单问题归零</li>\n</ul>\n<div class=\"key-point\">STAR 法：Situation 简短、Task 说清职责、Action 要具体、Result 要量化</div>",
         "id": "q-proj-star-behavior"
+      },
+      {
+        "q": "AI 辅助编程工具（Claude Code / Cursor / Codex）在实际项目中怎么用？各自擅长什么？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么面试会问这个</h4>\n<p>越来越多公司把\"会用 AI 工具\"作为硬性要求。不是问你\"知不知道有这些工具\"，而是要看你<b>日常开发中真的在用，并且能说出具体提效场景</b>。</p>\n<h4>主流 AI 编程工具定位</h4>\n<ul>\n<li><b>Claude Code (CLI)</b>：终端原生的 AI 编程助手，擅长多文件重构、代码库级别的理解、复杂 debug。适合后端工程师在终端工作流中使用</li>\n<li><b>Cursor</b>：基于 VS Code 的 AI IDE，Tab 补全 + Chat + Composer 多文件编辑。适合需要实时补全和可视化的全栈开发</li>\n<li><b>GitHub Copilot</b>：最广泛的行级补全工具，集成到各种 IDE。适合日常编码加速</li>\n<li><b>Codex (OpenAI)</b>：API 级别的代码生成能力，适合集成到自动化流水线或自定义工具中</li>\n<li><b>Gemini CLI</b>：Google 的终端 AI 工具，擅长搜索整合和代码生成</li>\n</ul>\n<h4>实际提效场景</h4>\n<ul>\n<li><b>代码生成</b>：给 AI 描述业务需求，生成 CRUD、数据模型、API 路由的初始代码，再人工审查调整</li>\n<li><b>Debug</b>：把报错信息和相关代码丢给 AI，让它分析根因并给出修复方案</li>\n<li><b>重构</b>：让 AI 理解现有代码结构后，批量重命名、拆分函数、提取公共模块</li>\n<li><b>写测试</b>：给 AI 看实现代码，让它生成 Table-Driven Tests，覆盖正常/边界/异常用例</li>\n<li><b>代码审查</b>：让 AI 审查 PR diff，找潜在 bug、性能问题、安全风险</li>\n<li><b>文档与注释</b>：给复杂函数生成清晰的文档和使用示例</li>\n</ul>\n<h4>怎么答得像真正在用</h4>\n<p>不要泛泛而谈，要举具体例子：\"上周我用 Claude Code 重构了支付模块的错误处理链路，它理解了整个 Checkout→Payment→Webhook 的调用关系，一次性把 15 个文件的错误包装统一成 fmt.Errorf + %w 格式。人工审查后只改了两处。\"</p>\n<div class=\"key-point\">核心态度：AI 是加速器不是替代品。你要展示的是\"我用 AI 提效，但我能判断 AI 的输出质量并做最终决策\"。</div>",
+        "id": "q-u76ayt"
+      },
+      {
+        "q": "AI 驱动开发的工作流是什么？从需求到代码到测试，怎么和 AI 配合？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>AI 驱动开发 ≠ 让 AI 写所有代码</h4>\n<p>AI 驱动开发是一种<b>人机协作的工作方式</b>：人负责需求理解、架构决策、质量把关；AI 负责代码生成、模式识别、重复劳动。</p>\n<h4>典型工作流（以功能开发为例）</h4>\n<ol>\n<li><b>需求理解</b>：用 AI 帮忙梳理需求文档，生成技术方案大纲，列出需要修改的文件和接口</li>\n<li><b>架构设计</b>：人做关键决策（数据模型、接口设计、技术选型），AI 辅助画图或生成设计文档</li>\n<li><b>代码实现</b>：AI 生成初始代码框架（路由、模型、基础 CRUD），人审查并补充业务逻辑</li>\n<li><b>测试编写</b>：AI 根据实现代码生成单元测试和集成测试用例</li>\n<li><b>代码审查</b>：AI 做第一轮审查（风格、安全、性能），人做最终审查</li>\n<li><b>Debug</b>：遇到问题时，把错误上下文给 AI 分析，快速定位根因</li>\n</ol>\n<h4>提效的关键不是工具，是 Prompt 质量</h4>\n<ul>\n<li><b>给足上下文</b>：不是说\"帮我写个接口\"，而是\"这是现有的 Order 模型和路由结构，我需要新增一个退款接口，要求幂等、记日志、支持 PayPal 和 Stripe 两个通道\"</li>\n<li><b>分步骤拆</b>：复杂功能拆成小步骤，每步让 AI 做一件事，逐步推进</li>\n<li><b>给约束条件</b>：代码风格、框架版本、错误处理方式、命名规范——约束越明确，输出越可用</li>\n<li><b>让 AI 解释</b>：生成代码后让它解释为什么这么写，判断它的理解是否正确</li>\n</ul>\n<h4>常见误区</h4>\n<ul>\n<li>❌ 完全信任 AI 输出，不做审查</li>\n<li>❌ 让 AI 一次性写整个模块（上下文太大，质量下降）</li>\n<li>❌ 只用 AI 写新代码，不用它做重构和测试（后者提效更大）</li>\n</ul>\n<div class=\"key-point\">面试时的核心信号：你不是\"会按按钮\"，而是\"知道什么时候该用 AI、什么时候不该，以及怎么让 AI 的输出质量更高\"。</div>",
+        "id": "q-wjtvi3"
+      },
+      {
+        "q": "Python、Go、Java 各自适合什么后端场景？出海 SaaS 技术栈怎么选？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>三种语言的后端定位</h4>\n<table>\n<tr><th>维度</th><th>Go</th><th>Python</th><th>Java</th></tr>\n<tr><td>核心优势</td><td>并发性能、部署简单、低资源占用</td><td>开发速度快、AI/ML 生态、胶水语言</td><td>企业级生态、类型安全、大团队协作</td></tr>\n<tr><td>典型场景</td><td>高并发 API、微服务网关、基础设施</td><td>AI 应用、数据处理、快速原型、脚本</td><td>大型业务系统、金融、ERP</td></tr>\n<tr><td>启动速度</td><td>毫秒级</td><td>百毫秒级</td><td>秒级（JVM 预热）</td></tr>\n<tr><td>部署体积</td><td>单二进制 ~10MB</td><td>需 Python 环境 + 依赖</td><td>JAR + JVM ~200MB+</td></tr>\n<tr><td>AI 生态</td><td>弱（调用 API 为主）</td><td>最强（PyTorch/LangChain/HuggingFace）</td><td>中（Spring AI 在追赶）</td></tr>\n<tr><td>类型系统</td><td>静态强类型</td><td>动态类型（可选 type hints）</td><td>静态强类型</td></tr>\n</table>\n<h4>出海 SaaS 技术栈选型思路</h4>\n<ul>\n<li><b>API 层 / 高并发服务</b>：Go — 扛并发、部署轻、K8s 友好</li>\n<li><b>AI 功能模块</b>：Python — 直接用 LangChain/OpenAI SDK，生态最成熟</li>\n<li><b>复杂业务中台</b>：Java — Spring Boot 生态成熟，适合大团队长期维护</li>\n<li><b>前端 + BFF</b>：Next.js / TypeScript — SSR + API Routes 一体化</li>\n</ul>\n<h4>混合架构示例</h4>\n<pre><code>Next.js (前端 + BFF)\n  ↓ HTTP / tRPC\nGo 服务 (核心 API、支付、订单)\n  ↓ gRPC / HTTP\nPython 服务 (AI 内容生成、SEO 优化)\n  ↓\nMySQL + Redis + MQ</code></pre>\n<h4>结合你的经历怎么讲</h4>\n<p>Shoply 平台用 Go + PHP 混合架构，Go 扛高并发和核心链路，PHP 做灵活业务插件。如果面向 AI 驱动的 SaaS，Python 可以替代 PHP 的角色——做 AI 功能模块，而 Go 继续承担性能敏感的核心服务。</p>\n<div class=\"key-point\">面试核心观点：不存在\"一种语言适合所有场景\"，技术选型要看业务特征、团队能力和生态需求。能说清每种语言的边界，比只精通一种更有价值。</div>",
+        "id": "q-7zioa5"
+      },
+      {
+        "q": "后端怎么集成 LLM API（OpenAI / Claude）？流式输出、错误重试、成本控制怎么做？",
+        "diff": "hard",
+        "tags": [
+          "project",
+          "scene"
+        ],
+        "a": "<h4>基本集成架构</h4>\n<pre><code>客户端 → 后端 API → LLM Provider (OpenAI/Claude/国产模型)\n         ↓\n  统一适配层（标准化请求/响应格式）\n         ↓\n  流式输出（SSE/WebSocket → 前端逐字显示）</code></pre>\n<h4>流式输出（Streaming）实现</h4>\n<ul>\n<li><b>后端</b>：调用 LLM API 时设置 <code>stream: true</code>，逐块读取响应</li>\n<li><b>传给前端</b>：用 <b>SSE (Server-Sent Events)</b> 逐块推送，前端用 <code>EventSource</code> 接收</li>\n<li>为什么不用 WebSocket：SSE 更简单，单向推送足够，且 HTTP/2 下复用连接</li>\n</ul>\n<pre><code>// Go 后端 SSE 流式推送示例\nw.Header().Set(\"Content-Type\", \"text/event-stream\")\nw.Header().Set(\"Cache-Control\", \"no-cache\")\nfor chunk := range llmStream {\n    fmt.Fprintf(w, \"data: %s\\n\\n\", chunk)\n    w.(http.Flusher).Flush()\n}</code></pre>\n<h4>错误处理与重试</h4>\n<ul>\n<li><b>超时控制</b>：LLM 响应慢（首 token 可能 2-5 秒），超时设长一些（30-60s），但要有上限</li>\n<li><b>重试策略</b>：429 (Rate Limit) 指数退避重试；500 系列最多重试 2 次；400 系列（Prompt 问题）不重试</li>\n<li><b>模型降级</b>：主模型超时/报错时自动 fallback 到备用模型（如 Claude → GPT-4 → GPT-3.5）</li>\n<li><b>幂等保证</b>：同一请求重试时用相同的 request_id，避免重复计费</li>\n</ul>\n<h4>成本控制</h4>\n<ul>\n<li><b>Token 计量</b>：每次请求记录 input/output token 数，按用户/项目聚合统计</li>\n<li><b>配额管理</b>：按团队设 token 月度预算，接近上限时告警</li>\n<li><b>缓存</b>：相同 Prompt 的结果做语义缓存（Embedding 相似度匹配），避免重复调用</li>\n<li><b>Prompt 优化</b>：减少冗余上下文，用 system prompt 复用替代每次重传</li>\n</ul>\n<div class=\"project-link\">简历关联：你有 AI Agent 模块经验，基于 WebSocket 实现任务状态实时推送。流式输出和错误映射的经验可以直接迁移</div>\n<div class=\"key-point\">面试追问\"你们的 AI 模块怎么控制成本\"——能答出 token 计量 + 语义缓存 + 模型降级这三点就很加分。</div>",
+        "id": "q-16opd4"
+      },
+      {
+        "q": "全栈工程师怎么设计前后端架构？Next.js + 后端 API 的分层方案和职责划分？",
+        "diff": "medium",
+        "tags": [
+          "scene"
+        ],
+        "a": "<h4>为什么面试会问全栈架构</h4>\n<p>全栈岗位不是\"前端后端都会一点\"，而是要求你能<b>设计整体方案并独立交付</b>。面试官要看你对前后端边界、数据流向、部署方式有清晰认知。</p>\n<h4>典型 SaaS 全栈架构</h4>\n<pre><code>用户浏览器\n  ↓\nNext.js (SSR/SSG + API Routes / Server Actions)\n  ↓ 内部 API 调用\n后端服务 (Go/Python/Java)\n  ├─ 核心业务 API\n  ├─ AI 服务（LLM 调用、内容生成）\n  └─ 异步任务（邮件、数据处理）\n  ↓\nMySQL + Redis + MQ + OSS</code></pre>\n<h4>各层职责划分</h4>\n<ul>\n<li><b>Next.js 层</b>：页面渲染（SSR/SSG）、BFF 聚合（把多个后端接口合成前端需要的数据结构）、鉴权中间件、静态资源</li>\n<li><b>后端 API 层</b>：核心业务逻辑、数据校验、事务处理、支付/订单等强一致性操作</li>\n<li><b>AI 服务层</b>：LLM API 调用封装、Prompt 管理、流式输出、结果缓存</li>\n</ul>\n<h4>前后端分离 vs Next.js 全栈</h4>\n<ul>\n<li><b>纯前后端分离</b>（React SPA + 独立后端）：适合大团队、前后端独立部署和迭代</li>\n<li><b>Next.js 全栈</b>（API Routes / Server Actions）：适合小团队快速迭代、SEO 友好、减少部署复杂度</li>\n<li><b>混合方案</b>：Next.js 做 BFF + SSR，核心业务仍由独立后端服务处理——<b>这是出海 SaaS 最常见的架构</b></li>\n</ul>\n<h4>你的经验怎么关联</h4>\n<p>Shoply 项目中你做了前后端全链路：Go 后端 + C 端 Vue 页面 Apple Pay/Google Pay 3DS 集成。这证明你有全栈交付能力，只是前端框架从 Vue 换成 React/Next.js。</p>\n<div class=\"key-point\">全栈面试核心：不是\"我会写前端也会写后端\"，而是\"我能设计整体方案、划清职责边界、独立交付完整功能\"。</div>",
+        "id": "q-xm41mo"
       }
     ]
   },
