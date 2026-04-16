@@ -21,3 +21,9 @@ output/
 content-sources/
 scripts/jd-keywords.json
 scripts/jd-coverage.mjs
+
+# iOS
+ios/*.xcodeproj
+ios/*.xcworkspace
+ios/build/
+ios/DerivedData/
