@@ -3,6 +3,7 @@ window.INTERVIEW_DATA = [
     "cat": "Go 语言核心",
     "icon": "🔷",
     "color": "#6c8cff",
+    "slug": "go-core",
     "items": [
       {
         "q": "Goroutine 的调度模型 GMP 是什么？G、M、P 各代表什么？",
@@ -191,6 +192,7 @@ window.INTERVIEW_DATA = [
     "cat": "MySQL 数据库",
     "icon": "🗄️",
     "color": "#f59e0b",
+    "slug": "mysql",
     "items": [
       {
         "q": "InnoDB 的索引结构是什么？为什么用 B+ 树而不是 B 树或哈希？",
@@ -266,6 +268,7 @@ window.INTERVIEW_DATA = [
     "cat": "Redis 缓存与队列",
     "icon": "🔴",
     "color": "#ef4444",
+    "slug": "redis",
     "items": [
       {
         "q": "Redis 的五种基础数据类型及底层编码？什么时候会发生编码转换？",
@@ -349,6 +352,7 @@ window.INTERVIEW_DATA = [
     "cat": "设计模式与架构",
     "icon": "🏗️",
     "color": "#a78bfa",
+    "slug": "architecture",
     "items": [
       {
         "q": "常见的设计模式有哪几大类？Go 里最常用的是哪些？",
@@ -472,6 +476,7 @@ window.INTERVIEW_DATA = [
     "cat": "支付与交易系统",
     "icon": "💳",
     "color": "#22d3ee",
+    "slug": "payment",
     "items": [
       {
         "q": "支付系统的核心流程是什么？从用户下单到支付完成经历了哪些步骤？",
@@ -580,6 +585,7 @@ window.INTERVIEW_DATA = [
     "cat": "搜索引擎",
     "icon": "🔍",
     "color": "#34d399",
+    "slug": "search",
     "items": [
       {
         "q": "倒排索引的原理？你的 go-es 如何兼容 Elasticsearch Query DSL？",
@@ -641,6 +647,7 @@ window.INTERVIEW_DATA = [
     "cat": "安全防护",
     "icon": "🛡️",
     "color": "#f472b6",
+    "slug": "security",
     "items": [
       {
         "q": "JWT + RSA 认证方案怎么设计？和 HMAC 签名的区别？",
@@ -691,6 +698,7 @@ window.INTERVIEW_DATA = [
     "cat": "WebSocket 与实时通信",
     "icon": "🔌",
     "color": "#fb923c",
+    "slug": "websocket",
     "items": [
       {
         "q": "WebSocket 和 HTTP 长轮询的区别？你在哪些场景用了 WebSocket？",
@@ -743,6 +751,7 @@ window.INTERVIEW_DATA = [
     "cat": "Docker 与部署",
     "icon": "🐳",
     "color": "#0ea5e9",
+    "slug": "docker",
     "items": [
       {
         "q": "Go 项目的 Dockerfile 如何写？多阶段构建有什么好处？",
@@ -811,6 +820,7 @@ window.INTERVIEW_DATA = [
     "cat": "项目场景深挖",
     "icon": "🎯",
     "color": "#e879f9",
+    "slug": "project",
     "items": [
       {
         "q": "「游客订单归户」是什么？购物车串单问题怎么解决的？",
@@ -1250,6 +1260,7 @@ window.INTERVIEW_DATA = [
     "cat": "高频手撕代码",
     "icon": "✍️",
     "color": "#facc15",
+    "slug": "coding",
     "items": [
       {
         "q": "用 Go 实现一个并发安全的 LRU Cache",
@@ -1315,6 +1326,7 @@ window.INTERVIEW_DATA = [
     "cat": "测试与工程质量",
     "icon": "🧪",
     "color": "#14b8a6",
+    "slug": "testing",
     "items": [
       {
         "q": "Go 项目如何做好单元测试？Table-Driven Tests、Mock、覆盖率分别怎么用？",
@@ -1358,6 +1370,7 @@ window.INTERVIEW_DATA = [
     "cat": "Kafka 消息队列",
     "icon": "📨",
     "color": "#10b981",
+    "slug": "kafka",
     "items": [
       {
         "q": "Kafka 的核心架构？Producer / Broker / Consumer / Partition 分别是什么？",
@@ -1424,6 +1437,7 @@ window.INTERVIEW_DATA = [
     "cat": "计算机网络",
     "icon": "🌐",
     "color": "#818cf8",
+    "slug": "network",
     "items": [
       {
         "q": "TCP 三次握手和四次挥手的流程？为什么握手三次，挥手四次？",
@@ -1497,6 +1511,7 @@ window.INTERVIEW_DATA = [
     "cat": "Kubernetes 深入",
     "icon": "☸️",
     "color": "#326ce5",
+    "slug": "kubernetes",
     "items": [
       {
         "q": "K8s 的核心架构？Master 和 Node 各有哪些组件？",
@@ -1562,6 +1577,7 @@ window.INTERVIEW_DATA = [
     "cat": "MongoDB",
     "icon": "🍃",
     "color": "#47a248",
+    "slug": "mongodb",
     "items": [
       {
         "q": "MongoDB 和 MySQL 的核心区别？什么场景适合用 MongoDB？",
@@ -1617,6 +1633,7 @@ window.INTERVIEW_DATA = [
     "cat": "高并发与高可用",
     "icon": "⚡",
     "color": "#f43f5e",
+    "slug": "concurrency",
     "items": [
       {
         "q": "什么是高并发？QPS、TPS、RT、P99 这些指标分别是什么意思？",
@@ -1745,6 +1762,7 @@ window.INTERVIEW_DATA = [
     "cat": "微服务治理",
     "icon": "🔗",
     "color": "#06b6d4",
+    "slug": "microservices",
     "items": [
       {
         "q": "微服务的服务发现有哪些方式？注册中心的作用？",
@@ -1872,6 +1890,7 @@ window.INTERVIEW_DATA = [
     "cat": "Linux 基础",
     "icon": "🐧",
     "color": "#fbbf24",
+    "slug": "linux",
     "items": [
       {
         "q": "常用的 Linux 排查命令？线上服务 CPU 飙高怎么定位？",
