@@ -14,6 +14,7 @@ on:
       - robots.txt
       - sitemap.xml
       - site.webmanifest
+      - googled42fe79d25dbdc9a.html
       - scripts/validate-data.mjs
       - scripts/validate-site.mjs
       - .github/workflows/deploy.yml
@@ -64,7 +65,7 @@ jobs:
               cp -R "$dir" dist/
             fi
           done
-          for file in CNAME robots.txt site.webmanifest sitemap.xml 404.html study.html mock.html; do
+          for file in CNAME robots.txt site.webmanifest sitemap.xml 404.html study.html mock.html googled42fe79d25dbdc9a.html; do
             if [ -f "$file" ]; then
               cp "$file" dist/
             fi
