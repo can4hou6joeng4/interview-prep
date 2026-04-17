@@ -3,6 +3,7 @@ import CoreSpotlight
 
 struct RootView: View {
     @EnvironmentObject private var store: QuestionStore
+    @EnvironmentObject private var deeplink: DeepLink
     @State private var selectedTab: Int = 0
     @State private var deepLinkQuestion: Question?
     @State private var deepLinkCategory: Category?
@@ -44,6 +45,11 @@ struct RootView: View {
             deepLinkQuestion = q
             selectedTab = 0
         }
+        .onChange(of: deeplink.pending) { _, target in
+            guard let t = target else { return }
+            handle(target: t)
+            deeplink.pending = nil
+        }
         .sheet(item: $deepLinkQuestion) { q in
             if let cat = deepLinkCategory {
                 NavigationStack {
@@ -54,6 +60,24 @@ struct RootView: View {
                             }
                         }
                 }
+            }
+        }
+    }
+
+    private func handle(target: DeepLinkTarget) {
+        switch target {
+        case .random:
+            selectedTab = 2
+            if let (cat, q) = store.randomQuestion() {
+                deepLinkCategory = cat
+                deepLinkQuestion = q
+            }
+        case .review:
+            selectedTab = 0
+        case .question(let id):
+            if let (cat, q) = store.find(questionId: id) {
+                deepLinkCategory = cat
+                deepLinkQuestion = q
             }
         }
     }

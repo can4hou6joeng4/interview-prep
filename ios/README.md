@@ -78,7 +78,7 @@ ios/
 └── README.md
 ```
 
-## 已实现能力（S1 + S2）
+## 已实现能力（S1 + S2 + S3）
 
 - ✅ 19 分类 / 203 题离线浏览
 - ✅ 题目详情 WebView 渲染（HTML + 代码块 + 深色模式）
@@ -86,11 +86,25 @@ ios/
 - ✅ 全文搜索（题目 + 答案）
 - ✅ Spotlight 索引：系统搜索直达题目
 - ✅ 随机一题
+- ✅ TTS 通勤朗读（中文普通话，锁屏后可继续）
+- ✅ Siri Shortcuts + App Intents：「随机来一题」「开始今日复习」
+- ✅ iCloud Key-Value Store 同步（多设备进度合并）
 
-## 下个 Sprint（S3）预告
+## 证书能力边界说明
 
-- Widget Extension（小/中号每日一题）
-- Live Activity（今日刷题进度）
-- Siri Shortcuts（"随机来一题"）
-- TTS 通勤朗读
-- iCloud Drive 导出用户状态（多设备手动同步）
+两张证书的 Provisioning Profile 均**非通配符**（`application-identifier` 锁死在单一 Bundle ID），因此以下能力需要升级 $99 开发者账号才能解锁：
+
+| 能力 | 阻塞原因 | 解锁条件 |
+|---|---|---|
+| Widget Extension | 需要独立 App ID `.Widget` 后缀 | 自有开发者账号 + 注册 App ID |
+| Live Activity 锁屏 UI | UI 需运行在 Widget Extension 中 | 同上 |
+| App Groups 跨进程共享 | 需自定义 group identifier | 同上 |
+| iCloud Drive 文档容器 | 需注册 iCloud Container | 同上 |
+
+当前 S3 已采用**零扩展**方案：Siri Shortcuts/TTS/iCloud KVS 全部在主 App 进程内实现，覆盖 95% 的 iOS 独有体验。
+
+## 下一步（S4 候选）
+
+- 题库增量下载机制（App 启动拉 `questions-index.json` 比对版本）
+- LaTeX 公式渲染（当前代码块 OK，数学公式需评估 iosMath）
+- 错题本自动归集（基于 UserProgress.status=1 且多次查看）

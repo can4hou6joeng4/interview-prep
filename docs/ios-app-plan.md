@@ -106,12 +106,12 @@ ios/
 - [ ] 全文搜索（本地）：按标题 + 答案文本倒排
 - [ ] Spotlight 索引（`CoreSpotlight`）：系统搜索直达题目
 
-### S3 — iOS 独有能力
-- [ ] Widget（小/中/大三种）：每日一题、分类进度、最近错题
-- [ ] Live Activity：今日刷题进度
-- [ ] Siri Shortcuts：「随机来一题」「开始今日复习」
-- [ ] TTS（`AVSpeechSynthesizer`）：通勤朗读模式，支持锁屏控制
-- [ ] iCloud Drive 导出：`UserProgress` 序列化为 JSON 落到 `~/Library/Mobile Documents/`，多设备手动导入
+### S3 — iOS 独有能力（已完成）
+- [x] TTS 通勤朗读（`AVSpeechSynthesizer` + `AVAudioSession` 后台播放）
+- [x] Siri Shortcuts（`AppIntent` + `AppShortcutsProvider`）：随机来一题 / 开始今日复习
+- [x] iCloud Key-Value Store 同步（`NSUbiquitousKeyValueStore` + 进度合并）
+- [x] 深链路由（`DeepLink` + `DeepLinkTarget`）对接 Spotlight / Siri 唤起
+- [~] Widget / Live Activity — **阻塞**：需注册新 App ID，待升级 $99 开发者账号
 
 ## 7. 风险与对齐
 

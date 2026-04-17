@@ -20,6 +20,9 @@ targets:
     platform: iOS
     sources:
       - path: InterviewPrep
+        excludes:
+          - "InterviewPrep-Enterprise.entitlements"
+          - "InterviewPrep.entitlements"
     resources:
       - path: InterviewPrep/Resources
     info:
@@ -29,25 +32,27 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSSiriUsageDescription: 用于提供"随机来一题""今日复习"等快捷指令
     settings:
       base:
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1,2"
       configs:
         Debug:
-          # 开发者证书（Natalie Neuman）—— 能力全 iCloud/Siri/Widget，仅绑定 1 台设备
           PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183
           DEVELOPMENT_TEAM: R36U8N6X48
           CODE_SIGN_IDENTITY: "Apple Development"
           PROVISIONING_PROFILE_SPECIFIER: "00008130-001219640A98001CDA524Y"
+          CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep.entitlements
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183
           DEVELOPMENT_TEAM: R36U8N6X48
           CODE_SIGN_IDENTITY: "Apple Development"
           PROVISIONING_PROFILE_SPECIFIER: "00008130-001219640A98001CDA524Y"
+          CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep.entitlements
         ReleaseEnterprise:
-          # 企业证书（XL AXIATA）—— 任意设备，能力有限（无 iCloud）
           PRODUCT_BUNDLE_IDENTIFIER: com.xl.MyXL.Giant-staging
           DEVELOPMENT_TEAM: Q6SJUT5K5D
           CODE_SIGN_IDENTITY: "iPhone Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "MyXL-UniversalDist"
+          CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep-Enterprise.entitlements
