@@ -23,58 +23,107 @@ struct QuestionListView: View {
         default: return category.items.filter { $0.diff == filter.rawValue }
         }
     }
+    private var catColor: Color { Theme.categoryColor(category.color) }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("难度", selection: $filter) {
-                ForEach(DiffFilter.allCases) { f in
-                    Text(f.label).tag(f)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            List(filtered) { q in
-                NavigationLink(value: q) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(q.q).font(.body).lineLimit(3)
-                        HStack(spacing: 6) {
-                            DifficultyBadge(diff: q.diff)
-                            ForEach(q.tags, id: \.self) { tag in
-                                Text(tag)
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(Color.secondary.opacity(0.15), in: Capsule())
-                            }
+        ZStack {
+            Theme.bg.ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 14) {
+                    catHeader
+                    filterBar
+                    ForEach(filtered) { q in
+                        NavigationLink(value: q) {
+                            row(q)
                         }
+                        .buttonStyle(.plain)
                     }
-                    .padding(.vertical, 2)
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
         .navigationTitle(category.cat)
+        .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: Question.self) { q in
             QuestionDetailView(category: category, question: q)
         }
     }
-}
 
-struct DifficultyBadge: View {
-    let diff: String
-    var color: Color {
-        switch diff {
-        case "easy": return .green
-        case "medium": return .orange
-        case "hard": return .red
-        default: return .gray
+    private var catHeader: some View {
+        HStack(spacing: 12) {
+            Text(category.icon).font(.system(size: 32))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(category.cat)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(Theme.text)
+                Text("\(category.items.count) 题")
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundStyle(Theme.text2)
+            }
+            Spacer()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(catColor.opacity(0.3))
+        .neoBorder()
+        .neoShadow()
+    }
+
+    private var filterBar: some View {
+        HStack(spacing: 0) {
+            ForEach(DiffFilter.allCases) { f in
+                Button { filter = f } label: {
+                    Text(f.label)
+                        .font(.system(size: 12, weight: .black))
+                        .tracking(0.3)
+                        .textCase(.uppercase)
+                        .foregroundStyle(filter == f ? .white : Theme.text2)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(filter == f ? bgFor(f) : Color.clear)
+                }
+            }
+        }
+        .background(Theme.bg2)
+        .neoBorder()
+        .neoShadow(offset: 3)
+    }
+
+    private func bgFor(_ f: DiffFilter) -> Color {
+        switch f {
+        case .all: return Theme.pink
+        case .easy: return Theme.greenSolid
+        case .medium: return Theme.orangeSolid
+        case .hard: return Theme.redSolid
         }
     }
-    var body: some View {
-        Text(diff.uppercased())
-            .font(.caption2).bold()
-            .padding(.horizontal, 6).padding(.vertical, 2)
-            .foregroundStyle(.white)
-            .background(color, in: Capsule())
+
+    private func row(_ q: Question) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(q.q)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.text)
+                .multilineTextAlignment(.leading)
+                .lineLimit(3)
+            HStack(spacing: 6) {
+                DifficultyBadge(diff: q.diff)
+                ForEach(q.tags, id: \.self) { tag in
+                    Text(tag)
+                        .font(.system(size: 10, weight: .heavy))
+                        .tracking(0.3)
+                        .textCase(.uppercase)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Theme.yellow)
+                        .overlay(Rectangle().stroke(Theme.border, lineWidth: 2))
+                }
+                Spacer()
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface)
+        .neoBorder()
+        .neoShadow(offset: 3)
     }
 }
