@@ -11,19 +11,41 @@ struct MyView: View {
         Array(all.compactMap { $0.lastViewedAt != nil ? $0 : nil }.prefix(20))
     }
 
-    var body: some View {
-        ZStack {
-            Theme.bg.ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 18) {
-                    section(title: "错题本 · 学习中", count: learning.count, bg: Theme.orange, items: learning)
-                    section(title: "收藏夹 · Favorites", count: favorited.count, bg: Theme.yellow, items: favorited)
-                    section(title: "最近查看 · Recent", count: recent.count, bg: Theme.blue, items: recent)
-                }
-                .padding(16)
+    @State private var activeSection: Section = .learning
+    enum Section: String, CaseIterable, Identifiable {
+        case learning = "错题本"
+        case favorited = "收藏"
+        case recent = "最近"
+        var id: String { rawValue }
+        var icon: String {
+            switch self {
+            case .learning: return "book"
+            case .favorited: return "star.fill"
+            case .recent: return "clock"
             }
         }
-        .navigationTitle("我的")
+    }
+
+    private var currentItems: [UserProgress] {
+        switch activeSection {
+        case .learning: return learning
+        case .favorited: return favorited
+        case .recent: return recent
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Theme.base.ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 18) {
+                    hero
+                    segmentedPicker
+                    listSection
+                }
+                .padding(20)
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: Question.self) { q in
             if let (cat, _) = store.find(questionId: q.id) {
@@ -32,67 +54,103 @@ struct MyView: View {
         }
     }
 
-    private func section(title: String, count: Int, bg: Color, items: [UserProgress]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(title)
-                    .font(.system(size: 12, weight: .black))
-                    .tracking(1).textCase(.uppercase)
-                Spacer()
-                Text("\(count)")
-                    .font(.system(size: 12, weight: .black))
-                    .padding(.horizontal, 8).padding(.vertical, 2)
-                    .background(bg)
-                    .overlay(Rectangle().stroke(Theme.border, lineWidth: 2))
-            }
-            if items.isEmpty {
-                Text("暂无数据")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.text3)
-                    .frame(maxWidth: .infinity, minHeight: 60)
-                    .background(Theme.bg2)
-                    .neoBorder()
-                    .neoShadow(offset: 3)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(items) { p in row(progress: p) }
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            KickerText(text: "Library")
+            Text("我的学习")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(Theme.fg)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
+    }
+
+    private var segmentedPicker: some View {
+        HStack(spacing: 6) {
+            ForEach(Section.allCases) { s in
+                Button { activeSection = s } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: s.icon).font(.system(size: 11, weight: .semibold))
+                        Text(s.rawValue).font(.system(size: 12, weight: activeSection == s ? .semibold : .regular))
+                        Text(count(for: s))
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundStyle(activeSection == s ? Theme.accentHi : Theme.fgDim)
+                    }
+                    .foregroundStyle(activeSection == s ? Theme.fg : Theme.fgMuted)
+                    .padding(.horizontal, 11).padding(.vertical, 8)
+                    .background(
+                        Capsule().fill(activeSection == s ? Theme.surfaceHi : Color.clear)
+                    )
+                    .overlay(
+                        Capsule().strokeBorder(activeSection == s ? Theme.borderHi : Theme.border, lineWidth: 0.5)
+                    )
                 }
+                .buttonStyle(.pressable)
+            }
+            Spacer()
+        }
+    }
+
+    private func count(for s: Section) -> String {
+        let n: Int
+        switch s {
+        case .learning: n = learning.count
+        case .favorited: n = favorited.count
+        case .recent: n = recent.count
+        }
+        return "\(n)"
+    }
+
+    @ViewBuilder
+    private var listSection: some View {
+        if currentItems.isEmpty {
+            VStack(spacing: 10) {
+                Image(systemName: activeSection.icon).font(.system(size: 32, weight: .light))
+                Text("暂无数据").font(.system(size: 13))
+            }
+            .foregroundStyle(Theme.fgDim)
+            .frame(maxWidth: .infinity, minHeight: 220)
+        } else {
+            LazyVStack(spacing: 10) {
+                ForEach(currentItems) { p in row(p) }
             }
         }
     }
 
     @ViewBuilder
-    private func row(progress: UserProgress) -> some View {
-        if let (cat, q) = store.find(questionId: progress.questionId) {
+    private func row(_ p: UserProgress) -> some View {
+        if let (cat, q) = store.find(questionId: p.questionId) {
             NavigationLink(value: q) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(q.q)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(Theme.text)
-                        .lineLimit(2).multilineTextAlignment(.leading)
-                    HStack(spacing: 6) {
-                        Text(cat.icon).font(.system(size: 13))
-                        Text(cat.cat)
-                            .font(.system(size: 10, weight: .heavy))
-                            .tracking(0.3).textCase(.uppercase)
-                            .foregroundStyle(Theme.text2)
-                        DifficultyBadge(diff: q.diff)
-                        Spacer()
-                        if progress.favorited {
-                            Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(Theme.orangeSolid)
-                        }
-                        if !progress.note.isEmpty {
-                            Image(systemName: "note.text").font(.system(size: 11)).foregroundStyle(Theme.purple)
+                HStack(alignment: .top, spacing: 12) {
+                    Text(cat.icon).font(.system(size: 18))
+                        .frame(width: 28, height: 28)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(q.q)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.fg)
+                            .lineLimit(2).multilineTextAlignment(.leading)
+                        HStack(spacing: 6) {
+                            Text(cat.cat)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(Theme.fgMuted)
+                            DifficultyChip(diff: q.diff)
+                            Spacer()
+                            if p.favorited {
+                                Image(systemName: "star.fill").font(.system(size: 10))
+                                    .foregroundStyle(Theme.warning)
+                            }
+                            if !p.note.isEmpty {
+                                Image(systemName: "pencil").font(.system(size: 10))
+                                    .foregroundStyle(Theme.info)
+                            }
                         }
                     }
                 }
-                .padding(12)
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.surface)
-                .neoBorder()
-                .neoShadow(offset: 3)
+                .elevatedCard()
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct SearchView: View {
     @EnvironmentObject private var store: QuestionStore
     @State private var keyword: String = ""
+    @FocusState private var focused: Bool
 
     var results: [(Category, Question)] {
         store.search(keyword)
@@ -10,31 +11,35 @@ struct SearchView: View {
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
-            VStack(spacing: 12) {
-                searchBar
+            Theme.base.ignoresSafeArea()
+            VStack(spacing: 14) {
+                searchField
                 if keyword.isEmpty {
-                    placeholder(icon: "magnifyingglass", text: "输入关键词搜索题目与答案")
+                    emptyHint(icon: "magnifyingglass", text: "搜索题目、答案文本")
                 } else if results.isEmpty {
-                    placeholder(icon: "magnifyingglass.circle", text: "未找到匹配「\(keyword)」的题目")
+                    emptyHint(icon: "text.magnifyingglass", text: "未找到「\(keyword)」相关题目")
                 } else {
                     ScrollView {
-                        VStack(spacing: 10) {
+                        LazyVStack(spacing: 10) {
+                            HStack {
+                                KickerText(text: "\(results.count) 条结果")
+                                Spacer()
+                            }
+                            .padding(.top, 4)
                             ForEach(Array(results.enumerated()), id: \.offset) { _, pair in
                                 NavigationLink(value: pair.1) {
                                     row(cat: pair.0, q: pair.1)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             }
                         }
                     }
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 20)
             .padding(.top, 12)
         }
-        .navigationTitle("搜索")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: Question.self) { q in
             if let (cat, _) = store.find(questionId: q.id) {
@@ -43,60 +48,56 @@ struct SearchView: View {
         }
     }
 
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .bold))
-            TextField("搜索题目 / 答案", text: $keyword)
-                .font(.system(size: 14, weight: .bold))
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Theme.fgMuted)
+            TextField("", text: $keyword, prompt: Text("搜索题目 / 答案").foregroundColor(Theme.fgDim))
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.fg)
                 .textInputAutocapitalization(.never)
+                .focused($focused)
             if !keyword.isEmpty {
-                Button {
-                    keyword = ""
-                } label: {
+                Button { keyword = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Theme.text3)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.fgDim)
                 }
+                .buttonStyle(.plain)
             }
         }
-        .padding(12)
-        .foregroundStyle(Theme.text)
-        .background(Theme.surface)
-        .neoBorder()
-        .neoShadow(offset: 3)
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .elevatedCard(bg: Theme.elevated)
     }
 
     private func row(cat: Category, q: Question) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(q.q)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Theme.text)
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.fg)
                 .lineLimit(2).multilineTextAlignment(.leading)
             HStack(spacing: 6) {
-                Text(cat.icon)
+                Text(cat.icon).font(.system(size: 12))
                 Text(cat.cat)
-                    .font(.system(size: 11, weight: .heavy))
-                    .tracking(0.3).textCase(.uppercase)
-                    .foregroundStyle(Theme.text2)
-                DifficultyBadge(diff: q.diff)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.fgMuted)
+                DifficultyChip(diff: q.diff)
                 Spacer()
             }
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface)
-        .neoBorder()
-        .neoShadow(offset: 3)
+        .elevatedCard()
     }
 
-    private func placeholder(icon: String, text: String) -> some View {
+    private func emptyHint(icon: String, text: String) -> some View {
         VStack(spacing: 10) {
-            Image(systemName: icon).font(.system(size: 40, weight: .heavy))
-            Text(text)
-                .font(.system(size: 12, weight: .heavy))
-                .tracking(0.3).multilineTextAlignment(.center)
+            Image(systemName: icon).font(.system(size: 32, weight: .light))
+            Text(text).font(.system(size: 13))
         }
-        .foregroundStyle(Theme.text3)
-        .frame(maxWidth: .infinity, minHeight: 200)
-        .padding()
+        .foregroundStyle(Theme.fgDim)
+        .frame(maxWidth: .infinity, minHeight: 220)
+        .padding(.top, 20)
     }
 }

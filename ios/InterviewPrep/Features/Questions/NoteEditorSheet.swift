@@ -7,54 +7,53 @@ struct NoteEditorSheet: View {
     let onSave: (String) -> Void
 
     @State private var draft: String = ""
+    @FocusState private var focused: Bool
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.bg.ignoresSafeArea()
-                VStack(alignment: .leading, spacing: 12) {
+                Theme.base.ignoresSafeArea()
+                VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 6) {
-                        KickerText(text: "题目 · Question")
-                        Text(questionText).font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Theme.text)
+                        KickerText(text: "Question")
+                        Text(questionText)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.fg)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(12)
+                    .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.yellow.opacity(0.5))
-                    .neoBorder()
-                    .neoShadow(offset: 3)
+                    .elevatedCard()
 
-                    KickerText(text: "我的笔记 · My Note")
+                    KickerText(text: "My Note")
+
                     TextEditor(text: $draft)
                         .font(.system(size: 14))
-                        .foregroundStyle(Theme.text)
+                        .foregroundStyle(Theme.fg)
                         .scrollContentBackground(.hidden)
-                        .padding(8)
+                        .focused($focused)
+                        .padding(10)
                         .frame(minHeight: 260)
-                        .background(Theme.surface)
-                        .neoBorder()
-                        .neoShadow(offset: 3)
+                        .elevatedCard(bg: Theme.elevated)
+
                     Spacer()
                 }
-                .padding(16)
+                .padding(20)
             }
             .navigationTitle("编辑笔记")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
-                        .font(.system(size: 14, weight: .heavy))
+                    Button("取消") { dismiss() }.font(.system(size: 14))
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        note = draft
-                        onSave(draft)
-                        dismiss()
+                    Button { note = draft; onSave(draft); dismiss() } label: {
+                        Text("保存").font(.system(size: 14, weight: .semibold))
                     }
-                    .font(.system(size: 14, weight: .heavy))
                 }
             }
-            .onAppear { draft = note }
+            .onAppear { draft = note; focused = true }
         }
+        .preferredColorScheme(.dark)
     }
 }

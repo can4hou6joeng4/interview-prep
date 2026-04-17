@@ -18,30 +18,30 @@ struct QuestionDetailView: View {
     private var isReadingThis: Bool {
         tts.isSpeaking && tts.currentQuestionId == question.id
     }
-    private var catColor: Color { Theme.categoryColor(category.color) }
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            Theme.base.ignoresSafeArea()
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    questionHeader
+                VStack(alignment: .leading, spacing: 18) {
+                    meta
+                    title
                     actionRow
-                    masteryPicker
+                    masterySegmented
                     if let p = progress, !p.note.isEmpty {
                         noteCard(p.note)
                     }
+                    KickerText(text: "Answer · 参考解析")
                     AnswerWebView(html: wrappedHTML)
-                        .frame(minHeight: 420)
-                        .background(Theme.surface)
-                        .neoBorder()
-                        .neoShadow(offset: 3)
+                        .frame(minHeight: 440)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.r, style: .continuous))
+                        .elevatedCard(bg: Theme.elevated2, hairline: true)
                 }
-                .padding(14)
+                .padding(20)
             }
         }
-        .navigationTitle("题目")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { EmptyView() } }
         .onAppear { touch() }
         .onDisappear { if isReadingThis { tts.stop() } }
         .sheet(isPresented: $showNoteEditor) {
@@ -49,50 +49,46 @@ struct QuestionDetailView: View {
         }
     }
 
-    private var questionHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Text(category.icon).font(.system(size: 16))
-                Text(category.cat)
-                    .font(.system(size: 11, weight: .heavy))
-                    .tracking(0.5)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.text2)
-                DifficultyBadge(diff: question.diff)
-                Spacer()
-            }
-            Text(question.q)
-                .font(.system(size: 17, weight: .black))
-                .foregroundStyle(Theme.text)
-                .multilineTextAlignment(.leading)
+    private var meta: some View {
+        HStack(spacing: 8) {
+            Text(category.icon).font(.system(size: 14))
+            Text(category.cat)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.fgMuted)
+            DifficultyChip(diff: question.diff)
+            Spacer()
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(catColor.opacity(0.3))
-        .neoBorder()
-        .neoShadow()
+    }
+
+    private var title: some View {
+        Text(question.q)
+            .font(.system(size: 21, weight: .semibold))
+            .foregroundStyle(Theme.fg)
+            .fixedSize(horizontal: false, vertical: true)
+            .lineSpacing(4)
     }
 
     private var actionRow: some View {
-        HStack(spacing: 8) {
-            actionButton(
-                icon: (progress?.favorited ?? false) ? "star.fill" : "star",
+        HStack(spacing: 10) {
+            iconButton(
+                system: (progress?.favorited ?? false) ? "star.fill" : "star",
                 label: "收藏",
-                bg: (progress?.favorited ?? false) ? Theme.yellow : Theme.surface
+                active: progress?.favorited ?? false,
+                tint: Theme.warning
             ) { toggleFavorite() }
-
-            actionButton(
-                icon: isReadingThis ? "stop.circle.fill" : "speaker.wave.2.fill",
+            iconButton(
+                system: isReadingThis ? "stop.fill" : "speaker.wave.2.fill",
                 label: isReadingThis ? "停止" : "朗读",
-                bg: isReadingThis ? Theme.pink : Theme.blue
+                active: isReadingThis,
+                tint: Theme.accent
             ) {
                 if isReadingThis { tts.stop() } else { tts.speak(question: question) }
             }
-
-            actionButton(
-                icon: (progress?.note.isEmpty ?? true) ? "note.text" : "note.text.badge.plus",
+            iconButton(
+                system: (progress?.note.isEmpty ?? true) ? "square.and.pencil" : "pencil.circle.fill",
                 label: "笔记",
-                bg: (progress?.note.isEmpty ?? true) ? Theme.surface : Theme.purple
+                active: !(progress?.note.isEmpty ?? true),
+                tint: Theme.info
             ) {
                 noteDraft = progress?.note ?? ""
                 showNoteEditor = true
@@ -100,109 +96,137 @@ struct QuestionDetailView: View {
         }
     }
 
-    private func actionButton(icon: String, label: String, bg: Color, action: @escaping () -> Void) -> some View {
+    private func iconButton(system: String, label: String, active: Bool, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon).font(.system(size: 16, weight: .bold))
+            VStack(spacing: 6) {
+                Image(systemName: system)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(active ? tint : Theme.fg)
                 Text(label)
-                    .font(.system(size: 10, weight: .heavy))
-                    .tracking(0.3)
-                    .textCase(.uppercase)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.fgMuted)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 10)
-            .foregroundStyle(Theme.text)
-            .background(bg)
-            .neoBorder()
-            .neoShadow(offset: 3)
+            .frame(maxWidth: .infinity).padding(.vertical, 12)
+            .elevatedCard(bg: active ? tint.opacity(0.1) : Theme.elevated)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
-    private var masteryPicker: some View {
-        HStack(spacing: 0) {
-            ForEach(0..<3) { i in
+    private var masterySegmented: some View {
+        let labels = ["未学", "学习中", "已掌握"]
+        return HStack(spacing: 6) {
+            ForEach(0..<3, id: \.self) { i in
                 Button { updateStatus(i) } label: {
-                    let label = ["未学", "学习中", "已掌握"][i]
                     let active = (progress?.status ?? 0) == i
-                    let bg: Color = active ? [Theme.text3, Theme.orangeSolid, Theme.greenSolid][i] : Color.clear
-                    Text(label)
-                        .font(.system(size: 12, weight: .black))
-                        .tracking(0.3)
-                        .textCase(.uppercase)
-                        .foregroundStyle(active ? .white : Theme.text2)
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(bg)
+                    Text(labels[i])
+                        .font(.system(size: 13, weight: active ? .semibold : .regular))
+                        .foregroundStyle(active ? Theme.fg : Theme.fgMuted)
+                        .frame(maxWidth: .infinity).padding(.vertical, 9)
+                        .background(
+                            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
+                                .fill(active ? Theme.surfaceHi : Color.clear)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
+                                .strokeBorder(active ? Theme.borderHi : Color.clear, lineWidth: 0.5)
+                        )
                 }
+                .buttonStyle(.pressable)
             }
         }
-        .background(Theme.bg2)
-        .neoBorder()
-        .neoShadow(offset: 3)
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.rSm + 4, style: .continuous).fill(Theme.elevated)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.rSm + 4, style: .continuous).strokeBorder(Theme.border, lineWidth: 0.5)
+        )
     }
 
     private func noteCard(_ text: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: "note.text")
-                KickerText(text: "我的笔记 · My Note")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "pencil").font(.system(size: 11))
+                KickerText(text: "My Note")
             }
-            .foregroundStyle(Theme.text2)
+            .foregroundStyle(Theme.info)
             Text(text)
                 .font(.system(size: 14))
-                .foregroundStyle(Theme.text)
+                .foregroundStyle(Theme.fg)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.purple.opacity(0.5))
-        .neoBorder()
-        .neoShadow(offset: 3)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.r, style: .continuous).fill(Theme.info.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.r, style: .continuous).strokeBorder(Theme.info.opacity(0.25), lineWidth: 0.5)
+        )
     }
 
+    // MARK: data ops
     private func ensureProgress() -> UserProgress {
         if let p = progress { return p }
         let p = UserProgress(questionId: question.id)
         ctx.insert(p)
         return p
     }
-    private func touch() {
-        let p = ensureProgress(); p.lastViewedAt = Date()
-        try? ctx.save(); cloud.push(all)
-    }
-    private func toggleFavorite() {
-        let p = ensureProgress(); p.favorited.toggle()
-        try? ctx.save(); cloud.push(all)
-    }
-    private func updateStatus(_ s: Int) {
-        let p = ensureProgress(); p.status = s
-        try? ctx.save(); cloud.push(all)
-    }
-    private func saveNote(_ text: String) {
-        let p = ensureProgress(); p.note = text
-        try? ctx.save(); cloud.push(all)
-    }
+    private func touch() { let p = ensureProgress(); p.lastViewedAt = Date(); try? ctx.save(); cloud.push(all) }
+    private func toggleFavorite() { let p = ensureProgress(); p.favorited.toggle(); try? ctx.save(); cloud.push(all) }
+    private func updateStatus(_ s: Int) { let p = ensureProgress(); p.status = s; try? ctx.save(); cloud.push(all) }
+    private func saveNote(_ t: String) { let p = ensureProgress(); p.note = t; try? ctx.save(); cloud.push(all) }
 
     private var wrappedHTML: String {
         """
         <!doctype html><html><head><meta charset='utf-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1'>
         <style>
-          :root{--bg:#ffffff;--text:#1a1a2e;--text2:#444;--border:#222;--pink:#ff6b9d;--yellow:#ffe156;--blue:#4ecdc4;}
-          *{margin:0;padding:0;box-sizing:border-box}
-          body{font:15px -apple-system,BlinkMacSystemFont,'PingFang SC','Inter',sans-serif;color:var(--text);line-height:1.75;padding:16px;background:var(--bg);}
-          h4{margin:18px 0 8px;font-weight:900;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text);border-bottom:3px solid var(--border);padding-bottom:4px;}
-          ul,ol{padding-left:20px;margin:6px 0}
-          li{margin:4px 0}
-          b,strong{font-weight:900}
-          p{margin:6px 0}
-          pre{background:#fff8e8;padding:12px;border:3px solid var(--border);box-shadow:3px 3px 0 var(--border);overflow-x:auto;font-size:13px;margin:10px 0}
-          code{font-family:'JetBrains Mono','SF Mono',Menlo,monospace;font-weight:500}
-          :not(pre) > code{background:var(--yellow);padding:1px 5px;border:2px solid var(--border);font-size:13px}
-          .key-point{background:var(--yellow);border:3px solid var(--border);box-shadow:3px 3px 0 var(--border);padding:10px 14px;margin:12px 0;font-weight:700}
-          .project-link{background:var(--blue);border:3px solid var(--border);box-shadow:3px 3px 0 var(--border);padding:10px 14px;margin:12px 0;font-weight:700}
-          @media (prefers-color-scheme: dark){
-            :root{--bg:#1c1c1e;--text:#e6e6e6;--border:#888}
-            pre{background:#2c2c2e}
+          :root{
+            --bg:#0A0A0C; --fg:#EDEDEF; --fg2:#8A8F98; --border:rgba(255,255,255,0.08);
+            --accent:#5E6AD2; --warn:#FACC15; --info:#60A5FA; --surface:rgba(255,255,255,0.04);
           }
+          *{margin:0;padding:0;box-sizing:border-box}
+          body{
+            font:15px -apple-system,BlinkMacSystemFont,'SF Pro Text','Inter','PingFang SC',sans-serif;
+            color:var(--fg); line-height:1.72; padding:18px; background:var(--bg);
+            -webkit-font-smoothing:antialiased;
+          }
+          h4{
+            margin:20px 0 10px; font-weight:600; font-size:13px;
+            color:var(--fg); letter-spacing:0.2px;
+          }
+          h4::before{
+            content:""; display:inline-block; width:3px; height:12px;
+            background:var(--accent); margin-right:8px; vertical-align:-1px; border-radius:2px;
+          }
+          p{margin:8px 0; color:var(--fg)}
+          ul,ol{padding-left:22px; margin:8px 0}
+          li{margin:5px 0; color:var(--fg)}
+          b,strong{font-weight:600; color:var(--fg)}
+          pre{
+            background:rgba(255,255,255,0.03); padding:14px 16px; margin:12px 0;
+            border:0.5px solid var(--border); border-radius:10px; overflow-x:auto;
+            font-size:12.5px; line-height:1.55;
+          }
+          code{
+            font-family:'SF Mono','JetBrains Mono',Menlo,monospace; font-size:13px;
+          }
+          :not(pre) > code{
+            background:var(--surface); color:var(--fg); padding:1px 6px;
+            border:0.5px solid var(--border); border-radius:4px; font-size:12.5px;
+          }
+          .key-point{
+            background:rgba(250,204,21,0.08); border:0.5px solid rgba(250,204,21,0.3);
+            border-left:3px solid var(--warn); border-radius:10px;
+            padding:12px 14px; margin:14px 0; color:var(--fg);
+          }
+          .project-link{
+            background:rgba(96,165,250,0.08); border:0.5px solid rgba(96,165,250,0.3);
+            border-left:3px solid var(--info); border-radius:10px;
+            padding:12px 14px; margin:14px 0; color:var(--fg);
+          }
+          a{color:var(--accent); text-decoration:none}
         </style></head><body>\(question.a)</body></html>
         """
     }

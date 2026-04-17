@@ -23,24 +23,25 @@ struct QuestionListView: View {
         default: return category.items.filter { $0.diff == filter.rawValue }
         }
     }
-    private var catColor: Color { Theme.categoryColor(category.color) }
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            Theme.base.ignoresSafeArea()
             ScrollView {
-                VStack(spacing: 14) {
-                    catHeader
-                    filterBar
-                    ForEach(filtered) { q in
-                        NavigationLink(value: q) {
-                            row(q)
+                LazyVStack(spacing: 16) {
+                    header
+                    filterTabs
+                    LazyVStack(spacing: 10) {
+                        ForEach(Array(filtered.enumerated()), id: \.element.id) { idx, q in
+                            NavigationLink(value: q) {
+                                row(index: idx + 1, q: q)
+                            }
+                            .buttonStyle(.pressable)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
             }
         }
         .navigationTitle(category.cat)
@@ -50,80 +51,62 @@ struct QuestionListView: View {
         }
     }
 
-    private var catHeader: some View {
+    private var header: some View {
         HStack(spacing: 12) {
-            Text(category.icon).font(.system(size: 32))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(category.cat)
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundStyle(Theme.text)
-                Text("\(category.items.count) 题")
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(Theme.text2)
+            Text(category.icon).font(.system(size: 22))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(category.cat).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.fg)
+                Text("\(category.items.count) 题").font(.system(size: 11)).foregroundStyle(Theme.fgMuted)
             }
             Spacer()
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(catColor.opacity(0.3))
-        .neoBorder()
-        .neoShadow()
+        .elevatedCard()
     }
 
-    private var filterBar: some View {
-        HStack(spacing: 0) {
+    private var filterTabs: some View {
+        HStack(spacing: 6) {
             ForEach(DiffFilter.allCases) { f in
                 Button { filter = f } label: {
                     Text(f.label)
-                        .font(.system(size: 12, weight: .black))
-                        .tracking(0.3)
-                        .textCase(.uppercase)
-                        .foregroundStyle(filter == f ? .white : Theme.text2)
-                        .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity)
-                        .background(filter == f ? bgFor(f) : Color.clear)
+                        .font(.system(size: 12, weight: filter == f ? .semibold : .regular))
+                        .foregroundStyle(filter == f ? Theme.fg : Theme.fgMuted)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(
+                            Capsule().fill(filter == f ? Theme.surfaceHi : Color.clear)
+                        )
+                        .overlay(
+                            Capsule().strokeBorder(filter == f ? Theme.borderHi : Theme.border, lineWidth: 0.5)
+                        )
                 }
+                .buttonStyle(.pressable)
             }
-        }
-        .background(Theme.bg2)
-        .neoBorder()
-        .neoShadow(offset: 3)
-    }
-
-    private func bgFor(_ f: DiffFilter) -> Color {
-        switch f {
-        case .all: return Theme.pink
-        case .easy: return Theme.greenSolid
-        case .medium: return Theme.orangeSolid
-        case .hard: return Theme.redSolid
+            Spacer()
         }
     }
 
-    private func row(_ q: Question) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(q.q)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Theme.text)
-                .multilineTextAlignment(.leading)
-                .lineLimit(3)
-            HStack(spacing: 6) {
-                DifficultyBadge(diff: q.diff)
-                ForEach(q.tags, id: \.self) { tag in
-                    Text(tag)
-                        .font(.system(size: 10, weight: .heavy))
-                        .tracking(0.3)
-                        .textCase(.uppercase)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Theme.yellow)
-                        .overlay(Rectangle().stroke(Theme.border, lineWidth: 2))
+    private func row(index: Int, q: Question) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(String(format: "%02d", index))
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(Theme.fgDim)
+                .frame(width: 22, alignment: .leading)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(q.q)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.fg)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3)
+                HStack(spacing: 6) {
+                    DifficultyChip(diff: q.diff)
+                    ForEach(q.tags, id: \.self) { tag in TagChip(text: tag) }
+                    Spacer()
                 }
-                Spacer()
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface)
-        .neoBorder()
-        .neoShadow(offset: 3)
+        .elevatedCard()
     }
 }

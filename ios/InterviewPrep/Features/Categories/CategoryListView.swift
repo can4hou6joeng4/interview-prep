@@ -7,138 +7,141 @@ struct CategoryListView: View {
 
     private var mastered: Int { progresses.filter { $0.status == 2 }.count }
     private var learning: Int { progresses.filter { $0.status == 1 }.count }
-    private var unstarted: Int { max(0, store.totalCount - mastered - learning) }
     private var pct: Double {
         store.totalCount > 0 ? Double(mastered) / Double(store.totalCount) : 0
     }
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            Theme.base.ignoresSafeArea()
             ScrollView {
-                VStack(spacing: 20) {
-                    header
-                    statsRow
-                    progressBar
-                    if let err = store.loadError {
-                        Text(err).font(.callout).foregroundStyle(Theme.redSolid)
-                            .padding().neoCard()
-                    } else {
-                        sectionTitle("Categories")
-                        categoriesGrid
-                    }
+                LazyVStack(spacing: 24, pinnedViews: []) {
+                    hero
+                    metrics
+                    sectionHeader("题目分类", trailing: "\(store.categories.count) 项")
+                    categoriesList
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) { EmptyView() }
-        }
         .navigationDestination(for: Category.self) { cat in
             QuestionListView(category: cat)
         }
     }
 
-    private var header: some View {
-        VStack(spacing: 10) {
-            Text("面经刷题")
-                .font(.system(size: 28, weight: .black))
-                .tracking(-0.5)
-                .padding(.horizontal, 20).padding(.vertical, 6)
-                .background(Theme.yellow)
-                .neoBorder()
-                .neoShadow()
-                .rotationEffect(.degrees(-1))
-            KickerText(text: "Based on résumé · Memory Cards")
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            KickerText(text: "Interview Prep")
+            Text("准备好下一场面试")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(Theme.fg)
+            Text("离线题库 · \(store.totalCount) 道精选题 · iCloud 同步")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.fgMuted)
         }
-        .padding(.top, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 12)
     }
 
-    private var statsRow: some View {
-        HStack(spacing: 10) {
-            statCard(value: store.totalCount, label: "总题数", bg: Theme.surface, fg: Theme.text)
-            statCard(value: mastered, label: "已掌握", bg: Theme.green, fg: Theme.text)
-            statCard(value: learning, label: "学习中", bg: Theme.orange, fg: Theme.text)
-            statCard(value: unstarted, label: "未学", bg: Theme.red, fg: .white)
-        }
-    }
-
-    private func statCard(value: Int, label: String, bg: Color, fg: Color) -> some View {
-        VStack(spacing: 4) {
-            Text("\(value)")
-                .font(.system(size: 26, weight: .black))
-                .foregroundStyle(fg)
-            Text(label)
-                .font(.system(size: 10, weight: .heavy))
-                .tracking(1)
-                .textCase(.uppercase)
-                .foregroundStyle(fg.opacity(0.85))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(bg)
-        .neoBorder()
-        .neoShadow(offset: 3)
-    }
-
-    private var progressBar: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("已掌握 \(mastered) / \(store.totalCount)")
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(Theme.text2)
-                Spacer()
-                Text("\(Int(pct * 100))%")
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(Theme.text2)
+    private var metrics: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                metric("已掌握", value: mastered, total: store.totalCount, tint: Theme.success)
+                metric("学习中", value: learning, total: store.totalCount, tint: Theme.warning)
             }
-            StripedProgressBar(progress: pct)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("总体进度").font(.system(size: 12)).foregroundStyle(Theme.fgMuted)
+                    Spacer()
+                    Text("\(Int(pct * 100))%").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.fg)
+                }
+                ThinProgressBar(progress: pct)
+            }
+            .padding(16)
+            .elevatedCard()
         }
     }
 
-    private func sectionTitle(_ text: String) -> some View {
+    private func metric(_ title: String, value: Int, total: Int, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Circle().fill(tint).frame(width: 6, height: 6)
+                Text(title).font(.system(size: 12)).foregroundStyle(Theme.fgMuted)
+                Spacer()
+            }
+            Text("\(value)")
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(Theme.fg)
+                .monospacedDigit()
+            Text("共 \(total) 题")
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.fgDim)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .elevatedCard()
+    }
+
+    private func sectionHeader(_ title: String, trailing: String? = nil) -> some View {
         HStack {
-            Text(text)
-                .font(.system(size: 16, weight: .black))
-                .tracking(1)
-                .textCase(.uppercase)
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.fg)
             Spacer()
+            if let trailing {
+                Text(trailing)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.fgDim)
+            }
         }
-        .padding(.top, 6)
     }
 
-    private var categoriesGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+    private var categoriesList: some View {
+        LazyVStack(spacing: 10) {
             ForEach(store.categories) { cat in
                 NavigationLink(value: cat) {
-                    categoryCard(cat)
+                    categoryRow(cat)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
     }
 
-    private func categoryCard(_ cat: Category) -> some View {
-        let count = cat.items.count
-        let color = Theme.categoryColor(cat.color)
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(cat.icon).font(.system(size: 28))
-            Text(cat.cat)
-                .font(.system(size: 14, weight: .black))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .foregroundStyle(Theme.text)
-            Text("\(count) 题")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Theme.text2)
+    private func categoryRow(_ cat: Category) -> some View {
+        let tint = Theme.categoryTint(cat.color)
+        let masteredInCat = progresses.filter { p in
+            p.status == 2 && cat.items.contains(where: { $0.id == p.questionId })
+        }.count
+
+        return HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(tint.opacity(0.14))
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(tint.opacity(0.35), lineWidth: 0.5)
+                Text(cat.icon).font(.system(size: 22))
+            }
+            .frame(width: 44, height: 44)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(cat.cat)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.fg)
+                    .lineLimit(1)
+                Text("\(cat.items.count) 题 · 已掌握 \(masteredInCat)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.fgMuted)
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.fgDim)
         }
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
-        .background(color.opacity(0.3))
-        .neoBorder()
-        .neoShadow(offset: 3)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .elevatedCard()
     }
 }

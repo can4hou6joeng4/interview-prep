@@ -1,145 +1,190 @@
 import SwiftUI
 
+// MARK: - Theme (Modern Dark / Linear-inspired)
 enum Theme {
-    // MARK: Colors (from assets/styles.css :root)
-    static let bg        = Color(hex: 0xFFFDF7)
-    static let bg2       = Color(hex: 0xFFF8E8)
-    static let surface   = Color.white
-    static let border    = Color(hex: 0x222222)
-    static let text      = Color(hex: 0x1A1A2E)
-    static let text2     = Color(hex: 0x444444)
-    static let text3     = Color(hex: 0x777777)
+    // Backgrounds (never pure #000, avoids OLED smear)
+    static let base       = Color(hex: 0x050506)
+    static let elevated   = Color(hex: 0x0A0A0C)
+    static let elevated2  = Color(hex: 0x101013)
+    static let surface    = Color.white.opacity(0.045)
+    static let surfaceHi  = Color.white.opacity(0.08)
 
-    static let pink      = Color(hex: 0xFF6B9D)
-    static let yellow    = Color(hex: 0xFFE156)
-    static let blue      = Color(hex: 0x4ECDC4)
-    static let green     = Color(hex: 0xA8E6CF)
-    static let orange    = Color(hex: 0xFF8A5C)
-    static let purple    = Color(hex: 0xC3A6FF)
-    static let cyan      = Color(hex: 0x56C2E6)
-    static let red       = Color(hex: 0xFF6B6B)
-    static let lime      = Color(hex: 0xC7F464)
+    // Foreground
+    static let fg         = Color(hex: 0xEDEDEF)
+    static let fgMuted    = Color(hex: 0x8A8F98)
+    static let fgDim      = Color(hex: 0x5A5F68)
 
-    static let greenSolid  = Color(hex: 0x2ECC71)
-    static let orangeSolid = Color(hex: 0xF39C12)
-    static let redSolid    = Color(hex: 0xE74C3C)
-    static let cyanSolid   = Color(hex: 0x3498DB)
+    // Border (hairline)
+    static let border     = Color.white.opacity(0.08)
+    static let borderHi   = Color.white.opacity(0.14)
 
-    // MARK: Semantic
+    // Accent
+    static let accent     = Color(hex: 0x5E6AD2)        // Linear purple-blue
+    static let accentHi   = Color(hex: 0x7C88E0)
+    static let accentDim  = Color(hex: 0x3D48A8)
+    static let accentGlow = Color(hex: 0x5E6AD2).opacity(0.2)
+
+    // Semantic (muted, not candy)
+    static let success    = Color(hex: 0x4ADE80)
+    static let warning    = Color(hex: 0xFACC15)
+    static let danger     = Color(hex: 0xEF4444)
+    static let info       = Color(hex: 0x60A5FA)
+
+    // MARK: Helpers
     static func diffColor(_ diff: String) -> Color {
         switch diff {
-        case "easy": return greenSolid
-        case "medium": return orangeSolid
-        case "hard": return redSolid
-        default: return text3
+        case "easy":   return success
+        case "medium": return warning
+        case "hard":   return danger
+        default:       return fgDim
         }
     }
 
-    /// Map a hex string from data.js (e.g. "#6c8cff") to Color, fallback to pink
-    static func categoryColor(_ hex: String) -> Color {
-        Color(hexString: hex) ?? pink
+    static func diffLabel(_ diff: String) -> String {
+        switch diff {
+        case "easy":   return "EASY"
+        case "medium": return "MED"
+        case "hard":   return "HARD"
+        default:       return "—"
+        }
+    }
+
+    // Map optional category hex to accent variant (subtly colored)
+    static func categoryTint(_ hex: String) -> Color {
+        Color(hexString: hex)?.opacity(0.9) ?? accent
+    }
+
+    // Motion
+    static let pressSpring = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.72)
+    static let ease = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.28)
+
+    // Radius
+    static let r: CGFloat = 16
+    static let rSm: CGFloat = 10
+    static let rXs: CGFloat = 6
+}
+
+// MARK: - Modifiers
+
+struct ElevatedCard: ViewModifier {
+    var bg: Color = Theme.elevated
+    var radius: CGFloat = Theme.r
+    var hairline: Bool = true
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: radius, style: .continuous).fill(bg)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(Theme.border, lineWidth: hairline ? 0.5 : 0)
+            )
     }
 }
 
-// MARK: - Neo-Brutalism modifiers
-
-struct NeoBorder: ViewModifier {
-    var width: CGFloat = 3
-    var color: Color = Theme.border
+struct AccentGlow: ViewModifier {
+    var radius: CGFloat = Theme.r
     func body(content: Content) -> some View {
-        content.overlay(
-            Rectangle().stroke(color, lineWidth: width)
-        )
-    }
-}
-
-struct NeoShadow: ViewModifier {
-    var offset: CGFloat = 4
-    var color: Color = Theme.border
-    func body(content: Content) -> some View {
-        // 背景层矩形伪阴影，避免 SwiftUI `.shadow` 对子 Text 产生鬼影
-        content.background(
-            color
-                .offset(x: offset, y: offset)
-        )
+        content
+            .background(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(Theme.accent)
+                    .blur(radius: 18)
+                    .opacity(0.45)
+                    .padding(-4)
+            )
     }
 }
 
 extension View {
-    func neoBorder(_ width: CGFloat = 3, color: Color = Theme.border) -> some View {
-        modifier(NeoBorder(width: width, color: color))
+    func elevatedCard(bg: Color = Theme.elevated, radius: CGFloat = Theme.r, hairline: Bool = true) -> some View {
+        modifier(ElevatedCard(bg: bg, radius: radius, hairline: hairline))
     }
-    func neoShadow(offset: CGFloat = 4) -> some View {
-        modifier(NeoShadow(offset: offset))
-    }
-    func neoCard(bg: Color = Theme.surface, offset: CGFloat = 4) -> some View {
-        self.padding(14)
-            .background(bg)
-            .neoBorder()
-            .neoShadow(offset: offset)
+    func accentGlow(radius: CGFloat = Theme.r) -> some View {
+        modifier(AccentGlow(radius: radius))
     }
 }
 
-// MARK: - Kicker (uppercase small label)
+// MARK: - Pressable Scale Button Style
+
+struct PressableScale: ButtonStyle {
+    var scale: CGFloat = 0.97
+    var opacity: CGFloat = 0.92
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1.0)
+            .opacity(configuration.isPressed ? opacity : 1.0)
+            .animation(Theme.pressSpring, value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableScale {
+    static var pressable: PressableScale { PressableScale() }
+}
+
+// MARK: - Small components
 
 struct KickerText: View {
     let text: String
     var body: some View {
         Text(text)
-            .font(.system(size: 11, weight: .heavy))
-            .tracking(1.5)
+            .font(.system(size: 11, weight: .medium))
+            .tracking(0.8)
             .textCase(.uppercase)
-            .foregroundStyle(Theme.text2)
+            .foregroundStyle(Theme.fgMuted)
     }
 }
 
-// MARK: - Diff badge
-
-struct DifficultyBadge: View {
+struct DifficultyChip: View {
     let diff: String
     var body: some View {
-        Text(diff.uppercased())
-            .font(.system(size: 10, weight: .black))
-            .tracking(0.5)
-            .padding(.horizontal, 6).padding(.vertical, 2)
-            .foregroundStyle(.white)
-            .background(Theme.diffColor(diff))
-            .overlay(Rectangle().stroke(Theme.border, lineWidth: 2))
+        HStack(spacing: 4) {
+            Circle().fill(Theme.diffColor(diff)).frame(width: 5, height: 5)
+            Text(Theme.diffLabel(diff))
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(0.4)
+                .foregroundStyle(Theme.fgMuted)
+        }
+        .padding(.horizontal, 7).padding(.vertical, 3)
+        .background(
+            Capsule().fill(Theme.surface)
+        )
+        .overlay(
+            Capsule().strokeBorder(Theme.border, lineWidth: 0.5)
+        )
     }
 }
 
-// MARK: - Striped progress (pink/yellow 45deg stripes from CSS)
+// Back-compat alias so old code compiles; new code should use DifficultyChip
+typealias DifficultyBadge = DifficultyChip
 
-struct StripedProgressBar: View {
+struct ThinProgressBar: View {
     let progress: Double    // 0...1
+    var height: CGFloat = 4
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Rectangle().fill(Theme.bg2)
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            stops: stripeStops(),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: geo.size.width * max(0, min(1, progress)))
-                    .animation(.easeOut(duration: 0.4), value: progress)
+                Capsule().fill(Theme.surface)
+                Capsule().fill(
+                    LinearGradient(colors: [Theme.accent, Theme.accentHi], startPoint: .leading, endPoint: .trailing)
+                )
+                .frame(width: geo.size.width * max(0, min(1, progress)))
+                .animation(Theme.ease, value: progress)
             }
         }
-        .frame(height: 8)
-        .overlay(Rectangle().stroke(Theme.border, lineWidth: 2))
+        .frame(height: height)
     }
-    private func stripeStops() -> [Gradient.Stop] {
-        // Approximate diagonal pink/yellow stripe using many stops
-        var out: [Gradient.Stop] = []
-        let n = 24
-        for i in 0..<n {
-            let t = Double(i) / Double(n)
-            out.append(.init(color: i.isMultiple(of: 2) ? Theme.pink : Theme.yellow, location: t))
-        }
-        return out
+}
+
+struct TagChip: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(Theme.fgMuted)
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(Capsule().fill(Theme.surface))
+            .overlay(Capsule().strokeBorder(Theme.border, lineWidth: 0.5))
     }
 }
 
