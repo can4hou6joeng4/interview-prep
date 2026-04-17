@@ -32,7 +32,7 @@ struct InterviewPrepShortcuts: AppShortcutsProvider {
             phrases: [
                 "\(.applicationName) 随机来一题",
                 "用 \(.applicationName) 抽一题",
-                "随机面试题"
+                "\(.applicationName) 随机面试题"
             ],
             shortTitle: "随机来一题",
             systemImageName: "shuffle"
@@ -41,7 +41,7 @@ struct InterviewPrepShortcuts: AppShortcutsProvider {
             intent: OpenTodayReviewIntent(),
             phrases: [
                 "\(.applicationName) 开始复习",
-                "今日复习"
+                "\(.applicationName) 今日复习"
             ],
             shortTitle: "开始今日复习",
             systemImageName: "book"

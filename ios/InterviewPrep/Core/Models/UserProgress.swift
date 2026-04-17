@@ -3,7 +3,6 @@ import SwiftData
 
 @Model
 final class UserProgress {
-    #Index<UserProgress>([\.questionId])
     @Attribute(.unique) var questionId: String
     var status: Int           // 0 未学 1 学习中 2 已掌握
     var favorited: Bool
