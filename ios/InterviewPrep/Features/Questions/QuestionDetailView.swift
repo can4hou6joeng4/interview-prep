@@ -9,6 +9,8 @@ struct QuestionDetailView: View {
     @EnvironmentObject private var tts: TTSService
     @EnvironmentObject private var cloud: CloudSyncService
     @Query private var all: [UserProgress]
+    @State private var showNoteEditor = false
+    @State private var noteDraft: String = ""
 
     private var progress: UserProgress? {
         all.first { $0.questionId == question.id }
@@ -37,6 +39,13 @@ struct QuestionDetailView: View {
                         Image(systemName: isReadingThis ? "stop.circle.fill" : "speaker.wave.2.fill")
                             .foregroundStyle(.blue)
                     }
+                    Button {
+                        noteDraft = progress?.note ?? ""
+                        showNoteEditor = true
+                    } label: {
+                        Image(systemName: (progress?.note.isEmpty ?? true) ? "note.text" : "note.text.badge.plus")
+                            .foregroundStyle(.purple)
+                    }
                 }
                 Picker("掌握度", selection: Binding(
                     get: { progress?.status ?? 0 },
@@ -48,6 +57,16 @@ struct QuestionDetailView: View {
                 }
                 .pickerStyle(.segmented)
 
+                if let p = progress, !p.note.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("我的笔记", systemImage: "note.text").font(.caption).foregroundStyle(.secondary)
+                        Text(p.note).font(.callout)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.purple.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                }
+
                 Divider()
                 AnswerWebView(html: wrappedHTML)
                     .frame(minHeight: 400)
@@ -58,6 +77,9 @@ struct QuestionDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { touch() }
         .onDisappear { if isReadingThis { tts.stop() } }
+        .sheet(isPresented: $showNoteEditor) {
+            NoteEditorSheet(questionText: question.q, note: $noteDraft, onSave: saveNote)
+        }
     }
 
     private func ensureProgress() -> UserProgress {
@@ -84,6 +106,13 @@ struct QuestionDetailView: View {
     private func updateStatus(_ s: Int) {
         let p = ensureProgress()
         p.status = s
+        try? ctx.save()
+        cloud.push(all)
+    }
+
+    private func saveNote(_ text: String) {
+        let p = ensureProgress()
+        p.note = text
         try? ctx.save()
         cloud.push(all)
     }

@@ -78,7 +78,7 @@ ios/
 └── README.md
 ```
 
-## 已实现能力（S1 + S2 + S3）
+## 已实现能力（S1 + S2 + S3 + S4）
 
 - ✅ 19 分类 / 203 题离线浏览
 - ✅ 题目详情 WebView 渲染（HTML + 代码块 + 深色模式）
@@ -89,6 +89,9 @@ ios/
 - ✅ TTS 通勤朗读（中文普通话，锁屏后可继续）
 - ✅ Siri Shortcuts + App Intents：「随机来一题」「开始今日复习」
 - ✅ iCloud Key-Value Store 同步（多设备进度合并）
+- ✅ **「我的」Tab**：错题本（学习中）/ 收藏夹 / 最近查看
+- ✅ **题目笔记**：每题可写 Markdown 笔记，随 iCloud 同步
+- ✅ **难度筛选**：题目列表支持 easy/medium/hard 过滤
 
 ## 证书能力边界说明
 
@@ -103,8 +106,9 @@ ios/
 
 当前 S3 已采用**零扩展**方案：Siri Shortcuts/TTS/iCloud KVS 全部在主 App 进程内实现，覆盖 95% 的 iOS 独有体验。
 
-## 下一步（S4 候选）
+## 下一步（S5 候选）
 
 - 题库增量下载机制（App 启动拉 `questions-index.json` 比对版本）
-- LaTeX 公式渲染（当前代码块 OK，数学公式需评估 iosMath）
-- 错题本自动归集（基于 UserProgress.status=1 且多次查看）
+- 艾宾浩斯间隔重复算法（SM-2）驱动每日复习推送
+- 错题本按分类二级分组 + 按上次查看时间排序
+- 学习日历热力图

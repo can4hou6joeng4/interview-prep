@@ -92,19 +92,20 @@ ios/
 └── README.md                   # 构建/签名说明
 ```
 
-## 6. Sprint 拆分（3 个迭代 × 约 8 个 PR）
+## 6. Sprint 拆分（4 个迭代）
 
-### S1 — 骨架与数据闭环（当前 PR 起点）
+### S1 — 骨架与数据闭环（已完成）
 - [x] 新建 `feat/ios-app-scaffold` 分支
 - [x] 数据导出脚本 `scripts/export-ios-data.mjs`
 - [x] XcodeGen 工程骨架 `ios/project.yml` + SwiftUI 最小可运行 App
 - [x] 分类列表 / 题目列表 / 题目详情（WebView 渲染答案）
-- [ ] `ios/README.md`：XcodeGen 生成、企业证书签名、安装步骤
+- [x] `ios/README.md`：XcodeGen 生成、企业证书签名、安装步骤
 
-### S2 — 用户状态与搜索
-- [ ] SwiftData 模型：`UserProgress { questionId, status, favorited, lastViewedAt, note }`
-- [ ] 全文搜索（本地）：按标题 + 答案文本倒排
-- [ ] Spotlight 索引（`CoreSpotlight`）：系统搜索直达题目
+### S2 — 用户状态与搜索（已完成）
+- [x] SwiftData 模型：`UserProgress { questionId, status, favorited, lastViewedAt, note }`
+- [x] 全文搜索（本地）：按标题 + 答案文本 contains
+- [x] Spotlight 索引（`CoreSpotlight`）：系统搜索直达题目
+- [x] 证书双配置（开发者 / 企业）+ 签名打包脚本
 
 ### S3 — iOS 独有能力（已完成）
 - [x] TTS 通勤朗读（`AVSpeechSynthesizer` + `AVAudioSession` 后台播放）
@@ -112,6 +113,12 @@ ios/
 - [x] iCloud Key-Value Store 同步（`NSUbiquitousKeyValueStore` + 进度合并）
 - [x] 深链路由（`DeepLink` + `DeepLinkTarget`）对接 Spotlight / Siri 唤起
 - [~] Widget / Live Activity — **阻塞**：需注册新 App ID，待升级 $99 开发者账号
+
+### S4 — 个人使用闭环（已完成）
+- [x] 「我的」Tab：错题本（学习中）/ 收藏夹 / 最近查看
+- [x] 题目笔记编辑（`NoteEditorSheet` + SwiftData `note` 字段 + iCloud 同步）
+- [x] 题目列表按难度筛选（`DiffFilter` segmented picker）
+- [x] 确认题库零 LaTeX → 砍掉 LaTeX 渲染需求
 
 ## 7. 风险与对齐
 

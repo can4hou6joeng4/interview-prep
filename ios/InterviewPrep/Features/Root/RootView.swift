@@ -25,18 +25,25 @@ struct RootView: View {
             .tag(1)
 
             NavigationStack {
+                MyView()
+                    .navigationTitle("我的")
+            }
+            .tabItem { Label("我的", systemImage: "person.crop.circle") }
+            .tag(2)
+
+            NavigationStack {
                 RandomView()
                     .navigationTitle("随机一题")
             }
             .tabItem { Label("随机", systemImage: "shuffle") }
-            .tag(2)
+            .tag(3)
 
             NavigationStack {
                 SettingsView()
                     .navigationTitle("设置")
             }
             .tabItem { Label("设置", systemImage: "gearshape") }
-            .tag(3)
+            .tag(4)
         }
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
             guard let id = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
@@ -67,13 +74,13 @@ struct RootView: View {
     private func handle(target: DeepLinkTarget) {
         switch target {
         case .random:
-            selectedTab = 2
+            selectedTab = 3
             if let (cat, q) = store.randomQuestion() {
                 deepLinkCategory = cat
                 deepLinkQuestion = q
             }
         case .review:
-            selectedTab = 0
+            selectedTab = 2
         case .question(let id):
             if let (cat, q) = store.find(questionId: id) {
                 deepLinkCategory = cat
