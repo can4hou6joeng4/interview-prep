@@ -55,8 +55,13 @@ struct NeoBorder: ViewModifier {
 
 struct NeoShadow: ViewModifier {
     var offset: CGFloat = 4
+    var color: Color = Theme.border
     func body(content: Content) -> some View {
-        content.shadow(color: Theme.border, radius: 0, x: offset, y: offset)
+        // 背景层矩形伪阴影，避免 SwiftUI `.shadow` 对子 Text 产生鬼影
+        content.background(
+            color
+                .offset(x: offset, y: offset)
+        )
     }
 }
 
