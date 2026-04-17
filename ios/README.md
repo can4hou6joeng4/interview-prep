@@ -32,6 +32,45 @@ open InterviewPrep.xcodeproj
 
 > ⚠️ 如果你当前 iPhone 的 UDID **不是** `00008130-001219640A98001C`，`Debug/Release` 配置无法真机运行，必须换用 `ReleaseEnterprise` 或找一台匹配的设备。
 
+## 安装到设备
+
+本项目产出的 `build/ipa/InterviewPrep.ipa` **已用 Distribution 证书正品签名**，profile 已绑定目标 UDID。**直接装即可，不要重签**（AltStore/Sideloadly 默认会重签降级成 7 天证书，丢 iCloud/Siri 能力）。
+
+### 推荐方式 A — 命令行（零 GUI）
+
+```bash
+# iPhone 通过 USB 连 Mac → 解锁 → 信任此电脑
+./scripts/install-device.sh
+# 或先构建再装
+./scripts/install-device.sh dev
+```
+
+脚本会自动：
+1. 校验 ipa 的签名链（Authority 三级完整）
+2. 探测连接的 iOS 设备 UDID
+3. 通过 `xcrun devicectl device install app` 直装（保持原签名）
+
+### 推荐方式 B — Apple Configurator 2（GUI）
+
+1. Mac App Store 装 Apple Configurator 2（免费）
+2. iPhone USB 连 Mac
+3. Configurator 2 里拖入 `build/ipa/InterviewPrep.ipa` → Add
+
+### 不推荐的方式
+
+- **AltStore / Sideloadly**：它们默认把 ipa 重新用免费 Apple ID 签名 → 7 天过期 + 丢 entitlements
+- **爱思助手 / ESign 默认配置**：同上，需手动关闭重签
+
+### 后续题库更新
+
+```bash
+# 仓库根目录
+node scripts/export-ios-data.mjs
+cd ios && ./scripts/install-device.sh dev
+```
+
+一键重建并推到设备。
+
 ## 打包 .ipa
 
 ```bash
@@ -41,12 +80,6 @@ cd ios
 ```
 
 产物：`ios/build/ipa/InterviewPrep.ipa`
-
-## 安装到设备
-
-1. **AltStore / Sideloadly**：拖入 .ipa 即可
-2. **Apple Configurator 2**：连接设备 → 拖入 .ipa
-3. **企业 OTA**：把 .ipa + manifest.plist 放 HTTPS 服务器，用 `itms-services://` 链接安装
 
 ## 题库更新
 
