@@ -21,7 +21,7 @@ mkdir -p "$BUILD_DIR"
 case "$MODE" in
   dev)
     CONFIG="Release"
-    METHOD="development"
+    METHOD="release-testing"
     TEAM="R36U8N6X48"
     BUNDLE="app.yellow4516.serval5183"
     PROFILE="00008130-001219640A98001CDA524Y"
