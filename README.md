@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/can4hou6joeng4/interview-prep?style=flat-square)](./LICENSE)
 [![Stars](https://img.shields.io/github/stars/can4hou6joeng4/interview-prep?style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/stargazers)
 
-Interactive flashcard-style interview prep for Go backend roles, tailored around real project experience, system design depth, and structured review workflows.
+Open-source interview prep toolkit for Go backend roles, combining a GitHub Pages flashcard site with a native iOS study app focused on review loops, lightweight note-taking, and structured recall.
 
 [中文说明](./README_zh.md)
 [Changelog](./CHANGELOG.md)
@@ -13,6 +13,7 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 ## Highlights
 
 - 19 categories and 203 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
+- Native iOS app built with SwiftUI, featuring a study dashboard, review queue, theme switching, lightweight note capture, and progress sync
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
 - Curated learning paths now group the bank into commerce, platform, realtime, project deep-dive, and sprint tracks
 - Dedicated weak-review entry now lets you jump into wrong-answer, fuzzy, weak, and mastered-only review within the current learning path
@@ -23,6 +24,24 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 - Zero-build static architecture, designed for GitHub Pages deployment
 - Every question and category now has a dedicated static page (`q/*.html`, `c/*.html`) for long-tail search indexing
 - Repository-level validation keeps README stats, SEO metadata, and required site assets in sync
+
+## Product Surfaces
+
+### GitHub Pages
+
+- Home dashboard with learning-path shortcuts and static SEO-friendly question/category pages
+- Flashcards, searchable list mode, and mock interview drills for browser-based practice
+
+### iOS App
+
+- Native study dashboard with “what to study next” actions
+- Dedicated review queue for weak/favorited items
+- Adaptive light/dark/system theme support
+- In-app note capture and recent-note surfacing for knowledge accumulation
+
+![iOS dashboard](./assets/ios-dashboard.jpg)
+
+![iOS review queue](./assets/ios-review-session.jpg)
 
 ## Live Demo
 
@@ -47,7 +66,13 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   ├── app.js
 │   ├── data.js
 │   ├── favicon.svg
+│   ├── ios-dashboard.jpg
+│   ├── ios-review-session.jpg
 │   └── styles.css
+├── ios/
+│   ├── InterviewPrep.xcodeproj
+│   ├── InterviewPrep/
+│   └── README.md
 ├── scripts/
 │   ├── build-pages.mjs
 │   ├── check-fast.sh
