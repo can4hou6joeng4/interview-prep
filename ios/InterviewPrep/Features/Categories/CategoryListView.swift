@@ -33,9 +33,9 @@ struct CategoryListView: View {
                 LazyVStack(spacing: 18, pinnedViews: []) {
                     hero
                     dashboard
-                    metrics
                     sectionHeader("题目分类", trailing: "\(store.categories.count) 项")
                     categoriesList
+                    metrics
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 14)
@@ -234,6 +234,7 @@ struct CategoryListView: View {
 
     private var categoriesList: some View {
         VStack(alignment: .leading, spacing: 18) {
+            featuredOverview
             subsectionHeader(
                 kicker: "Focus Tracks",
                 title: "重点专题",
@@ -249,6 +250,14 @@ struct CategoryListView: View {
         }
         .padding(16)
         .elevatedCard(bg: Theme.base2)
+    }
+
+    private var featuredOverview: some View {
+        HStack(spacing: 10) {
+            overviewPill(title: "重点专题", value: "\(featuredCategoryItems.count)")
+            overviewPill(title: "全部分类", value: "\(compactCategoryItems.count)")
+            overviewPill(title: "总题量", value: "\(store.totalCount)")
+        }
     }
 
     private var featuredCategories: some View {
@@ -466,6 +475,20 @@ struct CategoryListView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func overviewPill(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Theme.fgMuted)
+            Text(value)
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .foregroundStyle(Theme.fg)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .elevatedCard(bg: Theme.surface)
     }
 
     private func featuredDescription(for category: Category) -> String {
