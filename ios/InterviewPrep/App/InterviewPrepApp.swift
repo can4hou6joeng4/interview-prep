@@ -7,38 +7,42 @@ struct InterviewPrepApp: App {
     @StateObject private var tts = TTSService.shared
     @StateObject private var cloud = CloudSyncService.shared
     @StateObject private var deeplink = DeepLink.shared
+    @AppStorage("appThemePreference") private var appThemePreferenceRaw = AppThemePreference.system.rawValue
+
+    private var appThemePreference: AppThemePreference {
+        get { AppThemePreference(rawValue: appThemePreferenceRaw) ?? .system }
+        nonmutating set { appThemePreferenceRaw = newValue.rawValue }
+    }
 
     init() {
-        // Nav bar — transparent dark with subtle hairline
         let nav = UINavigationBarAppearance()
-        nav.configureWithTransparentBackground()
+        nav.configureWithDefaultBackground()
         nav.backgroundColor = UIColor(Theme.base)
-        nav.shadowColor = .clear
+        nav.shadowColor = UIColor(Theme.border).withAlphaComponent(0.4)
         nav.titleTextAttributes = [
             .foregroundColor: UIColor(Theme.fg),
             .font: UIFont.systemFont(ofSize: 15, weight: .semibold)
         ]
         nav.largeTitleTextAttributes = [
             .foregroundColor: UIColor(Theme.fg),
-            .font: UIFont.systemFont(ofSize: 28, weight: .bold)
+            .font: UIFont.systemFont(ofSize: 30, weight: .bold)
         ]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
-        UINavigationBar.appearance().tintColor = UIColor(Theme.fg)
+        UINavigationBar.appearance().tintColor = UIColor(Theme.accent)
 
-        // Tab bar — matches elevated surface
         let tab = UITabBarAppearance()
-        tab.configureWithOpaqueBackground()
-        tab.backgroundColor = UIColor(Theme.elevated)
-        tab.shadowColor = UIColor(Theme.border)
+        tab.configureWithDefaultBackground()
+        tab.backgroundColor = UIColor(Theme.surface)
+        tab.shadowColor = UIColor(Theme.border).withAlphaComponent(0.35)
         let item = tab.stackedLayoutAppearance
         item.normal.iconColor = UIColor(Theme.fgDim)
         item.normal.titleTextAttributes = [
             .foregroundColor: UIColor(Theme.fgDim),
             .font: UIFont.systemFont(ofSize: 10, weight: .medium)
         ]
-        item.selected.iconColor = UIColor(Theme.fg)
+        item.selected.iconColor = UIColor(Theme.accent)
         item.selected.titleTextAttributes = [
             .foregroundColor: UIColor(Theme.fg),
             .font: UIFont.systemFont(ofSize: 10, weight: .semibold)
@@ -56,7 +60,7 @@ struct InterviewPrepApp: App {
                 .environmentObject(cloud)
                 .environmentObject(deeplink)
                 .tint(Theme.accent)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(appThemePreference.colorScheme)
         }
         .modelContainer(for: UserProgress.self)
     }

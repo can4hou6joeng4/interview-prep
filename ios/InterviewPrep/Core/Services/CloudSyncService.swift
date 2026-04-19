@@ -30,6 +30,7 @@ final class CloudSyncService: ObservableObject {
             let favorited: Bool
             let note: String
             let viewed: Date?
+            let noteUpdatedAt: Date?
         }
         var updatedAt: Date
         var items: [Item]
@@ -40,7 +41,7 @@ final class CloudSyncService: ObservableObject {
             updatedAt: Date(),
             items: items.map {
                 .init(id: $0.questionId, status: $0.status, favorited: $0.favorited,
-                      note: $0.note, viewed: $0.lastViewedAt)
+                      note: $0.note, viewed: $0.lastViewedAt, noteUpdatedAt: $0.noteUpdatedAt)
             }
         )
         guard let data = try? JSONEncoder().encode(snap) else { return }

@@ -8,12 +8,14 @@ final class UserProgress {
     var favorited: Bool
     var note: String
     var lastViewedAt: Date?
+    var noteUpdatedAt: Date?
 
-    init(questionId: String, status: Int = 0, favorited: Bool = false, note: String = "", lastViewedAt: Date? = nil) {
+    init(questionId: String, status: Int = 0, favorited: Bool = false, note: String = "", lastViewedAt: Date? = nil, noteUpdatedAt: Date? = nil) {
         self.questionId = questionId
         self.status = status
         self.favorited = favorited
         self.note = note
         self.lastViewedAt = lastViewedAt
+        self.noteUpdatedAt = noteUpdatedAt
     }
 }

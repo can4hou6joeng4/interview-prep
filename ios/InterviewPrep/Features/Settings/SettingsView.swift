@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject private var store: QuestionStore
     @EnvironmentObject private var cloud: CloudSyncService
     @Environment(\.modelContext) private var ctx
+    @AppStorage("appThemePreference") private var appThemePreferenceRaw = AppThemePreference.system.rawValue
     @Query private var progresses: [UserProgress]
 
     private var mastered: Int { progresses.filter { $0.status == 2 }.count }
@@ -19,8 +20,10 @@ struct SettingsView: View {
                 VStack(spacing: 18) {
                     hero
                     progressCard
+                    section(title: "外观") { appearanceCard }
                     section(title: "iCloud 同步") { cloudCard }
                     section(title: "题库信息") { libraryCard }
+                    section(title: "开源协作") { openSourceCard }
                     section(title: "关于") { aboutCard }
                 }
                 .padding(20)
@@ -30,9 +33,12 @@ struct SettingsView: View {
     }
 
     private var hero: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             KickerText(text: "Settings")
             Text("偏好与同步").font(.system(size: 24, weight: .bold)).foregroundStyle(Theme.fg)
+            Text("管理外观、同步和题库基础信息。")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.fgMuted)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 4)
@@ -67,6 +73,11 @@ struct SettingsView: View {
         }
     }
 
+    private var themePreference: AppThemePreference {
+        get { AppThemePreference(rawValue: appThemePreferenceRaw) ?? .system }
+        nonmutating set { appThemePreferenceRaw = newValue.rawValue }
+    }
+
     @ViewBuilder
     private func section<C: View>(title: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -91,6 +102,44 @@ struct SettingsView: View {
             }
             .padding(14)
         }
+        .elevatedCard()
+    }
+
+    private var appearanceCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("选择你更舒服的阅读环境。")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.fgMuted)
+
+            HStack(spacing: 10) {
+                ForEach(AppThemePreference.allCases) { option in
+                    Button {
+                        themePreference = option
+                    } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: option.icon)
+                                .font(.system(size: 16, weight: .semibold))
+                            Text(option.title)
+                                .font(.system(size: 11, weight: .semibold))
+                                .multilineTextAlignment(.center)
+                        }
+                        .foregroundStyle(themePreference == option ? .white : Theme.fg)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
+                                .fill(themePreference == option ? Theme.accent : Theme.base2)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
+                                .stroke(themePreference == option ? Color.clear : Theme.border, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.pressable)
+                }
+            }
+        }
+        .padding(16)
         .elevatedCard()
     }
 
@@ -123,6 +172,23 @@ struct SettingsView: View {
         .elevatedCard()
     }
 
+    private var openSourceCard: some View {
+        VStack(spacing: 0) {
+            openSourceLink(
+                title: "查看 Issues",
+                subtitle: "看看还有哪些功能和问题正在推进",
+                url: "https://github.com/can4hou6joeng4/interview-prep/issues"
+            )
+            divider
+            openSourceLink(
+                title: "查看 Changelog",
+                subtitle: "追踪题库和产品迭代记录",
+                url: "https://github.com/can4hou6joeng4/interview-prep/blob/main/CHANGELOG.md"
+            )
+        }
+        .elevatedCard()
+    }
+
     private func infoRow(_ label: String, value: String, tint: Color? = nil) -> some View {
         HStack {
             Text(label).font(.system(size: 13)).foregroundStyle(Theme.fgMuted)
@@ -141,20 +207,36 @@ struct SettingsView: View {
         Rectangle().fill(Theme.border).frame(height: 0.5).padding(.leading, 14)
     }
 
-    private func buttonLabel(icon: String, title: String, primary: Bool) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 11, weight: .semibold))
-            Text(title).font(.system(size: 12, weight: .semibold))
+    private func openSourceLink(title: String, subtitle: String, url: String) -> some View {
+        Link(destination: URL(string: url)!) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.fg)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Theme.fgDim)
+                }
+                Text(subtitle)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.fgMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .foregroundStyle(primary ? .white : Theme.fg)
-        .frame(maxWidth: .infinity).padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
-                .fill(primary ? Theme.accent : Theme.surfaceHi)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
-                .strokeBorder(primary ? Color.clear : Theme.borderHi, lineWidth: 0.5)
+    }
+
+    private func buttonLabel(icon: String, title: String, primary: Bool) -> some View {
+        BrutalButtonLabel(
+            title: title,
+            icon: icon,
+            bg: primary ? Theme.accent : Theme.chrome,
+            fg: primary ? .white : Theme.fg,
+            fullWidth: true
         )
     }
 
@@ -170,6 +252,10 @@ struct SettingsView: View {
                 existing.status = max(existing.status, item.status)
                 existing.favorited = existing.favorited || item.favorited
                 if existing.note.isEmpty { existing.note = item.note }
+                if let noteUpdated = item.noteUpdatedAt,
+                   existing.noteUpdatedAt == nil || existing.noteUpdatedAt! < noteUpdated {
+                    existing.noteUpdatedAt = noteUpdated
+                }
                 if let viewed = item.viewed, (existing.lastViewedAt == nil || existing.lastViewedAt! < viewed) {
                     existing.lastViewedAt = viewed
                 }
@@ -179,7 +265,8 @@ struct SettingsView: View {
                     status: item.status,
                     favorited: item.favorited,
                     note: item.note,
-                    lastViewedAt: item.viewed
+                    lastViewedAt: item.viewed,
+                    noteUpdatedAt: item.noteUpdatedAt
                 ))
             }
         }
