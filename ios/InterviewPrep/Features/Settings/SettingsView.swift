@@ -6,6 +6,7 @@ struct SettingsView: View {
     @EnvironmentObject private var cloud: CloudSyncService
     @Environment(\.modelContext) private var ctx
     @AppStorage("appThemePreference") private var appThemePreferenceRaw = AppThemePreference.system.rawValue
+    @AppStorage("appAccentPalette") private var appAccentPaletteRaw = AppAccentPalette.indigo.rawValue
     @Query private var progresses: [UserProgress]
 
     private var mastered: Int { progresses.filter { $0.status == 2 }.count }
@@ -78,6 +79,11 @@ struct SettingsView: View {
         nonmutating set { appThemePreferenceRaw = newValue.rawValue }
     }
 
+    private var accentPalette: AppAccentPalette {
+        get { AppAccentPalette(rawValue: appAccentPaletteRaw) ?? .indigo }
+        nonmutating set { appAccentPaletteRaw = newValue.rawValue }
+    }
+
     @ViewBuilder
     private func section<C: View>(title: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -136,6 +142,38 @@ struct SettingsView: View {
                         )
                     }
                     .buttonStyle(.pressable)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                KickerText(text: "Palette")
+                HStack(spacing: 10) {
+                    ForEach(AppAccentPalette.allCases) { palette in
+                        Button {
+                            accentPalette = palette
+                        } label: {
+                            VStack(spacing: 8) {
+                                Circle()
+                                    .fill(Color(hex: palette.preview.light))
+                                    .frame(width: 22, height: 22)
+                                    .overlay(Circle().stroke(Theme.border, lineWidth: 1))
+                                Text(palette.title)
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+                            .foregroundStyle(accentPalette == palette ? .white : Theme.fg)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
+                                    .fill(accentPalette == palette ? Theme.accent : Theme.base2)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
+                                    .stroke(accentPalette == palette ? Color.clear : Theme.border, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.pressable)
+                    }
                 }
             }
         }

@@ -8,6 +8,7 @@ struct InterviewPrepApp: App {
     @StateObject private var cloud = CloudSyncService.shared
     @StateObject private var deeplink = DeepLink.shared
     @AppStorage("appThemePreference") private var appThemePreferenceRaw = AppThemePreference.system.rawValue
+    @AppStorage("appAccentPalette") private var appAccentPaletteRaw = AppAccentPalette.indigo.rawValue
 
     private var appThemePreference: AppThemePreference {
         get { AppThemePreference(rawValue: appThemePreferenceRaw) ?? .system }
@@ -15,6 +16,10 @@ struct InterviewPrepApp: App {
     }
 
     init() {
+        configureAppearance()
+    }
+
+    private func configureAppearance() {
         let nav = UINavigationBarAppearance()
         nav.configureWithDefaultBackground()
         nav.backgroundColor = UIColor(Theme.base)
@@ -61,6 +66,16 @@ struct InterviewPrepApp: App {
                 .environmentObject(deeplink)
                 .tint(Theme.accent)
                 .preferredColorScheme(appThemePreference.colorScheme)
+                .id("\(appThemePreferenceRaw)-\(appAccentPaletteRaw)")
+                .onAppear {
+                    configureAppearance()
+                }
+                .onChange(of: appAccentPaletteRaw) { _, _ in
+                    configureAppearance()
+                }
+                .onChange(of: appThemePreferenceRaw) { _, _ in
+                    configureAppearance()
+                }
         }
         .modelContainer(for: UserProgress.self)
     }

@@ -33,12 +33,97 @@ enum AppThemePreference: String, CaseIterable, Identifiable {
     }
 }
 
+enum AppAccentPalette: String, CaseIterable, Identifiable {
+    case indigo
+    case ocean
+    case sunset
+    case forest
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .indigo: return "默认"
+        case .ocean: return "海洋"
+        case .sunset: return "日落"
+        case .forest: return "森林"
+        }
+    }
+
+    var preview: (light: UInt32, dark: UInt32) {
+        switch self {
+        case .indigo: return (0x4F46E5, 0x818CF8)
+        case .ocean: return (0x0891B2, 0x22D3EE)
+        case .sunset: return (0xEA580C, 0xFB923C)
+        case .forest: return (0x15803D, 0x4ADE80)
+        }
+    }
+}
+
+private struct ThemePalette {
+    let accentLight: UInt32
+    let accentDark: UInt32
+    let accentHiLight: UInt32
+    let accentHiDark: UInt32
+    let accentDimLight: UInt32
+    let accentDimDark: UInt32
+    let chromeLight: UInt32
+    let chromeDark: UInt32
+    let base2Light: UInt32
+    let base2Dark: UInt32
+    let infoLight: UInt32
+    let infoDark: UInt32
+}
+
 // MARK: - Theme (Native Study Tool, adaptive)
 enum Theme {
+    private static var currentPalette: ThemePalette {
+        let raw = UserDefaults.standard.string(forKey: "appAccentPalette") ?? AppAccentPalette.indigo.rawValue
+        let palette = AppAccentPalette(rawValue: raw) ?? .indigo
+        switch palette {
+        case .indigo:
+            return ThemePalette(
+                accentLight: 0x4F46E5, accentDark: 0x818CF8,
+                accentHiLight: 0x6366F1, accentHiDark: 0xA5B4FC,
+                accentDimLight: 0x4338CA, accentDimDark: 0xC7D2FE,
+                chromeLight: 0xE0E7FF, chromeDark: 0x1A2440,
+                base2Light: 0xEEF2FF, base2Dark: 0x111B31,
+                infoLight: 0xDBEAFE, infoDark: 0x172554
+            )
+        case .ocean:
+            return ThemePalette(
+                accentLight: 0x0891B2, accentDark: 0x22D3EE,
+                accentHiLight: 0x06B6D4, accentHiDark: 0x67E8F9,
+                accentDimLight: 0x155E75, accentDimDark: 0xA5F3FC,
+                chromeLight: 0xD9F5FB, chromeDark: 0x082F49,
+                base2Light: 0xECFEFF, base2Dark: 0x0F172A,
+                infoLight: 0xCFFAFE, infoDark: 0x083344
+            )
+        case .sunset:
+            return ThemePalette(
+                accentLight: 0xEA580C, accentDark: 0xFB923C,
+                accentHiLight: 0xF97316, accentHiDark: 0xFDBA74,
+                accentDimLight: 0x9A3412, accentDimDark: 0xFED7AA,
+                chromeLight: 0xFFEDD5, chromeDark: 0x431407,
+                base2Light: 0xFFF7ED, base2Dark: 0x2A1A11,
+                infoLight: 0xFFEDD5, infoDark: 0x4A2C1D
+            )
+        case .forest:
+            return ThemePalette(
+                accentLight: 0x15803D, accentDark: 0x4ADE80,
+                accentHiLight: 0x16A34A, accentHiDark: 0x86EFAC,
+                accentDimLight: 0x166534, accentDimDark: 0xBBF7D0,
+                chromeLight: 0xDCFCE7, chromeDark: 0x052E16,
+                base2Light: 0xF0FDF4, base2Dark: 0x10231A,
+                infoLight: 0xDCFCE7, infoDark: 0x163126
+            )
+        }
+    }
+
     static let base = Color(light: 0xF6F7FB, dark: 0x0B1220)
-    static let base2 = Color(light: 0xEEF2FF, dark: 0x111B31)
+    static var base2: Color { Color(light: currentPalette.base2Light, dark: currentPalette.base2Dark) }
     static let surface = Color(light: 0xFFFFFF, dark: 0x162033)
-    static let chrome = Color(light: 0xE0E7FF, dark: 0x1A2440)
+    static var chrome: Color { Color(light: currentPalette.chromeLight, dark: currentPalette.chromeDark) }
     static let chromeBorder = Color(light: 0xCBD5E1, dark: 0x334155)
     static let elevated = surface
     static let elevated2 = base2
@@ -53,16 +138,16 @@ enum Theme {
     static let shadow = Color(light: 0x000000, dark: 0x000000).opacity(0.14)
     static let borderWidth: CGFloat = 1.25
 
-    static let accent = Color(light: 0x4F46E5, dark: 0x818CF8)
-    static let accentHi = Color(light: 0x6366F1, dark: 0xA5B4FC)
-    static let accentDim = Color(light: 0x4338CA, dark: 0xC7D2FE)
+    static var accent: Color { Color(light: currentPalette.accentLight, dark: currentPalette.accentDark) }
+    static var accentHi: Color { Color(light: currentPalette.accentHiLight, dark: currentPalette.accentHiDark) }
+    static var accentDim: Color { Color(light: currentPalette.accentDimLight, dark: currentPalette.accentDimDark) }
     static let success = Color(light: 0xD1FAE5, dark: 0x10372B)
     static let successSolid = Color(light: 0x10B981, dark: 0x34D399)
     static let warning = Color(light: 0xFEF3C7, dark: 0x4A3514)
     static let warningSolid = Color(light: 0xF59E0B, dark: 0xFBBF24)
     static let danger = Color(light: 0xFEE2E2, dark: 0x4A1F28)
     static let dangerSolid = Color(light: 0xEF4444, dark: 0xFB7185)
-    static let info = Color(light: 0xDBEAFE, dark: 0x172554)
+    static var info: Color { Color(light: currentPalette.infoLight, dark: currentPalette.infoDark) }
     static let blue = Color(light: 0xCFE8FF, dark: 0x1E3A5F)
     static let purple = Color(light: 0xDDD6FE, dark: 0x2E2457)
     static let lime = Color(light: 0xD9F99D, dark: 0x365314)
