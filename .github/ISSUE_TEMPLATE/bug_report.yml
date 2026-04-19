@@ -4,6 +4,19 @@ title: "[Bug] "
 labels:
   - bug
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 影响范围
+      description: 这个问题主要影响哪一部分
+      options:
+        - GitHub Pages / 静态站点
+        - iOS App
+        - 题库内容
+        - 构建 / CI / Workflow
+        - 文档 / 仓库配置
+    validations:
+      required: true
   - type: textarea
     id: summary
     attributes:
@@ -34,3 +47,8 @@ body:
     attributes:
       label: 环境信息
       description: 浏览器、系统、是否为 GitHub Pages 页面
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响程度
+      description: 例如是否阻断刷题、是否仅影响样式、是否会导致数据丢失

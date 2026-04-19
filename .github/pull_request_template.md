@@ -2,6 +2,13 @@
 
 - 
 
+## Scope
+
+- [ ] GitHub Pages / 静态站点
+- [ ] iOS App
+- [ ] 题库内容
+- [ ] 仓库治理 / 文档
+
 ## Validation
 
 - [ ] `node --check assets/app.js`
