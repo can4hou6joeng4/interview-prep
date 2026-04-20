@@ -15,6 +15,8 @@ Open-source interview prep toolkit for Go backend roles, combining a GitHub Page
 - 19 categories and 203 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
 - Native iOS app built with SwiftUI, featuring a study dashboard, review queue, theme switching, lightweight note capture, and progress sync
 - Native iOS app now supports multiple accent palettes alongside system/light/dark appearance switching
+- Native iOS app home now highlights streak days, weekly review volume, and monthly topic coverage
+- Review completion screen reports mastery rate and routes users back to the topic that needs more work
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
 - Curated learning paths now group the bank into commerce, platform, realtime, project deep-dive, and sprint tracks
 - Dedicated weak-review entry now lets you jump into wrong-answer, fuzzy, weak, and mastered-only review within the current learning path
@@ -36,7 +38,10 @@ Open-source interview prep toolkit for Go backend roles, combining a GitHub Page
 ### iOS App
 
 - Native study dashboard with “what to study next” actions
-- Dedicated review queue for weak/favorited items
+- Streak tracking with daily / weekly / monthly study metrics on the home board
+- Dedicated review queue for weak/favorited items, plus a completion screen with mastery rate and topic-level recommendations
+- Category bank with status filters (unstarted / learning / mastered / favorited) and per-category mastery progress
+- Search results come with quick actions to favorite, mark-as-learning, and jump into the owning topic
 - Adaptive light/dark/system theme support
 - Accent palette presets for different reading moods and visual preferences
 - In-app note capture and recent-note surfacing for knowledge accumulation
