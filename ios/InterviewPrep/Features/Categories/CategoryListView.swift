@@ -14,65 +14,29 @@ struct CategoryListView: View {
     }
 
     private var activeDays: [Date] {
-        let cal = Calendar.current
-        let set = Set(progresses.compactMap { progress -> Date? in
-            guard let date = progress.lastViewedAt else { return nil }
-            return cal.startOfDay(for: date)
-        })
-        return set.sorted(by: >)
+        StudyStats.activeDaySet(from: progresses.compactMap { $0.lastViewedAt })
+            .sorted(by: >)
     }
 
     private var streakCount: Int {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        var cursor = today
-        var count = 0
-        let active = Set(activeDays)
-        while active.contains(cursor) {
-            count += 1
-            guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = prev
-        }
-        if count == 0 {
-            if let yesterday = cal.date(byAdding: .day, value: -1, to: today),
-               active.contains(yesterday) {
-                var c2 = 0
-                var cur = yesterday
-                while active.contains(cur) {
-                    c2 += 1
-                    guard let prev = cal.date(byAdding: .day, value: -1, to: cur) else { break }
-                    cur = prev
-                }
-                return c2
-            }
-        }
-        return count
+        let set = Set(activeDays)
+        return StudyStats.streakDays(activeDays: set)
     }
 
     private var thisWeekViewed: Int {
-        let cal = Calendar.current
-        let weekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start ?? .distantPast
-        let ids = Set(progresses.compactMap { progress -> String? in
-            guard let date = progress.lastViewedAt, date >= weekStart else { return nil }
-            return progress.questionId
-        })
-        return ids.count
+        let dates = progresses.compactMap { $0.lastViewedAt }
+        return StudyStats.thisWeekViewedCount(viewedDates: dates)
     }
 
     private var thisMonthCategoryCoverage: Int {
-        let cal = Calendar.current
-        let monthStart = cal.dateInterval(of: .month, for: Date())?.start ?? .distantPast
-        let questionIds = progresses.compactMap { progress -> String? in
-            guard let date = progress.lastViewedAt, date >= monthStart else { return nil }
-            return progress.questionId
+        let entries = progresses.compactMap { progress -> (Date, String?)? in
+            guard let date = progress.lastViewedAt else { return nil }
+            let categoryId = store.find(questionId: progress.questionId)?.0.id
+            return (date, categoryId)
         }
-        var seen = Set<String>()
-        for id in questionIds {
-            if let (cat, _) = store.find(questionId: id) {
-                seen.insert(cat.id)
-            }
-        }
-        return seen.count
+        return StudyStats.thisMonthCategoryCoverage(
+            entries: entries.map { (viewedAt: $0.0, categoryId: $0.1) }
+        )
     }
     private var recentPair: (Category, Question)? {
         guard let recent = progresses
