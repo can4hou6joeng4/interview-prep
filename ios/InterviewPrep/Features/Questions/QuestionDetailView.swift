@@ -36,6 +36,7 @@ struct QuestionDetailView: View {
                     heroCard
                     actionRow
                     recallCard
+                    reviewToggleButton
                     revealAnswerButton
                     if showAnswer {
                         answerCard
@@ -158,6 +159,22 @@ struct QuestionDetailView: View {
         }
         .padding(14)
         .elevatedCard(bg: Theme.base2)
+    }
+
+    private var reviewToggleButton: some View {
+        let isInReview = (progress?.status ?? 0) == 1
+        return Button {
+            toggleReviewQueue()
+        } label: {
+            BrutalButtonLabel(
+                title: isInReview ? "已在今日复习" : "加入今日复习",
+                icon: isInReview ? "checkmark" : "plus",
+                bg: isInReview ? Theme.successSolid : Theme.warning,
+                fg: isInReview ? .white : Theme.fg,
+                fullWidth: true
+            )
+        }
+        .buttonStyle(.pressable)
     }
 
     private var revealAnswerButton: some View {
@@ -325,6 +342,20 @@ struct QuestionDetailView: View {
         try? ctx.save()
         cloud.push(all)
         showFeedback(t.isEmpty ? "已清空笔记" : "笔记已保存")
+    }
+
+    private func toggleReviewQueue() {
+        let p = ensureProgress()
+        if p.status == 1 {
+            p.status = 0
+            showFeedback("已移出今日复习")
+        } else {
+            p.status = 1
+            p.lastViewedAt = Date()
+            showFeedback("已加入今日复习")
+        }
+        try? ctx.save()
+        cloud.push(all)
     }
 
     private func showFeedback(_ text: String) {
