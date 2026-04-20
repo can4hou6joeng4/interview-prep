@@ -389,44 +389,13 @@ struct ReviewSessionView: View {
     }
 
     private func buildSummary() -> ReviewCompletionSummary {
-        var aggregate: [String: (Category, total: Int, mastered: Int, continued: Int)] = [:]
-        for item in sessionItems {
-            let key = item.category.id
-            var slot = aggregate[key] ?? (item.category, 0, 0, 0)
-            slot.total += 1
-            if let result = sessionResults[item.question.id] {
-                if result == 2 { slot.mastered += 1 }
-                if result == 1 { slot.continued += 1 }
-            }
-            aggregate[key] = slot
+        let entries = sessionItems.map { item in
+            ReviewCompletionSummary.Entry(
+                category: item.category,
+                questionId: item.question.id
+            )
         }
-
-        let breakdowns = aggregate.values
-            .map { entry in
-                ReviewCategoryBreakdown(
-                    category: entry.0,
-                    total: entry.total,
-                    mastered: entry.mastered,
-                    continued: entry.continued
-                )
-            }
-            .sorted { lhs, rhs in
-                if lhs.continued != rhs.continued { return lhs.continued > rhs.continued }
-                if lhs.rate != rhs.rate { return lhs.rate < rhs.rate }
-                return lhs.category.cat < rhs.category.cat
-            }
-
-        let recommended = breakdowns.first { $0.continued > 0 }?.category
-            ?? breakdowns.first { $0.rate < 1 && $0.total > 0 }?.category
-
-        return ReviewCompletionSummary(
-            completedCount: completedCount,
-            totalCount: sessionItems.count,
-            continuedCount: continuedThisRound,
-            masteredCount: masteredThisRound,
-            breakdowns: breakdowns,
-            recommended: recommended
-        )
+        return ReviewCompletionSummary.build(entries: entries, results: sessionResults)
     }
 
     private var emptyState: some View {

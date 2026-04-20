@@ -8,6 +8,55 @@ struct ReviewCompletionSummary {
     let breakdowns: [ReviewCategoryBreakdown]
     let recommended: Category?
 
+    struct Entry {
+        let category: Category
+        let questionId: String
+    }
+
+    static func build(entries: [Entry], results: [String: Int]) -> ReviewCompletionSummary {
+        var aggregate: [String: (category: Category, total: Int, mastered: Int, continued: Int)] = [:]
+        for entry in entries {
+            var slot = aggregate[entry.category.id]
+                ?? (category: entry.category, total: 0, mastered: 0, continued: 0)
+            slot.total += 1
+            if let result = results[entry.questionId] {
+                if result == 2 { slot.mastered += 1 }
+                if result == 1 { slot.continued += 1 }
+            }
+            aggregate[entry.category.id] = slot
+        }
+
+        let breakdowns: [ReviewCategoryBreakdown] = aggregate.values.map { bucket in
+            ReviewCategoryBreakdown(
+                category: bucket.category,
+                total: bucket.total,
+                mastered: bucket.mastered,
+                continued: bucket.continued
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.continued != rhs.continued { return lhs.continued > rhs.continued }
+            if lhs.rate != rhs.rate { return lhs.rate < rhs.rate }
+            return lhs.category.cat < rhs.category.cat
+        }
+
+        let recommended = breakdowns.first { $0.continued > 0 }?.category
+            ?? breakdowns.first { $0.rate < 1 && $0.total > 0 }?.category
+
+        let completedCount = results.count
+        let masteredCount = results.values.filter { $0 == 2 }.count
+        let continuedCount = results.values.filter { $0 == 1 }.count
+
+        return ReviewCompletionSummary(
+            completedCount: completedCount,
+            totalCount: entries.count,
+            continuedCount: continuedCount,
+            masteredCount: masteredCount,
+            breakdowns: breakdowns,
+            recommended: recommended
+        )
+    }
+
     var masteryRate: Double {
         guard completedCount > 0 else { return 0 }
         return Double(masteredCount) / Double(completedCount)
