@@ -67,6 +67,7 @@ struct MyView: View {
                     quickActions
                     segmentedPicker
                     listSection
+                    recentSection
                     notesSection
                 }
                 .padding(20)
@@ -197,6 +198,33 @@ struct MyView: View {
                 LazyVStack(spacing: 10) {
                     ForEach(noted) { item in
                         noteRow(item)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var recentSection: some View {
+        if !recent.isEmpty && activeSection != .recent {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        KickerText(text: "Recently Opened")
+                        Text("最近查看")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(Theme.fg)
+                    }
+                    Spacer()
+                    Button("查看全部") {
+                        activeSection = .recent
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                }
+
+                LazyVStack(spacing: 10) {
+                    ForEach(Array(recent.prefix(3))) { item in
+                        recentRow(item)
                     }
                 }
             }
@@ -349,6 +377,41 @@ struct MyView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.fgDim)
                     }
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .elevatedCard(bg: Theme.surface)
+            }
+            .buttonStyle(.pressable)
+        }
+    }
+
+    @ViewBuilder
+    private func recentRow(_ progress: UserProgress) -> some View {
+        if let (cat, q) = store.find(questionId: progress.questionId) {
+            NavigationLink(value: q) {
+                HStack(alignment: .top, spacing: 12) {
+                    Text(cat.icon)
+                        .font(.system(size: 16))
+                        .frame(width: 30, height: 30)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(q.q)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Theme.fg)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        HStack(spacing: 8) {
+                            Text(cat.cat)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Theme.fgMuted)
+                            if let viewed = progress.lastViewedAt {
+                                Text(Self.noteDateFormatter.string(from: viewed))
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Theme.fgDim)
+                            }
+                        }
+                    }
+                    Spacer()
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
