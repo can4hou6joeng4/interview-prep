@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 import vm from 'node:vm';
 import { buildQuestionSlug } from './slug.mjs';
@@ -7,6 +8,23 @@ const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const SITE_BASE = 'https://can4hou6joeng4.github.io/interview-prep';
 const DRY_RUN = process.argv.includes('--dry-run');
 const VERBOSE = process.argv.includes('--verbose');
+
+function resolveDataLastmod() {
+  const dataPath = path.join(ROOT, 'assets/data.js');
+  try {
+    const iso = execSync(`git log -1 --format=%cI -- "${dataPath}"`, {
+      cwd: ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+    if (iso) return iso.slice(0, 10);
+  } catch {}
+  try {
+    const stat = statSync(dataPath);
+    return stat.mtime.toISOString().slice(0, 10);
+  } catch {}
+  return new Date().toISOString().slice(0, 10);
+}
 
 function loadData() {
   const source = readFileSync(path.join(ROOT, 'assets/data.js'), 'utf8');
@@ -324,7 +342,7 @@ function main() {
     cleanStaleFiles(cDir, cFilenames);
   }
 
-  const lastmod = new Date().toISOString().slice(0, 10);
+  const lastmod = resolveDataLastmod();
   const urls = [
     `${SITE_BASE}/`,
     `${SITE_BASE}/study.html`,
