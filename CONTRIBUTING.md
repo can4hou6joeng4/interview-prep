@@ -1,6 +1,11 @@
 # Contributing Guide
 
-这个仓库是一个零构建的静态 GitHub Pages 项目，目标是保持题库内容更新简单、发布稳定、协作成本低。
+这个仓库当前同时维护两条产品形态：
+
+- GitHub Pages 静态站点
+- 原生 iOS 学习 App
+
+目标是让题库内容更新简单、发布稳定、协作成本低，同时逐步把仓库打磨成一个更成熟的开源项目。
 
 ## 本地预览
 
@@ -32,6 +37,13 @@
    ./scripts/check-full.sh
    ```
 
+4. 如果本次改动涉及 iOS：
+
+   ```bash
+   cd ios
+   xcodebuild -project InterviewPrep.xcodeproj -scheme InterviewPrep -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' build
+   ```
+
 ## 本地 Hook
 
 建议在首次克隆仓库后执行：
@@ -45,6 +57,27 @@
 - `pre-commit` 会跑快速校验
 - `pre-push` 会跑完整校验
 - hook 只能帮你减少手动检查，不会替代 GitHub Pages 的远程发布流程
+
+## Git 开发规范
+
+- 默认以功能分支开发，不直接在 `main` 上做改动
+- 合并策略以 squash merge 为主，保持主分支历史清晰
+- 本仓库要求提交信息使用：
+
+  ```text
+  type: 中文描述
+  ```
+
+  示例：
+
+  ```text
+  feat: 强化首页分类专题层级
+  fix: 修复复习队列空态回退逻辑
+  docs: 同步主题配色说明
+  chore: 优化社区协作模板
+  ```
+
+- 描述里不要加入 issue 编号、文件名、变量名或英文标识符，保持短、清楚、可读
 
 ## 内容维护约定
 
@@ -61,8 +94,16 @@
 - `assets/styles.css`：视觉样式。
 - `assets/app.js`：交互、筛选、进度迁移与持久化。
 - `assets/data.js`：题库数据。
+- `ios/InterviewPrep/`：原生 iOS App 源码。
 - `content-sources/`：题库素材源与扩题规划。
 - `scripts/validate-data.mjs`：仓库内置校验脚本。
+
+## GitHub 协作建议
+
+- 提交 issue 时优先按模板选择影响范围：`site` / `ios` / `question-bank` / `maintenance`
+- PR 里请勾选真实跑过的验证项，不要勾选“应该没问题”
+- 如果改动跨越站点和 iOS 两端，建议在 Summary 里拆成两部分说明
+- 如果改动涉及题库内容，请说明是否同步更新了 `q/`、`c/` 和 `sitemap.xml`
 
 ## Pull Request 建议
 

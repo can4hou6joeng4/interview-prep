@@ -1,0 +1,81 @@
+name: InterviewPrep
+options:
+  bundleIdPrefix: com.can4hou6joeng4.interviewprep
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+  ReleaseEnterprise: release
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Manual
+targets:
+  InterviewPrep:
+    type: application
+    platform: iOS
+    sources:
+      - path: InterviewPrep
+        excludes:
+          - "InterviewPrep-Enterprise.entitlements"
+          - "InterviewPrep.entitlements"
+    resources:
+      - path: InterviewPrep/Resources
+    info:
+      path: InterviewPrep/Info.plist
+      properties:
+        CFBundleDisplayName: 面经刷题
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSSiriUsageDescription: 用于提供"随机来一题""今日复习"等快捷指令
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183
+          DEVELOPMENT_TEAM: R36U8N6X48
+          CODE_SIGN_IDENTITY: "iPhone Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "00008130-001219640A98001CDA524Y"
+          CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep.entitlements
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183
+          DEVELOPMENT_TEAM: R36U8N6X48
+          CODE_SIGN_IDENTITY: "iPhone Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "00008130-001219640A98001CDA524Y"
+          CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep.entitlements
+        ReleaseEnterprise:
+          PRODUCT_BUNDLE_IDENTIFIER: com.xl.MyXL.Giant-staging
+          DEVELOPMENT_TEAM: Q6SJUT5K5D
+          CODE_SIGN_IDENTITY: "iPhone Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "MyXL-UniversalDist"
+          CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep-Enterprise.entitlements
+  InterviewPrepTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: InterviewPrepTests
+    dependencies:
+      - target: InterviewPrep
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183.tests
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_ALLOWED: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+schemes:
+  InterviewPrep:
+    build:
+      targets:
+        InterviewPrep: all
+        InterviewPrepTests: [test]
+    test:
+      targets:
+        - InterviewPrepTests

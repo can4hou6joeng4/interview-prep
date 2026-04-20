@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/can4hou6joeng4/interview-prep?style=flat-square)](./LICENSE)
 [![Stars](https://img.shields.io/github/stars/can4hou6joeng4/interview-prep?style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/stargazers)
 
-Interactive flashcard-style interview prep for Go backend roles, tailored around real project experience, system design depth, and structured review workflows.
+Open-source interview prep toolkit for Go backend roles, combining a GitHub Pages flashcard site with a native iOS study app focused on review loops, lightweight note-taking, and structured recall.
 
 [中文说明](./README_zh.md)
 [Changelog](./CHANGELOG.md)
@@ -13,6 +13,11 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 ## Highlights
 
 - 19 categories and 203 questions across Go, MySQL, Redis, Kafka, Kubernetes, system design, AI engineering, and project deep dives
+- Native iOS app built with SwiftUI, featuring a study dashboard, review queue, theme switching, lightweight note capture, and progress sync
+- Native iOS app now supports multiple accent palettes alongside system/light/dark appearance switching
+- Native iOS app home now highlights streak days, weekly review volume, and monthly topic coverage
+- Review completion screen reports mastery rate and routes users back to the topic that needs more work
+- Dedicated XCTest target and a GitHub Actions workflow keep core study statistics covered on every iOS change
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
 - Curated learning paths now group the bank into commerce, platform, realtime, project deep-dive, and sprint tracks
 - Dedicated weak-review entry now lets you jump into wrong-answer, fuzzy, weak, and mastered-only review within the current learning path
@@ -23,6 +28,32 @@ Interactive flashcard-style interview prep for Go backend roles, tailored around
 - Zero-build static architecture, designed for GitHub Pages deployment
 - Every question and category now has a dedicated static page (`q/*.html`, `c/*.html`) for long-tail search indexing
 - Repository-level validation keeps README stats, SEO metadata, and required site assets in sync
+
+## Product Surfaces
+
+### GitHub Pages
+
+- Home dashboard with learning-path shortcuts and static SEO-friendly question/category pages
+- Flashcards, searchable list mode, and mock interview drills for browser-based practice
+
+### iOS App
+
+- Native study dashboard with “what to study next” actions
+- Streak tracking with daily / weekly / monthly study metrics on the home board
+- Dedicated review queue for weak/favorited items, plus a completion screen with mastery rate and topic-level recommendations
+- Category bank with status filters (unstarted / learning / mastered / favorited) and per-category mastery progress
+- Search results come with quick actions to favorite, mark-as-learning, and jump into the owning topic
+- Question detail now ships a one-tap toggle to add the current question into the today review queue
+- My-tab note module supports keyword search across note body, question title, and category
+- My-tab library card surfaces longest streak, total active days, and total mastered question count
+- Settings page exposes JSON export and one-tap reset for the local learning state
+- Adaptive light/dark/system theme support
+- Accent palette presets for different reading moods and visual preferences
+- In-app note capture and recent-note surfacing for knowledge accumulation
+
+![iOS dashboard](./assets/ios-dashboard.jpg)
+
+![iOS review queue](./assets/ios-review-session.jpg)
 
 ## Live Demo
 
@@ -47,7 +78,13 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 │   ├── app.js
 │   ├── data.js
 │   ├── favicon.svg
+│   ├── ios-dashboard.jpg
+│   ├── ios-review-session.jpg
 │   └── styles.css
+├── ios/
+│   ├── InterviewPrep.xcodeproj
+│   ├── InterviewPrep/
+│   └── README.md
 ├── scripts/
 │   ├── build-pages.mjs
 │   ├── check-fast.sh
@@ -137,6 +174,7 @@ These hooks reduce manual validation work locally, but they do not replace pushi
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
 - [Security Policy](./SECURITY.md)
+- GitHub Discussions is enabled for ideas, Q&A, and longer-form collaboration
 
 ## Roadmap Ideas
 

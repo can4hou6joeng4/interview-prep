@@ -2,6 +2,31 @@
 
 本文件记录仓库中对用户可见、对仓库质量有明显影响的更新。
 
+## 2026-04-20
+
+### Added
+
+- 原生 iOS App 新增独立的复习完成页 `ReviewCompletionView`，展示掌握率环形图、专题分布卡片以及最弱专题回跳按钮。
+- 深链新增 `.category(slug:)` 目标，支持从复习完成页直接跳到指定分类并推入 NavigationStack。
+- 搜索结果行新增右侧 Menu 快捷动作，可直接收藏、加入学习中，或跳进所属专题。
+- 分类题目页接入掌握度进度条与状态筛选（未学 / 学习中 / 已掌握 / 收藏），行内加上状态角标。
+- 首页新增连续学习、本周浏览、本月专题三项激励指标卡，沉淀学习节奏。
+- 题目详情页新增一键「加入今日复习」开关，支持在未答题状态直接标记进队列。
+- 我的页笔记模块接入关键词检索，可同时匹配笔记正文、题目和所属分类。
+- 设置页新增学习数据区块，支持 JSON 导出和本地学习进度的二次确认重置。
+- 新增 `InterviewPrepTests` 单元测试目标，首批覆盖 `StudyStats` 的 streak、本周浏览与本月专题覆盖算法。
+- 新增 `.github/workflows/ios-test.yml` GitHub Actions 工作流，在 iOS 目录改动时自动在 macOS runner 跑一次 XCTest。
+- 复习完成汇总 `ReviewCompletionSummary.build(entries:results:)` 抽离为可独立测试的纯函数，并补齐 8 条 XCTest 覆盖。
+- `StudyStats` 新增 `longestStreak(activeDays:)` 算法并带单元测试，供我的页累计档案卡使用。
+- 我的页新增学习档案卡，展示最长连续天数、累计活跃天数和累计掌握题数。
+
+### Changed
+
+- 复习会话在首轮完成后不再停留在单卡片总结，而是进入结构化的完成态，给出下一步建议。
+- README 中英文版同步 iOS 新能力并勾选 `2026-04-19-ios-native-study-tool.md` 内的 Task 1-5，并追加 2026-04-20 增量条目。
+- 重构首页 streak 相关的日期计算到独立的 `StudyStats` 纯函数模块，方便后续扩展与单元测试。
+- `SECURITY.md` 将报告范围从纯静态站点扩展到原生 iOS App 的 SwiftData、iCloud、导出与深链场景。
+
 ## 2026-04-17
 
 ### Added

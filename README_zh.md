@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/can4hou6joeng4/interview-prep?style=flat-square)](./LICENSE)
 [![Stars](https://img.shields.io/github/stars/can4hou6joeng4/interview-prep?style=flat-square)](https://github.com/can4hou6joeng4/interview-prep/stargazers)
 
-基于简历项目定制的交互式面试题库，适合用来做 Go 后端岗位面试准备、知识回顾和项目深挖复盘。
+面向 Go 后端岗位的开源面试准备工具，当前同时提供 GitHub Pages 交互式题库与原生 iOS 学习 App，适合用来做知识回顾、项目深挖和结构化复习。
 
 [English README](./README.md)
 [更新记录](./CHANGELOG.md)
@@ -13,6 +13,11 @@
 ## 项目特点
 
 - 19 个分类、203 道题，覆盖 Go 核心、MySQL、Redis、Kafka、Kubernetes、微服务治理等主题
+- 原生 iOS App 已支持学习首页、复习队列、主题切换、轻量笔记和近期学习资产沉淀
+- 原生 iOS App 现已支持多套主题配色预设，并可与浅色 / 深色 / 跟随系统组合使用
+- 原生 iOS App 首页新增连续学习天数、本周浏览与本月专题覆盖指标
+- 原生 iOS App 复习完成态已升级为掌握率面板并支持直接回跳薄弱专题
+- 原生 iOS App 新增单元测试目标与 GitHub Actions 工作流，核心学习统计在每次改动时自动校验
 - 支持卡片学习、列表检索和模拟面试三种模式
 - 新增学习路径专题入口，可一键切到跨境交易、平台治理、实时系统、项目深挖和面试冲刺 5 条训练路径
 - 新增专项复习入口，可在当前学习路径内一键切到错题回顾、模糊巩固、薄弱专项和掌握抽查
@@ -23,6 +28,32 @@
 - 零构建、零依赖，可直接部署到 GitHub Pages
 - 每道题和每个分类都有独立的静态页面（`q/*.html`、`c/*.html`），便于搜索引擎独立索引长尾流量
 - 仓库级校验会自动检查题库统计、SEO 元信息和站点关键配套文件
+
+## 产品形态
+
+### GitHub Pages
+
+- 首页学习入口、学习路径专题和 SEO 友好的题目 / 分类静态页
+- 卡片学习、列表检索和模拟面试，适合浏览器端刷题
+
+### iOS App
+
+- 原生学习首页，直接给出“下一步学什么”
+- 首页已接入连续学习、本周浏览、本月覆盖专题三项激励指标
+- 独立的复习队列，优先处理薄弱题和收藏题，并在结束时展示掌握率与专题回跳入口
+- 题目详情页新增一键「加入今日复习」开关，阅读时即可沉淀复习队列
+- 分类题目页支持“未学 / 学习中 / 已掌握 / 收藏”状态筛选和掌握进度可视化
+- 搜索结果行支持一键收藏、加入学习中，或直达所属专题
+- 我的页笔记模块支持按关键词检索，覆盖笔记正文、题目和所属分类
+- 我的页新增学习档案卡，展示最长连续、累计活跃天数与累计掌握题数
+- 设置页提供学习进度的 JSON 导出与本地数据一键重置
+- 支持浅色 / 深色 / 跟随系统主题
+- 支持默认 / 海洋 / 日落 / 森林等主题配色方案
+- 题目笔记、近期笔记和学习资产入口已经接入
+
+![iOS 学习首页](./assets/ios-dashboard.jpg)
+
+![iOS 复习队列](./assets/ios-review-session.jpg)
 
 ## 在线访问
 
@@ -47,7 +78,13 @@ python3 -m http.server 4173
 │   ├── app.js
 │   ├── data.js
 │   ├── favicon.svg
+│   ├── ios-dashboard.jpg
+│   ├── ios-review-session.jpg
 │   └── styles.css
+├── ios/
+│   ├── InterviewPrep.xcodeproj
+│   ├── InterviewPrep/
+│   └── README.md
 ├── scripts/
 │   ├── build-pages.mjs
 │   ├── check-fast.sh
@@ -137,6 +174,7 @@ node scripts/jd-coverage.mjs --strict
 - [行为准则](./CODE_OF_CONDUCT.md)
 - [安全策略](./SECURITY.md)
 - [MIT 开源许可](./LICENSE)
+- GitHub Discussions 已开启，适合放置想法、问答和中长期讨论
 
 ## 后续可继续扩展的方向
 

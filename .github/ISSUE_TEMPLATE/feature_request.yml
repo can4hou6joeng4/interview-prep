@@ -4,6 +4,19 @@ title: "[Feature] "
 labels:
   - enhancement
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 目标模块
+      description: 这条建议更偏向哪个方向
+      options:
+        - GitHub Pages / 静态站点
+        - iOS App
+        - 题库内容
+        - 仓库治理 / 开源协作
+        - 文档与展示
+    validations:
+      required: true
   - type: textarea
     id: goal
     attributes:
@@ -21,3 +34,8 @@ body:
     attributes:
       label: 补充上下文
       description: 例如使用场景、题库分类、部署需求等
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 你期待的结果
+      description: 如果这项功能做完了，你希望看到什么变化

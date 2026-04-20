@@ -1,0 +1,63 @@
+name: iOS Tests
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-test.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Unit tests on iOS Simulator
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Show available simulators
+        run: xcrun simctl list devices available | grep -E "iPhone 1[5-9]|iPhone 2[0-9]" | head -10
+
+      - name: Pick a booted iPhone simulator
+        id: pick-sim
+        run: |
+          NAME=$(xcrun simctl list devices available | grep -Eo 'iPhone 1[5-9] Pro|iPhone 1[5-9]|iPhone 2[0-9] Pro|iPhone 2[0-9]' | head -1)
+          echo "sim_name=${NAME:-iPhone 16}" >> "$GITHUB_OUTPUT"
+          echo "Selected simulator: ${NAME:-iPhone 16}"
+
+      - name: Run unit tests
+        working-directory: ios
+        env:
+          SIM_NAME: ${{ steps.pick-sim.outputs.sim_name }}
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project InterviewPrep.xcodeproj \
+            -scheme InterviewPrep \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,name=${SIM_NAME},OS=latest" \
+            -sdk iphonesimulator \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            test

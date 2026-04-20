@@ -1,1 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: README / 使用说明
+    url: https://github.com/can4hou6joeng4/interview-prep/blob/main/README_zh.md
+    about: 先查看项目说明、运行方式和题库维护约定
+  - name: 安全问题
+    url: https://github.com/can4hou6joeng4/interview-prep/blob/main/SECURITY.md
+    about: 安全漏洞或敏感问题请按安全策略反馈
