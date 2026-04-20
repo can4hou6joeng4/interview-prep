@@ -56,3 +56,26 @@ targets:
           CODE_SIGN_IDENTITY: "iPhone Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "MyXL-UniversalDist"
           CODE_SIGN_ENTITLEMENTS: InterviewPrep/InterviewPrep-Enterprise.entitlements
+  InterviewPrepTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: InterviewPrepTests
+    dependencies:
+      - target: InterviewPrep
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.yellow4516.serval5183.tests
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_ALLOWED: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+schemes:
+  InterviewPrep:
+    build:
+      targets:
+        InterviewPrep: all
+        InterviewPrepTests: [test]
+    test:
+      targets:
+        - InterviewPrepTests
