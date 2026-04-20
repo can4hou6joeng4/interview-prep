@@ -16,6 +16,9 @@
 - 设置页新增学习数据区块，支持 JSON 导出和本地学习进度的二次确认重置。
 - 新增 `InterviewPrepTests` 单元测试目标，首批覆盖 `StudyStats` 的 streak、本周浏览与本月专题覆盖算法。
 - 新增 `.github/workflows/ios-test.yml` GitHub Actions 工作流，在 iOS 目录改动时自动在 macOS runner 跑一次 XCTest。
+- 复习完成汇总 `ReviewCompletionSummary.build(entries:results:)` 抽离为可独立测试的纯函数，并补齐 8 条 XCTest 覆盖。
+- `StudyStats` 新增 `longestStreak(activeDays:)` 算法并带单元测试，供我的页累计档案卡使用。
+- 我的页新增学习档案卡，展示最长连续天数、累计活跃天数和累计掌握题数。
 
 ### Changed
 

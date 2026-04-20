@@ -45,6 +45,7 @@ Open-source interview prep toolkit for Go backend roles, combining a GitHub Page
 - Search results come with quick actions to favorite, mark-as-learning, and jump into the owning topic
 - Question detail now ships a one-tap toggle to add the current question into the today review queue
 - My-tab note module supports keyword search across note body, question title, and category
+- My-tab library card surfaces longest streak, total active days, and total mastered question count
 - Settings page exposes JSON export and one-tap reset for the local learning state
 - Adaptive light/dark/system theme support
 - Accent palette presets for different reading moods and visual preferences
