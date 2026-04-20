@@ -8,6 +8,9 @@ struct SettingsView: View {
     @AppStorage("appThemePreference") private var appThemePreferenceRaw = AppThemePreference.system.rawValue
     @AppStorage("appAccentPalette") private var appAccentPaletteRaw = AppAccentPalette.indigo.rawValue
     @Query private var progresses: [UserProgress]
+    @State private var showExportSheet = false
+    @State private var showResetAlert = false
+    @State private var resetFeedback: String?
 
     private var mastered: Int { progresses.filter { $0.status == 2 }.count }
     private var learning: Int { progresses.filter { $0.status == 1 }.count }
@@ -23,14 +26,32 @@ struct SettingsView: View {
                     progressCard
                     section(title: "外观") { appearanceCard }
                     section(title: "iCloud 同步") { cloudCard }
+                    section(title: "学习数据") { dataCard }
                     section(title: "题库信息") { libraryCard }
                     section(title: "开源协作") { openSourceCard }
                     section(title: "关于") { aboutCard }
                 }
                 .padding(20)
             }
+            if let resetFeedback {
+                VStack {
+                    Spacer()
+                    FloatingToast(text: resetFeedback)
+                        .padding(.bottom, 28)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showExportSheet) {
+            ProgressExportSheet(items: exportItems)
+        }
+        .alert("确定重置学习进度？", isPresented: $showResetAlert) {
+            Button("取消", role: .cancel) { }
+            Button("确定重置", role: .destructive) { resetProgress() }
+        } message: {
+            Text("将清空所有题目的学习状态、收藏和笔记，操作不可撤销。本地 iCloud 同步数据不会自动清除。")
+        }
     }
 
     private var hero: some View {
@@ -309,5 +330,200 @@ struct SettingsView: View {
             }
         }
         try? ctx.save()
+    }
+
+    private var dataCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("可以把当前进度导出一份 JSON 备份，或在需要时重置本地学习数据。")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.fgMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button {
+                    showExportSheet = true
+                } label: {
+                    BrutalButtonLabel(
+                        title: "导出学习进度",
+                        icon: "square.and.arrow.up",
+                        bg: Theme.base2,
+                        fg: Theme.fg,
+                        fullWidth: true
+                    )
+                }
+                .buttonStyle(.pressable)
+                .disabled(progresses.isEmpty)
+
+                Button {
+                    showResetAlert = true
+                } label: {
+                    BrutalButtonLabel(
+                        title: "重置学习进度",
+                        icon: "trash",
+                        bg: Theme.danger,
+                        fg: Theme.fg,
+                        fullWidth: true
+                    )
+                }
+                .buttonStyle(.pressable)
+                .disabled(progresses.isEmpty)
+            }
+        }
+        .padding(16)
+        .elevatedCard()
+    }
+
+    private var exportItems: [ProgressExportItem] {
+        progresses.map { progress in
+            ProgressExportItem(
+                questionId: progress.questionId,
+                status: progress.status,
+                favorited: progress.favorited,
+                note: progress.note,
+                lastViewedAt: progress.lastViewedAt,
+                noteUpdatedAt: progress.noteUpdatedAt
+            )
+        }
+    }
+
+    private func resetProgress() {
+        for progress in progresses {
+            ctx.delete(progress)
+        }
+        try? ctx.save()
+        showResetToast("本地学习数据已重置")
+    }
+
+    private func showResetToast(_ text: String) {
+        withAnimation(Theme.ease) {
+            resetFeedback = text
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.6))
+            withAnimation(Theme.ease) {
+                if resetFeedback == text {
+                    resetFeedback = nil
+                }
+            }
+        }
+    }
+}
+
+struct ProgressExportItem: Codable, Identifiable {
+    let questionId: String
+    let status: Int
+    let favorited: Bool
+    let note: String
+    let lastViewedAt: Date?
+    let noteUpdatedAt: Date?
+
+    var id: String { questionId }
+}
+
+struct ProgressExportSheet: View {
+    let items: [ProgressExportItem]
+    @Environment(\.dismiss) private var dismiss
+
+    private var exportURL: URL? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        encoder.dateEncodingStrategy = .iso8601
+        guard let data = try? encoder.encode(items) else { return nil }
+        let stamp = ISO8601DateFormatter().string(from: Date())
+            .replacingOccurrences(of: ":", with: "-")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("interview-prep-progress-\(stamp).json")
+        do {
+            try data.write(to: url, options: .atomic)
+            return url
+        } catch {
+            return nil
+        }
+    }
+
+    private var masteredCount: Int { items.filter { $0.status == 2 }.count }
+    private var learningCount: Int { items.filter { $0.status == 1 }.count }
+    private var favoritedCount: Int { items.filter { $0.favorited }.count }
+    private var notedCount: Int {
+        items.filter { !$0.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Theme.base.ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            KickerText(text: "Progress Export")
+                            Text("导出学习进度")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(Theme.fg)
+                            Text("将本地学习状态、收藏和笔记打包为 JSON，方便备份或迁移。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Theme.fgMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        HStack(spacing: 10) {
+                            summaryPill(title: "总记录", value: "\(items.count)", tint: Theme.accent)
+                            summaryPill(title: "已掌握", value: "\(masteredCount)", tint: Theme.successSolid)
+                            summaryPill(title: "学习中", value: "\(learningCount)", tint: Theme.warningSolid)
+                        }
+
+                        HStack(spacing: 10) {
+                            summaryPill(title: "收藏", value: "\(favoritedCount)", tint: Theme.accentDim)
+                            summaryPill(title: "含笔记", value: "\(notedCount)", tint: Theme.info)
+                        }
+
+                        if let url = exportURL {
+                            ShareLink(item: url) {
+                                BrutalButtonLabel(
+                                    title: "分享 JSON 文件",
+                                    icon: "square.and.arrow.up",
+                                    bg: Theme.accent,
+                                    fg: .white,
+                                    fullWidth: true
+                                )
+                            }
+                            .buttonStyle(.pressable)
+
+                            Text("文件名：\(url.lastPathComponent)")
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundStyle(Theme.fgDim)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("暂时无法生成导出文件，请稍后再试。")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Theme.dangerSolid)
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle("导出学习进度")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func summaryPill(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Theme.fgMuted)
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .foregroundStyle(tint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .elevatedCard(bg: Theme.surface)
     }
 }
