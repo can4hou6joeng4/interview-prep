@@ -91,4 +91,36 @@ final class StudyStatsTests: XCTestCase {
         let result = StudyStats.activeDaySet(from: [noon, evening, nextDay], calendar: calendar)
         XCTAssertEqual(result.count, 2)
     }
+
+    func test_longestStreak_singleDay() {
+        let active: Set<Date> = [day("2026-04-20")]
+        XCTAssertEqual(StudyStats.longestStreak(activeDays: active, calendar: calendar), 1)
+    }
+
+    func test_longestStreak_findsMaxConsecutiveRun() {
+        let active: Set<Date> = [
+            day("2026-04-10"),
+            day("2026-04-11"),
+            day("2026-04-12"),
+            day("2026-04-15"),
+            day("2026-04-16"),
+            day("2026-04-17"),
+            day("2026-04-18"),
+            day("2026-04-20")
+        ]
+        XCTAssertEqual(StudyStats.longestStreak(activeDays: active, calendar: calendar), 4)
+    }
+
+    func test_longestStreak_returnsZeroWhenEmpty() {
+        XCTAssertEqual(StudyStats.longestStreak(activeDays: [], calendar: calendar), 0)
+    }
+
+    func test_longestStreak_handlesAllScatteredDays() {
+        let active: Set<Date> = [
+            day("2026-04-10"),
+            day("2026-04-12"),
+            day("2026-04-14")
+        ]
+        XCTAssertEqual(StudyStats.longestStreak(activeDays: active, calendar: calendar), 1)
+    }
 }

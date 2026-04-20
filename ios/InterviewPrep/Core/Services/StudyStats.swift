@@ -46,4 +46,23 @@ enum StudyStats {
     static func activeDaySet(from viewedDates: [Date], calendar: Calendar = .current) -> Set<Date> {
         Set(viewedDates.map { calendar.startOfDay(for: $0) })
     }
+
+    static func longestStreak(activeDays: Set<Date>, calendar: Calendar = .current) -> Int {
+        guard !activeDays.isEmpty else { return 0 }
+        let sorted = activeDays.sorted()
+        var longest = 1
+        var current = 1
+        for index in 1..<sorted.count {
+            let prev = sorted[index - 1]
+            let curr = sorted[index]
+            if let expected = calendar.date(byAdding: .day, value: 1, to: prev),
+               calendar.isDate(expected, inSameDayAs: curr) {
+                current += 1
+                longest = max(longest, current)
+            } else {
+                current = 1
+            }
+        }
+        return longest
+    }
 }

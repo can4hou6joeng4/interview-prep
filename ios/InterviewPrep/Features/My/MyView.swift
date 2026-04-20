@@ -82,6 +82,9 @@ struct MyView: View {
                 VStack(spacing: 18) {
                     hero
                     snapshotCard
+                    if totalActiveDays > 0 {
+                        achievementsCard
+                    }
                     quickActions
                     segmentedPicker
                     listSection
@@ -97,6 +100,59 @@ struct MyView: View {
                 QuestionDetailView(category: cat, question: q)
             }
         }
+    }
+
+    private var activeDaySet: Set<Date> {
+        StudyStats.activeDaySet(from: all.compactMap { $0.lastViewedAt })
+    }
+
+    private var totalActiveDays: Int {
+        activeDaySet.count
+    }
+
+    private var longestStreak: Int {
+        StudyStats.longestStreak(activeDays: activeDaySet)
+    }
+
+    private var totalMastered: Int {
+        all.filter { $0.status == 2 }.count
+    }
+
+    private var achievementsCard: some View {
+        HStack(spacing: 10) {
+            achievementTile(icon: "flame.fill", value: longestStreak, label: "最长连续", unit: "天", tint: Theme.dangerSolid)
+            achievementTile(icon: "calendar", value: totalActiveDays, label: "累计活跃", unit: "天", tint: Theme.accent)
+            achievementTile(icon: "checkmark.seal.fill", value: totalMastered, label: "累计掌握", unit: "题", tint: Theme.successSolid)
+        }
+    }
+
+    private func achievementTile(icon: String, value: Int, label: String, unit: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                Circle().fill(tint.opacity(0.18))
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: 28, height: 28)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(value)")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.fg)
+                    .monospacedDigit()
+                Text(unit)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Theme.fgMuted)
+            }
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Theme.fgMuted)
+                .textCase(.uppercase)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .elevatedCard(bg: Theme.surface)
     }
 
     private var hero: some View {
