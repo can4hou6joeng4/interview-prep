@@ -1,10 +1,15 @@
 import SwiftUI
+import SwiftData
 
 struct SearchView: View {
     @EnvironmentObject private var store: QuestionStore
     @EnvironmentObject private var deeplink: DeepLink
+    @EnvironmentObject private var cloud: CloudSyncService
+    @Environment(\.modelContext) private var ctx
+    @Query private var allProgress: [UserProgress]
     @AppStorage("recentSearchTerms") private var recentSearchTermsRaw = "[]"
     @State private var keyword: String = ""
+    @State private var toastMessage: String?
     @FocusState private var focused: Bool
 
     var results: [(Category, Question)] {
@@ -46,13 +51,7 @@ struct SearchView: View {
                             }
                             .padding(.top, 4)
                             ForEach(Array(results.enumerated()), id: \.offset) { _, pair in
-                                NavigationLink(value: pair.1) {
-                                    row(cat: pair.0, q: pair.1)
-                                }
-                                .simultaneousGesture(TapGesture().onEnded {
-                                    rememberSearch(keyword)
-                                })
-                                .buttonStyle(.pressable)
+                                resultRow(cat: pair.0, q: pair.1)
                             }
                         }
                     }
@@ -61,6 +60,15 @@ struct SearchView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
+
+            if let toastMessage {
+                VStack {
+                    Spacer()
+                    FloatingToast(text: toastMessage)
+                        .padding(.bottom, 28)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: Question.self) { q in
@@ -219,7 +227,50 @@ struct SearchView: View {
         }
     }
 
-    private func row(cat: Category, q: Question) -> some View {
+    private func resultRow(cat: Category, q: Question) -> some View {
+        let progress = allProgress.first { $0.questionId == q.id }
+        return HStack(alignment: .top, spacing: 10) {
+            NavigationLink(value: q) {
+                row(cat: cat, q: q, progress: progress)
+            }
+            .simultaneousGesture(TapGesture().onEnded {
+                rememberSearch(keyword)
+            })
+            .buttonStyle(.pressable)
+
+            Menu {
+                Button {
+                    toggleFavorite(q)
+                } label: {
+                    Label(
+                        progress?.favorited == true ? "取消收藏" : "收藏题目",
+                        systemImage: progress?.favorited == true ? "star.slash" : "star"
+                    )
+                }
+                Button {
+                    markLearning(q)
+                } label: {
+                    Label("加入学习中", systemImage: "book")
+                }
+                Divider()
+                Button {
+                    enterCategory(cat)
+                } label: {
+                    Label("进入「\(cat.cat)」", systemImage: "folder")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Theme.fgMuted)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Theme.base2))
+                    .overlay(Circle().stroke(Theme.border, lineWidth: 1))
+            }
+            .menuStyle(.borderlessButton)
+        }
+    }
+
+    private func row(cat: Category, q: Question, progress: UserProgress? = nil) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(q.q)
                 .font(.system(size: 14, weight: .bold))
@@ -231,6 +282,16 @@ struct SearchView: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Theme.fgMuted)
                 DifficultyChip(diff: q.diff)
+                if progress?.favorited == true {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Theme.warningSolid)
+                }
+                if progress?.status == 1 {
+                    Image(systemName: "book.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Theme.accent)
+                }
                 Spacer()
                 Image(systemName: "arrow.right")
                     .font(.system(size: 11, weight: .semibold))
@@ -258,5 +319,55 @@ struct SearchView: View {
         var next = recentSearchTerms.filter { $0.caseInsensitiveCompare(trimmed) != .orderedSame }
         next.insert(trimmed, at: 0)
         recentSearchTerms = Array(next.prefix(8))
+    }
+
+    private func ensureProgress(_ questionId: String) -> UserProgress {
+        if let existing = allProgress.first(where: { $0.questionId == questionId }) {
+            return existing
+        }
+        let created = UserProgress(questionId: questionId)
+        ctx.insert(created)
+        return created
+    }
+
+    private func toggleFavorite(_ question: Question) {
+        let progress = ensureProgress(question.id)
+        progress.favorited.toggle()
+        try? ctx.save()
+        cloud.push(allProgress)
+        showToast(progress.favorited ? "已加入收藏" : "已取消收藏")
+    }
+
+    private func markLearning(_ question: Question) {
+        let progress = ensureProgress(question.id)
+        if progress.status == 1 {
+            showToast("已经在学习中了")
+            return
+        }
+        progress.status = 1
+        progress.lastViewedAt = Date()
+        try? ctx.save()
+        cloud.push(allProgress)
+        showToast("已加入学习中")
+    }
+
+    private func enterCategory(_ category: Category) {
+        keyword = ""
+        focused = false
+        deeplink.pending = .category(slug: category.id)
+    }
+
+    private func showToast(_ text: String) {
+        withAnimation(Theme.ease) {
+            toastMessage = text
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.4))
+            withAnimation(Theme.ease) {
+                if toastMessage == text {
+                    toastMessage = nil
+                }
+            }
+        }
     }
 }
