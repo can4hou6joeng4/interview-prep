@@ -2,15 +2,9 @@ name: iOS Tests
 
 on:
   pull_request:
-    paths:
-      - 'ios/**'
-      - '.github/workflows/ios-test.yml'
   push:
     branches:
       - main
-    paths:
-      - 'ios/**'
-      - '.github/workflows/ios-test.yml'
   workflow_dispatch:
 
 jobs:
