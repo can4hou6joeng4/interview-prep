@@ -53,6 +53,7 @@ enum DeepLinkTarget: Equatable {
     case random
     case review
     case question(id: String)
+    case category(slug: String)
 }
 
 @MainActor

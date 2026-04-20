@@ -9,10 +9,11 @@ struct RootView: View {
     @State private var deepLinkQuestion: Question?
     @State private var deepLinkCategory: Category?
     @State private var showReviewSession = false
+    @State private var studyPath = NavigationPath()
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack {
+            NavigationStack(path: $studyPath) {
                 CategoryListView()
                     .navigationTitle("学习")
             }
@@ -80,6 +81,11 @@ struct RootView: View {
                 deepLinkCategory = cat
                 deepLinkQuestion = q
             }
+        case .category(let slug):
+            selectedTab = 0
+            if let category = store.categories.first(where: { $0.id == slug }) {
+                studyPath = NavigationPath([category])
+            }
         }
     }
 }
@@ -95,6 +101,7 @@ struct ReviewSessionView: View {
     @Environment(\.modelContext) private var ctx
     @EnvironmentObject private var store: QuestionStore
     @EnvironmentObject private var cloud: CloudSyncService
+    @EnvironmentObject private var deeplink: DeepLink
     @Query private var progresses: [UserProgress]
     @State private var currentIndex = 0
     @State private var randomQuestion: Question?
@@ -367,53 +374,59 @@ struct ReviewSessionView: View {
     }
 
     private var completionState: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                KickerText(text: "Session Complete")
-                Text("本轮复习完成")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Theme.fg)
-                Text("继续学习和标记掌握的结果已经记住了。")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.fgMuted)
-            }
-
-            HStack(spacing: 10) {
-                summaryPill(title: "完成", value: "\(completedCount)", tint: Theme.accent)
-                summaryPill(title: "继续学", value: "\(continuedThisRound)", tint: Theme.warningSolid)
-                summaryPill(title: "已掌握", value: "\(masteredThisRound)", tint: Theme.successSolid)
-            }
-
-            HStack(spacing: 10) {
-                Button {
-                    restartSession()
-                } label: {
-                    BrutalButtonLabel(
-                        title: "再来一轮",
-                        icon: "arrow.counterclockwise",
-                        bg: Theme.base2,
-                        fg: Theme.fg,
-                        fullWidth: true
-                    )
+        ReviewCompletionView(
+            summary: buildSummary(),
+            onRestart: { restartSession() },
+            onContinueCategory: { category in
+                dismiss()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(250))
+                    deeplink.pending = .category(slug: category.id)
                 }
-                .buttonStyle(.pressable)
+            },
+            onDismiss: { dismiss() }
+        )
+    }
 
-                Button {
-                    dismiss()
-                } label: {
-                    BrutalButtonLabel(
-                        title: "返回学习",
-                        icon: "house",
-                        bg: Theme.accent,
-                        fg: .white,
-                        fullWidth: true
-                    )
-                }
-                .buttonStyle(.pressable)
+    private func buildSummary() -> ReviewCompletionSummary {
+        var aggregate: [String: (Category, total: Int, mastered: Int, continued: Int)] = [:]
+        for item in sessionItems {
+            let key = item.category.id
+            var slot = aggregate[key] ?? (item.category, 0, 0, 0)
+            slot.total += 1
+            if let result = sessionResults[item.question.id] {
+                if result == 2 { slot.mastered += 1 }
+                if result == 1 { slot.continued += 1 }
             }
+            aggregate[key] = slot
         }
-        .padding(18)
-        .elevatedCard(bg: Theme.surface)
+
+        let breakdowns = aggregate.values
+            .map { entry in
+                ReviewCategoryBreakdown(
+                    category: entry.0,
+                    total: entry.total,
+                    mastered: entry.mastered,
+                    continued: entry.continued
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.continued != rhs.continued { return lhs.continued > rhs.continued }
+                if lhs.rate != rhs.rate { return lhs.rate < rhs.rate }
+                return lhs.category.cat < rhs.category.cat
+            }
+
+        let recommended = breakdowns.first { $0.continued > 0 }?.category
+            ?? breakdowns.first { $0.rate < 1 && $0.total > 0 }?.category
+
+        return ReviewCompletionSummary(
+            completedCount: completedCount,
+            totalCount: sessionItems.count,
+            continuedCount: continuedThisRound,
+            masteredCount: masteredThisRound,
+            breakdowns: breakdowns,
+            recommended: recommended
+        )
     }
 
     private var emptyState: some View {
