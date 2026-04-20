@@ -44,16 +44,7 @@ final class QuestionStore: ObservableObject {
     }
 
     func search(_ keyword: String) -> [(Category, Question)] {
-        let kw = keyword.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !kw.isEmpty else { return [] }
-        var out: [(Category, Question)] = []
-        for cat in categories {
-            for q in cat.items {
-                if q.q.lowercased().contains(kw) || q.a.lowercased().contains(kw) {
-                    out.append((cat, q))
-                }
-            }
-        }
-        return out
+        QuestionSearch.search(keyword: keyword, in: categories)
+            .map { ($0.category, $0.question) }
     }
 }
