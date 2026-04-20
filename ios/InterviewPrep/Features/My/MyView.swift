@@ -11,14 +11,31 @@ struct MyView: View {
     private var recent: [UserProgress] {
         Array(all.compactMap { $0.lastViewedAt != nil ? $0 : nil }.prefix(20))
     }
-    private var noted: [UserProgress] {
-        Array(
-            all
-                .filter { !$0.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .sorted { ($0.noteUpdatedAt ?? .distantPast) > ($1.noteUpdatedAt ?? .distantPast) }
-                .prefix(6)
-        )
+    private var notedAll: [UserProgress] {
+        let filtered = all.filter { progress in
+            !progress.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        return filtered.sorted { a, b in
+            (a.noteUpdatedAt ?? .distantPast) > (b.noteUpdatedAt ?? .distantPast)
+        }
     }
+    private var notedFiltered: [UserProgress] {
+        let kw = noteKeyword.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if kw.isEmpty {
+            return Array(notedAll.prefix(6))
+        }
+        return notedAll.filter { progress in
+            noteMatches(progress, keyword: kw)
+        }
+    }
+    private func noteMatches(_ progress: UserProgress, keyword: String) -> Bool {
+        if progress.note.lowercased().contains(keyword) { return true }
+        guard let (cat, q) = store.find(questionId: progress.questionId) else { return false }
+        if q.q.lowercased().contains(keyword) { return true }
+        if cat.cat.lowercased().contains(keyword) { return true }
+        return false
+    }
+    private var noted: [UserProgress] { notedFiltered }
     private var reviewQueueCount: Int {
         Set(all.filter { $0.status == 1 || $0.favorited }.map(\.questionId)).count
     }
@@ -35,6 +52,7 @@ struct MyView: View {
     }
 
     @State private var activeSection: Section = .learning
+    @State private var noteKeyword: String = ""
     enum Section: String, CaseIterable, Identifiable {
         case learning = "错题本"
         case favorited = "收藏"
@@ -137,7 +155,7 @@ struct MyView: View {
             HStack(spacing: 10) {
                 infoPill(label: "待复习", value: "\(reviewQueueCount)", tint: Theme.accent)
                 infoPill(label: "本周活跃", value: "\(weekActivityCount)", tint: Theme.successSolid)
-                infoPill(label: "笔记", value: "\(noted.count)", tint: Theme.warningSolid)
+                infoPill(label: "笔记", value: "\(notedAll.count)", tint: Theme.warningSolid)
             }
         }
         .padding(16)
@@ -177,7 +195,7 @@ struct MyView: View {
 
     @ViewBuilder
     private var notesSection: some View {
-        if !noted.isEmpty {
+        if !notedAll.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
@@ -187,7 +205,7 @@ struct MyView: View {
                             .foregroundStyle(Theme.fg)
                     }
                     Spacer()
-                    Text("\(noted.count) 条")
+                    Text("\(notedAll.count) 条")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.fgMuted)
                         .padding(.horizontal, 10)
@@ -195,13 +213,61 @@ struct MyView: View {
                         .brutalOutlined(bg: Theme.base2, radius: 999)
                 }
 
-                LazyVStack(spacing: 10) {
-                    ForEach(noted) { item in
-                        noteRow(item)
+                noteSearchField
+
+                if noted.isEmpty {
+                    noteSearchEmpty
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(noted) { item in
+                            noteRow(item)
+                        }
                     }
                 }
             }
         }
+    }
+
+    private var noteSearchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(Theme.fgMuted)
+            TextField("", text: $noteKeyword, prompt: Text("搜索笔记 / 题目 / 分类").foregroundColor(Theme.fgDim))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.fg)
+                .textInputAutocapitalization(.never)
+            if !noteKeyword.isEmpty {
+                Button { noteKeyword = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.fgDim)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .elevatedCard(bg: Theme.base2, radius: Theme.rSm)
+    }
+
+    private var noteSearchEmpty: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "text.magnifyingglass")
+                .font(.system(size: 24, weight: .light))
+                .foregroundStyle(Theme.fgDim)
+            Text("没有匹配「\(noteKeyword)」的笔记")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.fgDim)
+            Button("清空关键词") {
+                noteKeyword = ""
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Theme.accent)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding(14)
+        .elevatedCard(bg: Theme.surface)
     }
 
     @ViewBuilder
