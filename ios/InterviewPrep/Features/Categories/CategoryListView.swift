@@ -12,6 +12,68 @@ struct CategoryListView: View {
     private var reviewCount: Int {
         Set(progresses.filter { $0.status == 1 || $0.favorited }.map(\.questionId)).count
     }
+
+    private var activeDays: [Date] {
+        let cal = Calendar.current
+        let set = Set(progresses.compactMap { progress -> Date? in
+            guard let date = progress.lastViewedAt else { return nil }
+            return cal.startOfDay(for: date)
+        })
+        return set.sorted(by: >)
+    }
+
+    private var streakCount: Int {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        var cursor = today
+        var count = 0
+        let active = Set(activeDays)
+        while active.contains(cursor) {
+            count += 1
+            guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = prev
+        }
+        if count == 0 {
+            if let yesterday = cal.date(byAdding: .day, value: -1, to: today),
+               active.contains(yesterday) {
+                var c2 = 0
+                var cur = yesterday
+                while active.contains(cur) {
+                    c2 += 1
+                    guard let prev = cal.date(byAdding: .day, value: -1, to: cur) else { break }
+                    cur = prev
+                }
+                return c2
+            }
+        }
+        return count
+    }
+
+    private var thisWeekViewed: Int {
+        let cal = Calendar.current
+        let weekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start ?? .distantPast
+        let ids = Set(progresses.compactMap { progress -> String? in
+            guard let date = progress.lastViewedAt, date >= weekStart else { return nil }
+            return progress.questionId
+        })
+        return ids.count
+    }
+
+    private var thisMonthCategoryCoverage: Int {
+        let cal = Calendar.current
+        let monthStart = cal.dateInterval(of: .month, for: Date())?.start ?? .distantPast
+        let questionIds = progresses.compactMap { progress -> String? in
+            guard let date = progress.lastViewedAt, date >= monthStart else { return nil }
+            return progress.questionId
+        }
+        var seen = Set<String>()
+        for id in questionIds {
+            if let (cat, _) = store.find(questionId: id) {
+                seen.insert(cat.id)
+            }
+        }
+        return seen.count
+    }
     private var recentPair: (Category, Question)? {
         guard let recent = progresses
             .compactMap({ progress -> (UserProgress, Date)? in
@@ -33,6 +95,7 @@ struct CategoryListView: View {
                 LazyVStack(spacing: 18, pinnedViews: []) {
                     hero
                     dashboard
+                    streakCard
                     sectionHeader("题目分类", trailing: "\(store.categories.count) 项")
                     categoriesList
                     metrics
@@ -51,6 +114,62 @@ struct CategoryListView: View {
                 QuestionDetailView(category: cat, question: q)
             }
         }
+    }
+
+    private var streakCard: some View {
+        HStack(spacing: 12) {
+            streakModule(
+                icon: "flame.fill",
+                iconTint: Theme.dangerSolid,
+                value: "\(streakCount)",
+                label: "连续学习",
+                unit: "天"
+            )
+            streakModule(
+                icon: "calendar",
+                iconTint: Theme.accent,
+                value: "\(thisWeekViewed)",
+                label: "本周浏览",
+                unit: "题"
+            )
+            streakModule(
+                icon: "rectangle.stack.fill",
+                iconTint: Theme.successSolid,
+                value: "\(thisMonthCategoryCoverage)",
+                label: "本月专题",
+                unit: "个"
+            )
+        }
+    }
+
+    private func streakModule(icon: String, iconTint: Color, value: String, label: String, unit: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(iconTint.opacity(0.18))
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(iconTint)
+            }
+            .frame(width: 30, height: 30)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.fg)
+                    .monospacedDigit()
+                Text(unit)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Theme.fgMuted)
+            }
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Theme.fgMuted)
+                .textCase(.uppercase)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .elevatedCard(bg: Theme.surface)
     }
 
     private var hero: some View {
