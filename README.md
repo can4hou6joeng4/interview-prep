@@ -17,6 +17,7 @@ Open-source interview prep toolkit for Go backend roles, combining a GitHub Page
 - Native iOS app now supports multiple accent palettes alongside system/light/dark appearance switching
 - Native iOS app home now highlights streak days, weekly review volume, and monthly topic coverage
 - Review completion screen reports mastery rate and routes users back to the topic that needs more work
+- Dedicated XCTest target and a GitHub Actions workflow keep core study statistics covered on every iOS change
 - Three learning modes: flashcards, searchable list view, and mock interview drills with score write-back
 - Curated learning paths now group the bank into commerce, platform, realtime, project deep-dive, and sprint tracks
 - Dedicated weak-review entry now lets you jump into wrong-answer, fuzzy, weak, and mastered-only review within the current learning path

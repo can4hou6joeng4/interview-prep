@@ -14,11 +14,15 @@
 - 题目详情页新增一键「加入今日复习」开关，支持在未答题状态直接标记进队列。
 - 我的页笔记模块接入关键词检索，可同时匹配笔记正文、题目和所属分类。
 - 设置页新增学习数据区块，支持 JSON 导出和本地学习进度的二次确认重置。
+- 新增 `InterviewPrepTests` 单元测试目标，首批覆盖 `StudyStats` 的 streak、本周浏览与本月专题覆盖算法。
+- 新增 `.github/workflows/ios-test.yml` GitHub Actions 工作流，在 iOS 目录改动时自动在 macOS runner 跑一次 XCTest。
 
 ### Changed
 
 - 复习会话在首轮完成后不再停留在单卡片总结，而是进入结构化的完成态，给出下一步建议。
 - README 中英文版同步 iOS 新能力并勾选 `2026-04-19-ios-native-study-tool.md` 内的 Task 1-5，并追加 2026-04-20 增量条目。
+- 重构首页 streak 相关的日期计算到独立的 `StudyStats` 纯函数模块，方便后续扩展与单元测试。
+- `SECURITY.md` 将报告范围从纯静态站点扩展到原生 iOS App 的 SwiftData、iCloud、导出与深链场景。
 
 ## 2026-04-17
 
