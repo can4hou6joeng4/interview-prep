@@ -164,6 +164,7 @@ These hooks reduce manual validation work locally, but they do not replace pushi
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
 - [Security Policy](./SECURITY.md)
+- GitHub Discussions is enabled for ideas, Q&A, and longer-form collaboration
 
 ## Roadmap Ideas
 

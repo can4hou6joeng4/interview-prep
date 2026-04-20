@@ -164,6 +164,7 @@ node scripts/jd-coverage.mjs --strict
 - [行为准则](./CODE_OF_CONDUCT.md)
 - [安全策略](./SECURITY.md)
 - [MIT 开源许可](./LICENSE)
+- GitHub Discussions 已开启，适合放置想法、问答和中长期讨论
 
 ## 后续可继续扩展的方向
 
