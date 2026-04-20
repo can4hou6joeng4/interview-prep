@@ -1,0 +1,54 @@
+name: iOS Tests
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-test.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Unit tests on iOS Simulator
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Show available simulators
+        run: xcrun simctl list devices available | head -40
+
+      - name: Run unit tests
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project InterviewPrep.xcodeproj \
+            -scheme InterviewPrep \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -sdk iphonesimulator \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            test
